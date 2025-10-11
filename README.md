@@ -1,17 +1,42 @@
-# AgenticGenerator
+# Simple Web Calculator
 
-This repository was initialized by Aristotle-I for automated task management and pull request creation.
+A basic web-based calculator application built with Flask for the backend and HTML, CSS, and JavaScript for the frontend. This project demonstrates a full-stack approach to creating a simple interactive web application.
 
-## About
+## Table of Contents
 
-This repository is used by the Aristotle-I platform for:
-- Automated task completion workflows
-- Pull request creation for completed tasks
-- Integration with JIRA for task tracking
+- [Features](#features)
+- [Technologies Used](#technologies-used)
+- [Project Structure](#project-structure)
+- [Setup Instructions](#setup-instructions)
+  - [Prerequisites](#prerequisites)
+  - [Cloning the Repository](#cloning-the-repository)
+  - [Setting up the Backend](#setting-up-the-backend)
+  - [Running the Application](#running-the-application)
+- [Usage](#usage)
+- [API Endpoints](#api-endpoints)
+- [Deployment](#deployment)
+- [Contributing](#contributing)
+- [License](#license)
 
-## Getting Started
+## Features
 
-This repository will be populated with code and documentation as tasks are completed by the Aristotle-I agents.
+*   **Basic Arithmetic Operations**: Perform addition, subtraction, multiplication, and division.
+*   **Web-based User Interface**: Accessible via a web browser.
+*   **Responsive Design**: (Implicitly, as modern web apps should be)
+*   **Clear/Reset Functionality**: Clear the display and reset the calculator.
+*   **Backend API**: Handles calculations via a RESTful API.
 
----
-*Initialized by Aristotle-I on 1.102946583*
+## Technologies Used
+
+### Backend
+*   **Python**: Programming language.
+*   **Flask**: Web framework for building the API.
+
+### Frontend
+*   **HTML5**: Structure of the web page.
+*   **CSS3**: Styling and layout.
+*   **JavaScript**: Client-side logic, user interaction, and AJAX communication with the backend.
+
+## Project Structure
+
+The project is organized into `backend` and `frontend` directories, along with a main `run.py` file to start the application.
