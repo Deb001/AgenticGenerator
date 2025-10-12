@@ -1,42 +1,31 @@
-# Simple Web Calculator
+# Primitive Calculator
 
-A basic web-based calculator application built with Flask for the backend and HTML, CSS, and JavaScript for the frontend. This project demonstrates a full-stack approach to creating a simple interactive web application.
+A simple, web-based calculator application built using HTML, CSS, and JavaScript. This project provides a basic functional calculator capable of performing standard arithmetic operations.
 
 ## Table of Contents
 
 - [Features](#features)
 - [Technologies Used](#technologies-used)
 - [Project Structure](#project-structure)
-- [Setup Instructions](#setup-instructions)
-  - [Prerequisites](#prerequisites)
-  - [Cloning the Repository](#cloning-the-repository)
-  - [Setting up the Backend](#setting-up-the-backend)
-  - [Running the Application](#running-the-application)
+- [Setup and Installation](#setup-and-installation)
 - [Usage](#usage)
-- [API Endpoints](#api-endpoints)
-- [Deployment](#deployment)
 - [Contributing](#contributing)
 - [License](#license)
 
 ## Features
 
-*   **Basic Arithmetic Operations**: Perform addition, subtraction, multiplication, and division.
-*   **Web-based User Interface**: Accessible via a web browser.
-*   **Responsive Design**: (Implicitly, as modern web apps should be)
-*   **Clear/Reset Functionality**: Clear the display and reset the calculator.
-*   **Backend API**: Handles calculations via a RESTful API.
+*   **Basic Arithmetic Operations:** Perform addition, subtraction, multiplication, and division.
+*   **Clear Functionality:** A 'C' button to clear the current input and reset the calculator.
+*   **Decimal Support:** Input and calculate with decimal numbers.
+*   **Responsive Design:** (Implied by `style.css` purpose) The calculator interface is designed to be user-friendly across different screen sizes.
+*   **User-Friendly Interface:** Intuitive button layout for easy operation.
 
 ## Technologies Used
 
-### Backend
-*   **Python**: Programming language.
-*   **Flask**: Web framework for building the API.
-
-### Frontend
-*   **HTML5**: Structure of the web page.
-*   **CSS3**: Styling and layout.
-*   **JavaScript**: Client-side logic, user interaction, and AJAX communication with the backend.
+*   **HTML5:** Provides the structural foundation and layout for the calculator user interface.
+*   **CSS3:** Defines the visual presentation, styling, and responsiveness of the calculator UI.
+*   **JavaScript (ES6+):** Contains the core logic for calculator operations, handling user interaction, and updating the display.
 
 ## Project Structure
 
-The project is organized into `backend` and `frontend` directories, along with a main `run.py` file to start the application.
+The project is organized into a clear and logical directory structure:
