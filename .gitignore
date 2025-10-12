@@ -1,48 +1,42 @@
-# Python
-__pycache__/
-*.pyc
-*.pyd
-*.pyo
-*.egg-info/
-.Python
-build/
-dist/
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnp/
+.pnp.js
 
-# Virtual environment
-venv/
-.venv/
-
-# Editor/IDE specific files
-.vscode/
-.idea/
+# Editor directories and files
+.vscode/        # VS Code
+.idea/          # IntelliJ IDEA
 *.sublime-project
 *.sublime-workspace
+*.code-workspace
 
 # OS generated files
-.DS_Store
+.DS_Store       # macOS
 .DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
 ehthumbs.db
-Thumbs.db
+Thumbs.db       # Windows
+desktop.ini     # Windows
 
-# Environment variables
-.env
-.flaskenv
-
-# Logs and databases
+# Logs
 *.log
-*.sqlite
-*.sqlite3
+log/
 
-# Test coverage
-.coverage
-htmlcov/
-
-# Jupyter Notebook (if used, though not explicitly in this project)
-.ipynb_checkpoints
-
-# Miscellaneous
+# Temporary files
+*.tmp
 *~
-*.bak
+~*
+
+# Build artifacts (if any build process were introduced later)
+dist/
+build/
+out/
+
+# Environment variables (if used)
+.env
+.env.*
