@@ -1,1 +1,10 @@
-Flask
+# requirements.txt
+
+# Core web framework
+Flask==3.0.3
+
+# Environment variable support for Flask development
+python-dotenv==1.0.1
+
+# Testing framework
+pytest==8.3.2
