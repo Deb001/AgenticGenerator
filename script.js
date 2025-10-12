@@ -1,286 +1,280 @@
 /**
- * script.js
- *
- * Handles frontend logic, user interactions, updates the display, and
- * communicates with the backend API via AJAX for calculator operations.
- *
- * Issue Key: AI-1
+ * @file script.js
+ * @description Contains the core logic for calculator operations, user interaction, and display updates.
+ * @issue AI-1
  */
-
-// --- DOM Element References ---
-const displayElement = document.querySelector('.calculator-display');
-const numberButtons = document.querySelectorAll('.number');
-const operatorButtons = document.querySelectorAll('.operator');
-const equalsButton = document.querySelector('.equals');
-const clearButton = document.querySelector('.clear');
-const deleteButton = document.querySelector('.delete');
-const decimalButton = document.querySelector('.decimal');
-
-// --- Calculator State Variables ---
-let currentInput = '0'; // The number currently being entered or the result
-let previousInput = ''; // The first operand in an operation
-let operator = null;    // The selected arithmetic operator (+, -, *, /)
-let waitingForNewNumber = true; // True if the next digit should start a new number (after operator or equals)
-let errorState = false; // True if an error occurred and is displayed
-
-// --- Constants ---
-const BACKEND_API_URL = '/calculate'; // Endpoint for arithmetic operations
 
 /**
- * Updates the calculator display with the current input or an error message.
- * Limits display length to prevent overflow.
- * @param {string} value The string to display.
+ * Represents a calculator that performs basic arithmetic operations.
+ * Encapsulates the state and operations of the calculator.
  */
-function updateDisplay(value = currentInput) {
-    const MAX_DISPLAY_LENGTH = 12; // Maximum characters to display
-    if (errorState) {
-        displayElement.textContent = value; // Display error message as is
-    } else {
-        // Format numbers for display (e.g., remove trailing .0, handle scientific notation for large numbers)
-        let formattedValue = value;
-        if (value.includes('.') && value.endsWith('0')) {
-            formattedValue = value.replace(/\.0+$/, ''); // Remove trailing .0s
+class Calculator {
+    /**
+     * Initializes a new Calculator instance.
+     * @param {HTMLElement} previousOperandTextElement - The DOM element to display the previous operand and operation.
+     * @param {HTMLElement} currentOperandTextElement - The DOM element to display the current operand or result.
+     */
+    constructor(previousOperandTextElement, currentOperandTextElement) {
+        if (!(previousOperandTextElement instanceof HTMLElement) || !(currentOperandTextElement instanceof HTMLElement)) {
+            console.error("Calculator constructor received invalid DOM elements.");
+            throw new Error("Invalid DOM elements provided to Calculator constructor.");
         }
-        if (formattedValue.length > MAX_DISPLAY_LENGTH) {
-            // Attempt to parse to number and format to scientific notation if too long
-            const num = parseFloat(formattedValue);
-            if (!isNaN(num) && isFinite(num)) {
-                formattedValue = num.toPrecision(MAX_DISPLAY_LENGTH - 3); // -3 for 'e+X'
-                if (formattedValue.length > MAX_DISPLAY_LENGTH) {
-                    formattedValue = num.toExponential(MAX_DISPLAY_LENGTH - 5); // Even shorter for very large/small
-                }
-            } else {
-                formattedValue = formattedValue.substring(0, MAX_DISPLAY_LENGTH); // Truncate if not a number
+        this.previousOperandTextElement = previousOperandTextElement;
+        this.currentOperandTextElement = currentOperandTextElement;
+        this.clear(); // Initialize calculator state
+    }
+
+    /**
+     * Resets all operands and the current operation, effectively clearing the calculator.
+     */
+    clear() {
+        this.currentOperand = '';
+        this.previousOperand = '';
+        this.operation = undefined;
+        console.log("Calculator cleared.");
+    }
+
+    /**
+     * Removes the last digit from the current operand.
+     */
+    delete() {
+        this.currentOperand = this.currentOperand.toString().slice(0, -1);
+        console.log("Last digit deleted from current operand.");
+    }
+
+    /**
+     * Appends a digit or decimal point to the current operand.
+     * Prevents multiple decimal points.
+     * @param {string} number - The digit or decimal point to append.
+     */
+    appendNumber(number) {
+        if (number === '.' && this.currentOperand.includes('.')) {
+            console.warn("Attempted to add multiple decimal points.");
+            return; // Prevent multiple decimal points
+        }
+        this.currentOperand = this.currentOperand.toString() + number.toString();
+        console.log(`Appended number: ${number}. Current operand: ${this.currentOperand}`);
+    }
+
+    /**
+     * Stores the selected operation and moves the current operand to the previous operand.
+     * If an operation is already pending and a current operand exists, it computes the result first.
+     * @param {string} operation - The arithmetic operation (+, -, *, /) selected.
+     */
+    chooseOperation(operation) {
+        if (this.currentOperand === '') {
+            if (this.previousOperand !== '' && this.operation !== undefined) {
+                // Allow changing operation if only previous operand and operation exist
+                this.operation = operation;
+                console.log(`Operation changed to: ${operation}`);
+                return;
             }
+            console.warn("No current operand to choose an operation for.");
+            return; // Cannot choose operation without a current number
         }
-        displayElement.textContent = formattedValue;
-    }
-}
 
-/**
- * Resets all calculator state variables to their initial values.
- * Clears the display and any error states.
- */
-function clearAll() {
-    currentInput = '0';
-    previousInput = '';
-    operator = null;
-    waitingForNewNumber = true;
-    errorState = false;
-    updateDisplay();
-}
-
-/**
- * Deletes the last character from the current input.
- * If current input becomes empty, sets it to '0'.
- * Does nothing if in an error state.
- */
-function deleteLastChar() {
-    if (errorState) return; // Cannot delete from an error message
-    if (currentInput === '0' && previousInput === '') return; // Don't delete initial '0'
-
-    currentInput = currentInput.slice(0, -1);
-    if (currentInput === '' || currentInput === '-') { // If only '-' remains or empty
-        currentInput = '0';
-        waitingForNewNumber = true; // Allow starting a new number
-    }
-    updateDisplay();
-}
-
-/**
- * Appends a digit or a decimal point to the current input.
- * Handles starting new numbers, preventing multiple decimal points, and leading zeros.
- * @param {string} number The digit or decimal point to append.
- */
-function appendNumber(number) {
-    if (errorState) {
-        clearAll(); // Clear error state before starting new input
+        if (this.previousOperand !== '') {
+            this.compute(); // Compute if there's a pending operation
+        }
+        this.operation = operation;
+        this.previousOperand = this.currentOperand;
+        this.currentOperand = '';
+        console.log(`Operation chosen: ${operation}. Previous operand set to: ${this.previousOperand}`);
     }
 
-    if (waitingForNewNumber) {
-        // If starting a new number, replace '0' or previous result
-        if (number === '.') {
-            currentInput = '0.';
+    /**
+     * Performs the calculation based on the stored operation and operands.
+     * Handles division by zero and invalid number inputs.
+     */
+    compute() {
+        let computation;
+        const prev = parseFloat(this.previousOperand);
+        const current = parseFloat(this.currentOperand);
+
+        if (isNaN(prev) || isNaN(current)) {
+            console.warn("Invalid operands for computation. Previous:", this.previousOperand, "Current:", this.currentOperand);
+            return; // Cannot compute if operands are not valid numbers
+        }
+
+        switch (this.operation) {
+            case '+':
+                computation = prev + current;
+                break;
+            case '-':
+                computation = prev - current;
+                break;
+            case '*':
+                computation = prev * current;
+                break;
+            case '/':
+                if (current === 0) {
+                    console.error("Error: Division by zero attempted.");
+                    this.currentOperand = 'Error: Div by zero';
+                    this.previousOperand = '';
+                    this.operation = undefined;
+                    this.updateDisplay();
+                    // Optionally, clear the calculator completely after displaying error
+                    // setTimeout(() => this.clear(), 2000); // Clear after 2 seconds
+                    return;
+                }
+                computation = prev / current;
+                break;
+            default:
+                console.warn("No valid operation selected for computation.");
+                return;
+        }
+
+        // Handle potential floating point inaccuracies for display
+        if (Number.isFinite(computation) && Math.abs(computation) > 1e-9) {
+            // Limit decimal places for display if it's a long float
+            computation = parseFloat(computation.toFixed(10));
+        }
+
+        this.currentOperand = computation.toString();
+        this.operation = undefined;
+        this.previousOperand = '';
+        console.log(`Computation performed. Result: ${this.currentOperand}`);
+    }
+
+    /**
+     * Formats a number for display, adding commas for thousands and handling decimals.
+     * @param {string | number} number - The number to format.
+     * @returns {string} The formatted number string.
+     */
+    getDisplayNumber(number) {
+        const stringNumber = number.toString();
+        const integerDigits = parseFloat(stringNumber.split('.')[0]);
+        const decimalDigits = stringNumber.split('.')[1];
+        let integerDisplay;
+
+        if (isNaN(integerDigits)) {
+            integerDisplay = '';
         } else {
-            currentInput = number;
+            integerDisplay = integerDigits.toLocaleString('en', {
+                maximumFractionDigits: 0
+            });
         }
-        waitingForNewNumber = false;
-    } else {
-        // Prevent multiple decimal points
-        if (number === '.' && currentInput.includes('.')) {
-            return;
-        }
-        // Prevent multiple leading zeros unless it's '0.'
-        if (currentInput === '0' && number !== '.') {
-            currentInput = number; // Replace '0' with the new digit
+
+        if (decimalDigits != null) {
+            return `${integerDisplay}.${decimalDigits}`;
         } else {
-            currentInput += number;
+            return integerDisplay;
         }
     }
-    updateDisplay();
+
+    /**
+     * Renders the current and previous operands to the UI display elements.
+     */
+    updateDisplay() {
+        this.currentOperandTextElement.innerText = this.getDisplayNumber(this.currentOperand);
+        if (this.operation != null) {
+            this.previousOperandTextElement.innerText =
+                `${this.getDisplayNumber(this.previousOperand)} ${this.operation}`;
+        } else {
+            this.previousOperandTextElement.innerText = '';
+        }
+        console.log("Display updated. Current:", this.currentOperand, "Previous:", this.previousOperand, "Operation:", this.operation);
+    }
 }
+
+// --- DOM Element Selection and Event Listeners ---
+
+// Select all necessary DOM elements
+const numberButtons = document.querySelectorAll('[data-number]');
+const operationButtons = document.querySelectorAll('[data-operation]');
+const equalsButton = document.querySelector('[data-equals]');
+const deleteButton = document.querySelector('[data-delete]');
+const allClearButton = document.querySelector('[data-all-clear]');
+const previousOperandTextElement = document.querySelector('[data-previous-operand]');
+const currentOperandTextElement = document.querySelector('[data-current-operand]');
+
+// Validate that all required DOM elements are found
+if (!previousOperandTextElement || !currentOperandTextElement) {
+    console.error("Error: Calculator display elements not found in the DOM.");
+    alert("Calculator display elements are missing. Please check index.html.");
+}
+
+// Instantiate the Calculator object
+const calculator = new Calculator(previousOperandTextElement, currentOperandTextElement);
+
+// Initialize display
+calculator.updateDisplay();
 
 /**
- * Handles operator button clicks.
- * If a previous operation is pending, it performs the calculation first.
- * Stores the current input as the first operand and sets the new operator.
- * @param {string} nextOperator The operator symbol (+, -, *, /).
+ * Attaches click event listeners to number buttons.
  */
-function chooseOperator(nextOperator) {
-    if (errorState) {
-        // If an error occurred, allow starting a new calculation with the current error result
-        // or clear if the error is not a number. For now, let's clear.
-        clearAll();
-    }
-
-    if (previousInput && operator && currentInput !== '0' && !waitingForNewNumber) {
-        // If there's a pending operation and a new number has been entered, calculate first
-        performCalculation();
-    } else if (currentInput === '0' && previousInput === '' && nextOperator === '-') {
-        // Allow entering a negative number as the first input
-        currentInput = '-';
-        waitingForNewNumber = false;
-        updateDisplay();
-        return;
-    }
-
-    // If previousInput is empty, set currentInput as previousInput
-    if (!previousInput || waitingForNewNumber) {
-        previousInput = currentInput;
-    }
-    operator = nextOperator;
-    waitingForNewNumber = true; // Next digit will start a new number
-    updateDisplay(previousInput + ' ' + operator); // Show pending operation
-}
-
-/**
- * Performs the actual calculation by sending a request to the backend API.
- * Updates the display with the result or an error message.
- */
-async function performCalculation() {
-    if (!previousInput || !operator || waitingForNewNumber) {
-        // Not enough operands or operator to perform a calculation
-        return;
-    }
-
-    const num1 = parseFloat(previousInput);
-    const num2 = parseFloat(currentInput);
-
-    // Basic frontend validation for division by zero before sending to backend
-    if (operator === '/' && num2 === 0) {
-        currentInput = 'Error: Div by 0';
-        errorState = true;
-        updateDisplay();
-        previousInput = '';
-        operator = null;
-        waitingForNewNumber = true;
-        return;
-    }
-
-    // Construct the request payload
-    const requestBody = {
-        num1: num1,
-        num2: num2,
-        operation: operator
-    };
-
-    try {
-        const response = await fetch(BACKEND_API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(requestBody),
-        });
-
-        if (!response.ok) {
-            // Handle HTTP errors (e.g., 400 Bad Request, 500 Internal Server Error)
-            const errorData = await response.json();
-            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (data.result !== undefined && data.result !== null) {
-            currentInput = String(data.result);
-            errorState = false;
-        } else if (data.error) {
-            throw new Error(data.error);
-        } else {
-            throw new Error('Unknown API response format');
-        }
-
-    } catch (error) {
-        console.error('Calculation error:', error);
-        currentInput = `Error: ${error.message.substring(0, 15)}`; // Truncate long error messages
-        errorState = true;
-    } finally {
-        previousInput = '';
-        operator = null;
-        waitingForNewNumber = true;
-        updateDisplay();
-    }
-}
-
-// --- Event Listeners Setup ---
-
-// Number buttons (0-9) and decimal point
 numberButtons.forEach(button => {
-    button.addEventListener('click', () => appendNumber(button.textContent));
-});
-decimalButton.addEventListener('click', () => appendNumber(decimalButton.textContent));
-
-
-// Operator buttons (+, -, *, /)
-operatorButtons.forEach(button => {
-    button.addEventListener('click', () => chooseOperator(button.textContent));
+    button.addEventListener('click', () => {
+        calculator.appendNumber(button.innerText);
+        calculator.updateDisplay();
+    });
 });
 
-// Equals button
-equalsButton.addEventListener('click', () => {
-    if (errorState) {
-        clearAll(); // Clear error before attempting new calculation
-        return;
+/**
+ * Attaches click event listeners to operation buttons.
+ */
+operationButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        calculator.chooseOperation(button.innerText);
+        calculator.updateDisplay();
+    });
+});
+
+/**
+ * Attaches click event listener to the equals button.
+ */
+if (equalsButton) {
+    equalsButton.addEventListener('click', button => {
+        calculator.compute();
+        calculator.updateDisplay();
+    });
+} else {
+    console.error("Error: Equals button not found in the DOM.");
+}
+
+/**
+ * Attaches click event listener to the all-clear button.
+ */
+if (allClearButton) {
+    allClearButton.addEventListener('click', button => {
+        calculator.clear();
+        calculator.updateDisplay();
+    });
+} else {
+    console.error("Error: All Clear button not found in the DOM.");
+}
+
+/**
+ * Attaches click event listener to the delete button.
+ */
+if (deleteButton) {
+    deleteButton.addEventListener('click', button => {
+        calculator.delete();
+        calculator.updateDisplay();
+    });
+} else {
+    console.error("Error: Delete button not found in the DOM.");
+}
+
+// Optional: Add keyboard support for a better user experience
+document.addEventListener('keydown', e => {
+    if (e.key >= '0' && e.key <= '9' || e.key === '.') {
+        calculator.appendNumber(e.key);
+        calculator.updateDisplay();
+    } else if (e.key === '+' || e.key === '-' || e.key === '*' || e.key === '/') {
+        calculator.chooseOperation(e.key);
+        calculator.updateDisplay();
+    } else if (e.key === 'Enter' || e.key === '=') {
+        e.preventDefault(); // Prevent default Enter key behavior (e.g., form submission)
+        calculator.compute();
+        calculator.updateDisplay();
+    } else if (e.key === 'Backspace') {
+        calculator.delete();
+        calculator.updateDisplay();
+    } else if (e.key === 'Escape') {
+        calculator.clear();
+        calculator.updateDisplay();
     }
-    if (previousInput && operator && !waitingForNewNumber) {
-        performCalculation();
-    } else if (previousInput && !operator && !waitingForNewNumber) {
-        // If a number is displayed and equals is pressed without an operator,
-        // just display the current number as the result.
-        updateDisplay(currentInput);
-    }
 });
 
-// Clear (AC) button
-clearButton.addEventListener('click', clearAll);
-
-// Delete (DEL) button
-deleteButton.addEventListener('click', deleteLastChar);
-
-// Keyboard support
-document.addEventListener('keydown', (event) => {
-    const key = event.key;
-
-    if (key >= '0' && key <= '9') {
-        appendNumber(key);
-    } else if (key === '.') {
-        appendNumber(key);
-    } else if (key === '+' || key === '-' || key === '*' || key === '/') {
-        chooseOperator(key);
-    } else if (key === 'Enter' || key === '=') {
-        event.preventDefault(); // Prevent default form submission if any
-        if (previousInput && operator && !waitingForNewNumber) {
-            performCalculation();
-        }
-    } else if (key === 'Backspace') {
-        deleteLastChar();
-    } else if (key === 'Escape') { // 'Escape' for 'AC'
-        clearAll();
-    }
-});
-
-
-// --- Initialisation ---
-document.addEventListener('DOMContentLoaded', () => {
-    clearAll(); // Initialize the display when the DOM is fully loaded
-});
+console.log("script.js loaded and initialized.");
