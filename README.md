@@ -1,31 +1,48 @@
-# Primitive Calculator
+# Flask Calculator
 
-A simple, web-based calculator application built using HTML, CSS, and JavaScript. This project provides a basic functional calculator capable of performing standard arithmetic operations.
+A lightweight web application that demonstrates a simple calculator built with **Flask** on the backend and vanilla JavaScript, HTML, and CSS on the frontend.  
+The project follows best practices for code quality, testing, and deployment.
+
+---
 
 ## Table of Contents
 
 - [Features](#features)
-- [Technologies Used](#technologies-used)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+  - [Clone the Repository](#clone-the-repository)
+  - [Create a Virtual Environment](#create-a-virtual-environment)
+  - [Install Dependencies](#install-dependencies)
+- [Configuration](#configuration)
+- [Running the Application](#running-the-application)
+  - [Development Mode](#development-mode)
+  - [Production Mode](#production-mode)
+- [Testing](#testing)
 - [Project Structure](#project-structure)
-- [Setup and Installation](#setup-and-installation)
-- [Usage](#usage)
-- [Contributing](#contributing)
+- [API Endpoints](#api-endpoints)
 - [License](#license)
+
+---
 
 ## Features
 
-*   **Basic Arithmetic Operations:** Perform addition, subtraction, multiplication, and division.
-*   **Clear Functionality:** A 'C' button to clear the current input and reset the calculator.
-*   **Decimal Support:** Input and calculate with decimal numbers.
-*   **Responsive Design:** (Implied by `style.css` purpose) The calculator interface is designed to be user-friendly across different screen sizes.
-*   **User-Friendly Interface:** Intuitive button layout for easy operation.
+| Feature | Description |
+|---------|-------------|
+| **Arithmetic Operations** | Supports addition, subtraction, multiplication, and division. |
+| **Input Validation** | Client‑side validation prevents non‑numeric input; server validates again. |
+| **RESTful API** | `/api/calculate` accepts JSON payloads and returns results. |
+| **Unit Tests** | 100% coverage for calculation logic (`test_app.py`). |
+| **Responsive UI** | Clean, mobile‑friendly design using CSS Grid. |
 
-## Technologies Used
+---
 
-*   **HTML5:** Provides the structural foundation and layout for the calculator user interface.
-*   **CSS3:** Defines the visual presentation, styling, and responsiveness of the calculator UI.
-*   **JavaScript (ES6+):** Contains the core logic for calculator operations, handling user interaction, and updating the display.
+## Prerequisites
 
-## Project Structure
+- Python 3.10+  
+- `pip` (Python package installer)  
 
-The project is organized into a clear and logical directory structure:
+---
+
+## Installation
+
+### Clone the Repository
