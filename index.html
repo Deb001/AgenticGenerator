@@ -2,76 +2,45 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <title>Flask Calculator</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Primitive Calculator</title>
-    <!--
-        Imports:
-        - Links to 'style.css' for visual presentation.
-        - This connection is crucial for ST1_UI_Foundation, defining the look and feel.
-    -->
-    <link rel="stylesheet" href="style.css">
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- JavaScript -->
+    <script defer src="{{ url_for('static', filename='js/script.js') }}"></script>
 </head>
 <body>
-    <!--
-        Logic Flow: Defines the root HTML document structure.
-        Logic Flow: Includes a `<body>` section containing the main calculator container.
-    -->
     <div class="calculator">
-        <!--
-            Logic Flow: The calculator container will have a display area.
-            Connections: Provides DOM elements (display) that `script.js` interacts with (ST2_Core_Logic).
-            The 'id="display"' allows JavaScript to easily target and update this element.
-        -->
-        <div class="calculator-display" id="display">0</div>
+        <h1>Simple Calculator</h1>
+        <!-- Display -->
+        <input type="text" id="display" class="display" readonly aria-label="Calculator display">
+        <!-- Buttons -->
+        <div class="buttons">
+            <button type="button" class="btn clear" aria-label="Clear">C</button>
+            <button type="button" class="btn operator" data-op="/" aria-label="Divide">÷</button>
+            <button type="button" class="btn operator" data-op="*" aria-label="Multiply">×</button>
+            <button type="button" class="btn operator" data-op="-" aria-label="Subtract">−</button>
 
-        <!--
-            Logic Flow: The calculator container will have a grid of buttons (numbers, operators, clear, equals, decimal).
-            Connections: Provides DOM elements (buttons) that `script.js` interacts with (ST2_Core_Logic).
-            Buttons are ordered logically for a common 4-column grid layout, with CSS handling specific spans.
-        -->
-        <div class="calculator-buttons">
-            <!-- Clear button: Resets the calculator state. -->
-            <button class="button clear" id="clear">AC</button>
+            <button type="button" class="btn digit" data-digit="7">7</button>
+            <button type="button" class="btn digit" data-digit="8">8</button>
+            <button type="button" class="btn digit" data-digit="9">9</button>
+            <button type="button" class="btn operator" data-op="+" aria-label="Add">+</button>
 
-            <!-- Operator buttons: Perform arithmetic operations. -->
-            <button class="button operator" data-value="/">/</button>
-            <button class="button operator" data-value="*">x</button>
-            <button class="button operator" data-value="-">-</button>
+            <button type="button" class="btn digit" data-digit="4">4</button>
+            <button type="button" class="btn digit" data-digit="5">5</button>
+            <button type="button" class="btn digit" data-digit="6">6</button>
+            <button type="button" class="btn equals" aria-label="Equals">=</button>
 
-            <!-- Number buttons (7, 8, 9) -->
-            <button class="button number" data-value="7">7</button>
-            <button class="button number" data-value="8">8</button>
-            <button class="button number" data-value="9">9</button>
-            <button class="button operator" data-value="+">+</button>
+            <button type="button" class="btn digit" data-digit="1">1</button>
+            <button type="button" class="btn digit" data-digit="2">2</button>
+            <button type="button" class="btn digit" data-digit="3">3</button>
 
-            <!-- Number buttons (4, 5, 6) -->
-            <button class="button number" data-value="4">4</button>
-            <button class="button number" data-value="5">5</button>
-            <button class="button number" data-value="6">6</button>
-            <!-- Decimal button: Allows for floating-point numbers. -->
-            <button class="button decimal" data-value=".">.</button>
-
-            <!-- Number buttons (1, 2, 3) -->
-            <button class="button number" data-value="1">1</button>
-            <button class="button number" data-value="2">2</button>
-            <button class="button number" data-value="3">3</button>
-            <!-- Equals button: Triggers the calculation of the current expression. -->
-            <button class="button equals" id="equals">=</button>
-
-            <!-- Number button (0): Often styled to span multiple columns in a grid. -->
-            <button class="button number zero" data-value="0">0</button>
-            <!-- Note: The remaining grid cells in this row will be handled by CSS for layout. -->
+            <button type="button" class="btn digit zero" data-digit="0">0</button>
+            <button type="button" class="btn decimal" data-decimal="." aria-label="Decimal point">.</button>
         </div>
     </div>
 
-    <!--
-        Imports:
-        - Links to 'script.js' for core calculator logic.
-        - Logic Flow: Links `script.js` at the end of the `<body>` with `defer` attribute to ensure HTML is parsed first.
-        - The 'defer' attribute ensures the HTML document is fully parsed and the DOM is ready before the script executes,
-          preventing potential errors when accessing DOM elements.
-        - This connection is crucial for ST2_Core_Logic, providing interactivity.
-    -->
-    <script src="script.js" defer></script>
+    <!-- Error message container -->
+    <div id="error" class="error-message" role="alert" aria-live="assertive"></div>
 </body>
 </html>
