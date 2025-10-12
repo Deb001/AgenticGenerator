@@ -1,161 +1,244 @@
 /*
  * File: style.css
- * Purpose: Defines the visual styles, layout, and appearance for the calculator UI elements.
+ * Purpose: Defines the visual presentation, styling, and responsiveness of the calculator UI.
  * Issue Key: AI-1
  *
- * This stylesheet provides a clean and functional design for the calculator.
- * It ensures a consistent look and feel across the application, enhancing user experience.
+ * This file is part of the 'primitive_calculator' project.
+ * It provides the styling for elements defined in 'index.html' and is connected to the
+ * UI Foundation (ST1_UI_Foundation) and QA Refinement (ST3_QA_Refinement) subtasks.
  */
 
-/* Global Box-sizing Reset */
-*,
-*::before,
-*::after {
-    box-sizing: border-box; /* Ensures padding and border are included in the element's total width and height */
+/*
+ * 1. Resets default browser styles
+ *    - Removes default margin and padding from all elements.
+ *    - Sets box-sizing to border-box for consistent box model behavior.
+ */
+*, *::before, *::after {
+    box-sizing: border-box;
     margin: 0;
     padding: 0;
 }
 
-/* Body Styles */
+/*
+ * 2. Styles the overall `body` for background and centering.
+ *    - Sets a dark background color.
+ *    - Uses flexbox to center the calculator grid horizontally and vertically.
+ *    - Defines a minimum height to ensure centering works even with minimal content.
+ *    - Sets a default font family.
+ */
 body {
-    font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; /* Modern, readable font stack */
-    display: flex; /* Use flexbox for easy centering */
-    justify-content: center; /* Center horizontally */
-    align-items: center; /* Center vertically */
+    background: linear-gradient(to right, #0f2027, #203a43, #2c5364); /* Dark gradient background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
     min-height: 100vh; /* Full viewport height */
-    background-color: #f0f2f5; /* Light grey background for the page */
-    color: #333; /* Default text color */
-    overflow: hidden; /* Prevent scrollbars if content slightly exceeds viewport */
+    font-family: 'Roboto', sans-serif; /* A common, clean sans-serif font */
+    color: #fff; /* Default text color for the body */
+    overflow: hidden; /* Prevent scrollbars if content slightly overflows */
 }
 
-/* Calculator Container */
-.calculator {
-    background-color: #ffffff; /* White background for the calculator body */
-    border-radius: 15px; /* Rounded corners for a softer look */
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15); /* Soft shadow for depth */
-    width: 320px; /* Fixed width for the calculator */
-    max-width: 90%; /* Ensure it's responsive on smaller screens */
+/*
+ * 3. Defines the layout of the calculator grid using CSS Grid.
+ *    - Establishes a 4-column, 6-row grid structure.
+ *    - Sets a gap between grid items for visual separation.
+ *    - Applies a border-radius for rounded corners and a background color.
+ *    - Adds padding around the grid content.
+ */
+.calculator-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 100px); /* 4 columns, each 100px wide */
+    grid-template-rows: minmax(120px, auto) repeat(5, 100px); /* Display row + 5 button rows */
+    gap: 8px; /* Space between grid items */
+    background-color: #1a1a1a; /* Dark background for the calculator body */
     padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 15px; /* Space between display and buttons */
+    border-radius: 15px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5); /* Subtle shadow for depth */
+    max-width: 450px; /* Max width to prevent it from getting too large on big screens */
+    width: 90%; /* Responsive width */
 }
 
-/* Display Area */
-.display {
-    background-color: #222; /* Dark background for the display */
-    color: #ffffff; /* White text for the display */
-    font-size: 2.8em; /* Large font size for readability */
-    text-align: right; /* Align text to the right */
-    padding: 20px 15px;
-    border-radius: 10px; /* Rounded corners for the display */
-    min-height: 80px; /* Ensure a minimum height */
+/*
+ * 4. Styles the calculator display area.
+ *    - Spans across all 4 columns of the grid.
+ *    - Sets a dark background and light text color.
+ *    - Large font size for visibility.
+ *    - Right-aligns text.
+ *    - Uses flexbox to align content (current and previous operands) to the bottom-right.
+ *    - Ensures text wraps and breaks correctly.
+ */
+.calculator-display {
+    grid-column: 1 / -1; /* Spans across all columns */
+    background-color: #333; /* Darker background for the display */
+    color: #fff;
+    font-size: 2.5em; /* Large font size */
+    text-align: right;
+    padding: 15px 20px;
+    border-radius: 10px;
+    margin-bottom: 10px; /* Space below the display */
     display: flex;
-    align-items: center; /* Vertically center text */
-    justify-content: flex-end; /* Horizontally align text to the end */
+    flex-direction: column; /* Stack previous and current operands */
+    align-items: flex-end; /* Align text to the right */
+    justify-content: space-around; /* Distribute space */
     word-wrap: break-word; /* Allow long numbers to wrap */
-    overflow: hidden; /* Hide overflow if number is too long */
-    white-space: nowrap; /* Prevent numbers from breaking into new lines initially */
-    text-overflow: ellipsis; /* Add ellipsis for overflowed text */
+    word-break: break-all; /* Break words at any character */
+    min-height: 120px; /* Ensure a minimum height for the display */
+    overflow: hidden; /* Hide overflow if numbers are too long */
 }
 
-/* Buttons Container */
-.buttons {
-    display: grid; /* Use CSS Grid for button layout */
-    grid-template-columns: repeat(4, 1fr); /* 4 columns, equal width */
-    gap: 12px; /* Space between buttons */
+/* Styles for the previous operand in the display */
+.calculator-display .previous-operand {
+    font-size: 1.2em;
+    color: rgba(255, 255, 255, 0.75); /* Slightly faded for previous input */
+    min-height: 1.2em; /* Ensure it takes up space even if empty */
 }
 
-/* Individual Button Styles */
-button {
-    background-color: #e0e0e0; /* Light grey background for number/default buttons */
-    color: #333; /* Dark text for number/default buttons */
-    border: none; /* No border */
-    border-radius: 8px; /* Rounded corners for buttons */
-    padding: 20px 0; /* Vertical padding */
-    font-size: 1.6em; /* Large font size for buttons */
-    cursor: pointer; /* Indicate clickable element */
-    transition: background-color 0.2s ease, transform 0.1s ease; /* Smooth transitions for hover/active */
-    outline: none; /* Remove outline on focus for aesthetic reasons, consider accessibility */
-    -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
+/* Styles for the current operand in the display */
+.calculator-display .current-operand {
+    font-size: 2.5em;
+    color: #fff;
+    min-height: 2.5em; /* Ensure it takes up space even if empty */
 }
 
-/* Button Hover State */
-button:hover {
-    background-color: #d0d0d0; /* Slightly darker grey on hover */
-    transform: translateY(-1px); /* Slight lift effect */
+/*
+ * 5. Applies general styling to all calculator buttons.
+ *    - Sets a light background, no border, and a large font size.
+ *    - Changes cursor to pointer to indicate interactivity.
+ *    - Removes default outline on focus.
+ *    - Applies border-radius for rounded corners.
+ */
+.calculator-button {
+    background-color: rgba(255, 255, 255, 0.15); /* Semi-transparent white */
+    border: none;
+    outline: none;
+    font-size: 2em;
+    color: #fff;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out; /* Smooth transitions */
 }
 
-/* Button Active State (when clicked) */
-button:active {
-    background-color: #c0c0c0; /* Even darker grey when active */
-    transform: translateY(0); /* Reset lift effect */
+/*
+ * 9. Includes hover effects for buttons to enhance user experience.
+ *    - Darkens the background on hover.
+ *    - Adds a slight scale transformation for a subtle press effect.
+ */
+.calculator-button:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+    transform: scale(1.02);
 }
 
-/* Operator Buttons (+, -, *, /) */
-button.operator {
-    background-color: #ff9500; /* Orange background for operators */
-    color: #ffffff; /* White text for operators */
+.calculator-button:active {
+    transform: scale(0.98); /* Even smaller on active (click) */
 }
 
-button.operator:hover {
-    background-color: #e68a00; /* Darker orange on hover */
+/*
+ * 6. Provides specific styles for operator buttons.
+ *    - Uses a distinct color for operators.
+ */
+.operator {
+    background-color: #ff9500; /* Orange color for operators */
+    color: #fff;
 }
 
-button.operator:active {
-    background-color: #cc7a00; /* Even darker orange when active */
+.operator:hover {
+    background-color: #e08500; /* Darker orange on hover */
 }
 
-/* Clear Button (C) */
-button.clear {
-    background-color: #ff3b30; /* Red background for clear button */
-    color: #ffffff; /* White text for clear button */
+/*
+ * 7. Provides specific styles for equals button.
+ *    - Spans two columns.
+ *    - Uses the same distinct color as operators.
+ */
+.equals {
+    grid-column: span 2; /* Spans two columns */
+    background-color: #ff9500; /* Orange color for equals */
+    color: #fff;
 }
 
-button.clear:hover {
-    background-color: #e6342a; /* Darker red on hover */
+.equals:hover {
+    background-color: #e08500; /* Darker orange on hover */
 }
 
-button.clear:active {
-    background-color: #cc2d24; /* Even darker red when active */
+/*
+ * 8. Provides specific styles for clear/delete buttons.
+ *    - Clear button spans two columns.
+ *    - Uses a different color (e.g., a lighter grey or red for clear).
+ */
+.clear {
+    grid-column: span 2; /* Spans two columns */
+    background-color: #a6a6a6; /* Light grey for clear */
+    color: #1a1a1a; /* Dark text for clear button */
 }
 
-/* Equals Button (=) */
-button.equals {
-    background-color: #4cd964; /* Green background for equals button */
-    color: #ffffff; /* White text for equals button */
-    grid-column: span 2; /* Make equals button span two columns */
+.clear:hover {
+    background-color: #919191; /* Darker grey on hover */
 }
 
-button.equals:hover {
-    background-color: #43c258; /* Darker green on hover */
+.delete {
+    background-color: #a6a6a6; /* Light grey for delete */
+    color: #1a1a1a; /* Dark text for delete button */
 }
 
-button.equals:active {
-    background-color: #3ba94e; /* Even darker green when active */
+.delete:hover {
+    background-color: #919191; /* Darker grey on hover */
 }
 
-/* Zero Button (0) - often spans two columns */
-button.zero {
-    grid-column: span 2; /* Make zero button span two columns */
+/*
+ * 10. Ensures basic responsiveness for different screen sizes.
+ *     - Adjusts grid column size and font sizes for smaller screens.
+ *     - The `width: 90%` on `.calculator-grid` already provides basic responsiveness.
+ *     - This media query further refines it for very small screens.
+ */
+@media (max-width: 480px) {
+    .calculator-grid {
+        grid-template-columns: repeat(4, 70px); /* Smaller columns for small screens */
+        grid-template-rows: minmax(100px, auto) repeat(5, 70px); /* Smaller rows */
+        gap: 6px;
+        padding: 15px;
+    }
+
+    .calculator-button {
+        font-size: 1.8em; /* Slightly smaller font for buttons */
+    }
+
+    .calculator-display {
+        font-size: 2em; /* Slightly smaller font for display */
+        padding: 10px 15px;
+        min-height: 100px;
+    }
+
+    .calculator-display .previous-operand {
+        font-size: 1em;
+    }
+
+    .calculator-display .current-operand {
+        font-size: 2em;
+    }
 }
 
-/* Media Queries for smaller screens (if needed, though fixed width is used) */
-@media (max-width: 400px) {
-    .calculator {
-        width: 100%; /* Full width on very small screens */
-        border-radius: 0; /* No border-radius on full width */
-        box-shadow: none; /* No shadow on full width */
+@media (max-width: 320px) {
+    .calculator-grid {
+        grid-template-columns: repeat(4, 60px); /* Even smaller columns */
+        grid-template-rows: minmax(90px, auto) repeat(5, 60px); /* Even smaller rows */
+        gap: 5px;
         padding: 10px;
     }
 
-    .display {
-        font-size: 2.2em; /* Slightly smaller font on small screens */
-        padding: 15px 10px;
+    .calculator-button {
+        font-size: 1.5em;
     }
 
-    button {
-        font-size: 1.4em; /* Slightly smaller button font */
-        padding: 15px 0;
+    .calculator-display {
+        font-size: 1.8em;
+        padding: 8px 10px;
+        min-height: 90px;
+    }
+
+    .calculator-display .previous-operand {
+        font-size: 0.9em;
+    }
+
+    .calculator-display .current-operand {
+        font-size: 1.8em;
     }
 }
