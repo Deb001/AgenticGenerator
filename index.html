@@ -1,46 +1,207 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Flask Calculator</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <!-- JavaScript -->
-    <script defer src="{{ url_for('static', filename='js/script.js') }}"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Accessible Calculator</title>
+
+  <!-- Stylesheet: scoped, responsive calculator styling -->
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Helpful metadata for assistive tech -->
+  <meta name="description" content="Accessible, keyboard-friendly calculator. Supports +, -, ×, ÷, decimals, clear and backspace.">
 </head>
 <body>
-    <div class="calculator">
-        <h1>Simple Calculator</h1>
-        <!-- Display -->
-        <input type="text" id="display" class="display" readonly aria-label="Calculator display">
-        <!-- Buttons -->
-        <div class="buttons">
-            <button type="button" class="btn clear" aria-label="Clear">C</button>
-            <button type="button" class="btn operator" data-op="/" aria-label="Divide">÷</button>
-            <button type="button" class="btn operator" data-op="*" aria-label="Multiply">×</button>
-            <button type="button" class="btn operator" data-op="-" aria-label="Subtract">−</button>
+  <!--
+    Main calculator application shell.
+    - Display: div#display with aria-live so screen readers are notified of result updates.
+    - Buttons: use data-key for digit/decimal, data-operator for operators.
+    - Special buttons: #equals, #clear, #backspace for app.js hooks.
+  -->
+  <main class="calculator-root" aria-labelledby="calc-title">
+    <h1 id="calc-title" class="sr-only">Calculator</h1>
 
-            <button type="button" class="btn digit" data-digit="7">7</button>
-            <button type="button" class="btn digit" data-digit="8">8</button>
-            <button type="button" class="btn digit" data-digit="9">9</button>
-            <button type="button" class="btn operator" data-op="+" aria-label="Add">+</button>
-
-            <button type="button" class="btn digit" data-digit="4">4</button>
-            <button type="button" class="btn digit" data-digit="5">5</button>
-            <button type="button" class="btn digit" data-digit="6">6</button>
-            <button type="button" class="btn equals" aria-label="Equals">=</button>
-
-            <button type="button" class="btn digit" data-digit="1">1</button>
-            <button type="button" class="btn digit" data-digit="2">2</button>
-            <button type="button" class="btn digit" data-digit="3">3</button>
-
-            <button type="button" class="btn digit zero" data-digit="0">0</button>
-            <button type="button" class="btn decimal" data-decimal="." aria-label="Decimal point">.</button>
+    <!-- Visible calculator container -->
+    <section class="calculator" role="application" aria-label="Calculator">
+      <!-- Display area -->
+      <div class="display-wrap">
+        <!-- aria-live="polite" ensures screen readers announce updates but not interruptively -->
+        <div id="display"
+             role="status"
+             aria-live="polite"
+             aria-atomic="true"
+             aria-label="Calculator display"
+             class="display">
+          0
         </div>
-    </div>
+        <!-- A small status region for errors (also read by screen readers) -->
+        <div id="display-error" class="visually-hidden" aria-live="assertive" aria-atomic="true"></div>
+      </div>
 
-    <!-- Error message container -->
-    <div id="error" class="error-message" role="alert" aria-live="assertive"></div>
+      <!-- Button grid: digits, operators, equals, clear, backspace -->
+      <div class="button-grid" role="group" aria-label="Calculator buttons">
+        <!-- Row: Clear, Backspace, Divide -->
+        <button type="button"
+                id="clear"
+                class="btn btn-control"
+                aria-label="Clear"
+                title="Clear (Esc or C)">
+          C
+        </button>
+
+        <button type="button"
+                id="backspace"
+                class="btn btn-control"
+                aria-label="Backspace"
+                title="Backspace (Backspace)">
+          ⌫
+        </button>
+
+        <button type="button"
+                class="btn btn-operator"
+                data-operator="÷"
+                aria-label="Divide"
+                title="Divide (/)">
+          ÷
+        </button>
+
+        <!-- Row: 7,8,9, Multiply -->
+        <button type="button"
+                class="btn btn-key"
+                data-key="7"
+                aria-label="Seven">
+          7
+        </button>
+
+        <button type="button"
+                class="btn btn-key"
+                data-key="8"
+                aria-label="Eight">
+          8
+        </button>
+
+        <button type="button"
+                class="btn btn-key"
+                data-key="9"
+                aria-label="Nine">
+          9
+        </button>
+
+        <button type="button"
+                class="btn btn-operator"
+                data-operator="×"
+                aria-label="Multiply"
+                title="Multiply (*)">
+          ×
+        </button>
+
+        <!-- Row: 4,5,6, Minus -->
+        <button type="button"
+                class="btn btn-key"
+                data-key="4"
+                aria-label="Four">
+          4
+        </button>
+
+        <button type="button"
+                class="btn btn-key"
+                data-key="5"
+                aria-label="Five">
+          5
+        </button>
+
+        <button type="button"
+                class="btn btn-key"
+                data-key="6"
+                aria-label="Six">
+          6
+        </button>
+
+        <button type="button"
+                class="btn btn-operator"
+                data-operator="-"
+                aria-label="Subtract"
+                title="Subtract (-)">
+          −
+        </button>
+
+        <!-- Row: 1,2,3, Plus -->
+        <button type="button"
+                class="btn btn-key"
+                data-key="1"
+                aria-label="One">
+          1
+        </button>
+
+        <button type="button"
+                class="btn btn-key"
+                data-key="2"
+                aria-label="Two">
+          2
+        </button>
+
+        <button type="button"
+                class="btn btn-key"
+                data-key="3"
+                aria-label="Three">
+          3
+        </button>
+
+        <button type="button"
+                class="btn btn-operator"
+                data-operator="+"
+                aria-label="Add"
+                title="Add (+)">
+          +
+        </button>
+
+        <!-- Row: 0, decimal, equals (spans two columns) -->
+        <button type="button"
+                class="btn btn-key zero"
+                data-key="0"
+                aria-label="Zero">
+          0
+        </button>
+
+        <button type="button"
+                class="btn btn-key"
+                data-key="."
+                aria-label="Decimal point"
+                title="Decimal point (.)">
+          .
+        </button>
+
+        <button type="button"
+                id="equals"
+                class="btn btn-equals"
+                aria-label="Equals"
+                title="Equals (Enter)">
+          =
+        </button>
+      </div>
+
+      <!-- A short, visually-hidden instruction for keyboard users (also visible to sighted users if styles allow) -->
+      <div id="kbd-instructions" class="sr-only" aria-hidden="false">
+        Keyboard controls: digits 0-9, decimal point ., operators + - * / (or × ÷), Enter for equals, Backspace to delete, Esc or C to clear.
+      </div>
+    </section>
+
+    <!-- No-script fallback -->
+    <noscript>
+      <div class="no-script-warning" role="alert">
+        This calculator requires JavaScript. Please enable JavaScript to use the calculator.
+      </div>
+    </noscript>
+  </main>
+
+  <!-- Application script (ES module) -->
+  <script type="module" src="src/app.js"></script>
+
+  <!--
+    Accessibility helper classes:
+    - sr-only (screen-reader only): exposed via CSS (styles.css) to visually hide content but keep it readable to screen readers.
+    - visually-hidden: similar to sr-only; uses different naming for clarity in app code.
+    Note: actual styles are defined in styles.css which is required by the technical spec.
+  -->
 </body>
 </html>
