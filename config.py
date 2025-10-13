@@ -2,22 +2,33 @@
 config.py
 ---------
 
-Central configuration module for the project.
+Central configuration module for the Flask based calculator application.
 
 The module defines a hierarchy of configuration classes that can be
-instantiated based on the ``CONFIG_ENV`` environment variable.  It also
-exposes a ready‑to‑use ``logger`` instance configured according to the
-selected configuration.
+selected at runtime via the ``APP_ENV`` environment variable (or an
+explicit argument to :func:`load_config`).  Each configuration class
+provides sensible defaults and pulls values from environment variables
+where appropriate, making the application easy to configure in
+different deployment scenarios (development, testing, production).
 
-Typical usage::
+The module also offers a small helper to initialise Flask applications
+and to configure a robust logging setup.
 
-    from config import get_config, logger
+Typical usage in ``main.py``::
 
-    cfg = get_config()
-    logger.info("Application started in %s mode", cfg.ENV)
+    from flask import Flask
+    from config import load_config, configure_logging
 
-The implementation relies only on the Python standard library so that it
-remains lightweight and easy to test.
+    app = Flask(__name__, static_folder=config.STATIC_FOLDER,
+                template_folder=config.TEMPLATE_FOLDER)
+
+    config = load_config()
+    config.init_app(app)
+    configure_logging(config)
+
+    # register routes / blueprints …
+    if __name__ == "__main__":
+        app.run(host="0.0.0.0", port=5000)
 """
 
 from __future__ import annotations
@@ -26,191 +37,196 @@ import logging
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Mapping, Optional
-
-# --------------------------------------------------------------------------- #
-# Configuration data structures
-# --------------------------------------------------------------------------- #
+from typing import Any, Mapping, Optional, Type
 
 
-@dataclass(frozen=True)
+def _env_bool(key: str, default: bool = False) -> bool:
+    """Read a boolean value from the environment.
+
+    Accepts ``"1"``, ``"true"``, ``"yes"`` (case‑insensitive) as truthy.
+    """
+    val = os.getenv(key)
+    if val is None:
+        return default
+    return val.lower() in {"1", "true", "yes", "on"}
+
+
+def _env_path(key: str, default: Path) -> Path:
+    """Read a filesystem path from the environment, expanding user/home."""
+    val = os.getenv(key)
+    if not val:
+        return default
+    return Path(val).expanduser().resolve()
+
+
+@dataclass
 class BaseConfig:
     """
     Base configuration shared by all environments.
 
-    Attributes
-    ----------
-    ENV: str
-        Human readable name of the environment (e.g. ``development``).
-    DEBUG: bool
-        Enable/disable debug mode.
-    TESTING: bool
-        Enable/disable testing mode.
-    DATABASE_URL: str
-        URL used by the data layer.  Defaults to an SQLite file in the project
-        root for local development.
-    LOG_LEVEL: int
-        Logging level used by the default logger.
-    LOG_FORMAT: str
-        Format string for log messages.
-    LOG_FILE: Optional[Path]
-        Optional file path for log output.  If ``None`` logs go to ``stderr``.
-    STATIC_ROOT: Path
-        Directory that holds static assets (used by the web UI).
-    TEMPLATE_ROOT: Path
-        Directory that holds HTML templates.
+    Attributes are deliberately typed and have defaults that work for a
+    typical local development setup.  Sub‑classes override where needed.
     """
 
-    ENV: str = "base"
+    # Core Flask settings
     DEBUG: bool = False
     TESTING: bool = False
-    DATABASE_URL: str = "sqlite:///./data.db"
-    LOG_LEVEL: int = logging.INFO
-    LOG_FORMAT: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    LOG_FILE: Optional[Path] = None
-    STATIC_ROOT: Path = field(default_factory=lambda: Path(__file__).parent / "static")
-    TEMPLATE_ROOT: Path = field(default_factory=lambda: Path(__file__).parent / "templates")
+    SECRET_KEY: str = field(default_factory=lambda: os.getenv("SECRET_KEY", "change-me"))
 
-    @classmethod
-    def from_env(cls) -> "BaseConfig":
+    # Paths – resolved to absolute ``Path`` objects for safety
+    STATIC_FOLDER: Path = field(
+        default_factory=lambda: _env_path(
+            "STATIC_FOLDER", Path(__file__).parent.parent / "static"
+        )
+    )
+    TEMPLATE_FOLDER: Path = field(
+        default_factory=lambda: _env_path(
+            "TEMPLATE_FOLDER", Path(__file__).parent.parent / "templates"
+        )
+    )
+
+    # Logging configuration
+    LOG_LEVEL: int = field(default_factory=lambda: logging.INFO)
+    LOG_FORMAT: str = "%(asctime)s %(levelname)s %(name)s %(message)s"
+    LOG_FILE: Optional[Path] = None  # If set, a file handler will be added
+
+    # Miscellaneous
+    SESSION_COOKIE_HTTPONLY: bool = True
+    SESSION_COOKIE_SAMESITE: str = "Lax"
+
+    def init_app(self, app: Any) -> None:
         """
-        Create a configuration instance populated from environment variables.
-        Only variables that are explicitly defined in the subclass are read.
+        Apply configuration values to a Flask app instance.
+
+        ``app`` is expected to be a Flask application, but the function
+        deliberately avoids importing Flask at module import time to keep
+        this file lightweight and testable.
         """
-        env_vars: Mapping[str, Any] = {
-            "ENV": os.getenv("APP_ENV", cls.ENV),
-            "DEBUG": os.getenv("APP_DEBUG", str(cls.DEBUG)).lower() in ("1", "true", "yes"),
-            "TESTING": os.getenv("APP_TESTING", str(cls.TESTING)).lower() in ("1", "true", "yes"),
-            "DATABASE_URL": os.getenv("DATABASE_URL", cls.DATABASE_URL),
-            "LOG_LEVEL": getattr(logging, os.getenv("LOG_LEVEL", "").upper(), cls.LOG_LEVEL),
-            "LOG_FILE": Path(os.getenv("LOG_FILE")) if os.getenv("LOG_FILE") else cls.LOG_FILE,
-            "STATIC_ROOT": Path(os.getenv("STATIC_ROOT", cls.STATIC_ROOT)),
-            "TEMPLATE_ROOT": Path(os.getenv("TEMPLATE_ROOT", cls.TEMPLATE_ROOT)),
-        }
-
-        # Filter out any keys that the subclass does not accept
-        field_names = {f.name for f in cls.__dataclass_fields__.values()}
-        filtered = {k: v for k, v in env_vars.items() if k in field_names}
-        return cls(**filtered)  # type: ignore[arg-type]
+        # Direct attribute assignment works for both Flask and objects that
+        # mimic its config interface.
+        for key in self.__dataclass_fields__:  # type: ignore[attr-defined]
+            setattr(app, key, getattr(self, key))
 
 
-@dataclass(frozen=True)
+@dataclass
 class DevelopmentConfig(BaseConfig):
     """Configuration tuned for local development."""
 
-    ENV: str = "development"
     DEBUG: bool = True
     LOG_LEVEL: int = logging.DEBUG
-    DATABASE_URL: str = "sqlite:///./dev_data.db"
+    SECRET_KEY: str = field(default_factory=lambda: os.getenv("SECRET_KEY", "dev-secret-key"))
 
 
-@dataclass(frozen=True)
+@dataclass
 class TestingConfig(BaseConfig):
     """Configuration used when running the test suite."""
 
-    ENV: str = "testing"
-    DEBUG: bool = True
     TESTING: bool = True
+    DEBUG: bool = True
     LOG_LEVEL: int = logging.DEBUG
-    DATABASE_URL: str = "sqlite:///./test_data.db"
+    SECRET_KEY: str = "test-secret-key"
 
 
-@dataclass(frozen=True)
+@dataclass
 class ProductionConfig(BaseConfig):
     """Configuration for production deployments."""
 
-    ENV: str = "production"
     DEBUG: bool = False
     LOG_LEVEL: int = logging.WARNING
-    # In production the database URL must be supplied via env var
-    DATABASE_URL: str = field(default_factory=lambda: os.getenv("DATABASE_URL", ""))
+    # In production we *require* a secret key to be set via env var.
+    SECRET_KEY: str = field(default_factory=lambda: os.getenv("SECRET_KEY") or
+                            (_raise_missing_secret_key()))
 
 
-# --------------------------------------------------------------------------- #
-# Helper functions
-# --------------------------------------------------------------------------- #
+def _raise_missing_secret_key() -> str:
+    """Helper that raises a clear error when SECRET_KEY is absent in prod."""
+    raise RuntimeError(
+        "SECRET_KEY environment variable must be set in production. "
+        "Generate a strong random value and export it before starting the app."
+    )
 
 
-def get_config() -> BaseConfig:
+# Mapping from environment name to config class
+_ENV_CONFIG_MAP: Mapping[str, Type[BaseConfig]] = {
+    "development": DevelopmentConfig,
+    "testing": TestingConfig,
+    "production": ProductionConfig,
+}
+
+
+def load_config(env: Optional[str] = None) -> BaseConfig:
     """
-    Resolve and return the appropriate configuration instance.
+    Load the appropriate configuration class based on the ``APP_ENV``
+    environment variable or an explicit ``env`` argument.
 
-    The environment variable ``CONFIG_ENV`` determines which subclass is used.
-    Accepted values are ``development``, ``testing`` and ``production``.
-    If the variable is missing or contains an unknown value, ``DevelopmentConfig``
-    is used as a safe default.
+    Parameters
+    ----------
+    env :
+        Optional explicit environment name.  If omitted, the function
+        reads ``APP_ENV`` and defaults to ``"development"`` when the
+        variable is not set.
 
     Returns
     -------
     BaseConfig
-        An immutable configuration object.
+        An instantiated configuration object ready to be used.
     """
-    env = os.getenv("CONFIG_ENV", "development").lower()
-    config_cls: type[BaseConfig]
-
-    if env == "production":
-        config_cls = ProductionConfig
-    elif env == "testing":
-        config_cls = TestingConfig
-    else:
-        config_cls = DevelopmentConfig
-
-    return config_cls.from_env()
+    env_name = (env or os.getenv("APP_ENV", "development")).lower()
+    config_cls = _ENV_CONFIG_MAP.get(env_name)
+    if config_cls is None:
+        raise ValueError(
+            f"Unsupported APP_ENV '{env_name}'. "
+            f"Supported values are: {', '.join(_ENV_CONFIG_MAP)}."
+        )
+    return config_cls()
 
 
-def _configure_logging(cfg: BaseConfig) -> None:
+def configure_logging(config: BaseConfig) -> None:
     """
-    Apply logging configuration based on the supplied ``BaseConfig`` instance.
+    Configure the root logger according to the supplied configuration.
 
-    Parameters
-    ----------
-    cfg : BaseConfig
-        The configuration object containing logging preferences.
+    This function sets up a stream handler (stderr) and, if ``config.LOG_FILE``
+    is defined, an additional rotating file handler.
+
+    The function is idempotent – calling it multiple times will not add
+    duplicate handlers.
     """
-    handlers: list[logging.Handler] = []
+    logger = logging.getLogger()
+    logger.setLevel(config.LOG_LEVEL)
 
-    # Console handler (stderr)
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(cfg.LOG_LEVEL)
-    console_handler.setFormatter(logging.Formatter(cfg.LOG_FORMAT))
-    handlers.append(console_handler)
+    # Avoid adding duplicate handlers on repeated calls
+    if any(isinstance(h, logging.StreamHandler) for h in logger.handlers):
+        return
 
-    # Optional file handler
-    if cfg.LOG_FILE:
-        file_handler = logging.FileHandler(cfg.LOG_FILE, encoding="utf-8")
-        file_handler.setLevel(cfg.LOG_LEVEL)
-        file_handler.setFormatter(logging.Formatter(cfg.LOG_FORMAT))
-        handlers.append(file_handler)
+    formatter = logging.Formatter(config.LOG_FORMAT)
 
-    logging.basicConfig(level=cfg.LOG_LEVEL, handlers=handlers)
+    stream_handler = logging.StreamHandler()
+    stream_handler.setLevel(config.LOG_LEVEL)
+    stream_handler.setFormatter(formatter)
+    logger.addHandler(stream_handler)
 
+    if config.LOG_FILE:
+        from logging.handlers import RotatingFileHandler
 
-# --------------------------------------------------------------------------- #
-# Public objects
-# --------------------------------------------------------------------------- #
+        log_path = config.LOG_FILE.expanduser().resolve()
+        log_path.parent.mkdir(parents=True, exist_ok=True)
 
-# Resolve configuration at import time – this is cheap and ensures a single
-# source of truth throughout the process.
-config: BaseConfig = get_config()
-_configured = False
+        file_handler = RotatingFileHandler(
+            filename=str(log_path),
+            maxBytes=10 * 1024 * 1024,  # 10 MiB
+            backupCount=5,
+            encoding="utf-8",
+        )
+        file_handler.setLevel(config.LOG_LEVEL)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
 
-def _ensure_logging_configured() -> None:
-    """Idempotent wrapper to guarantee logging is configured exactly once."""
-    global _configured
-    if not _configured:
-        _configure_logging(config)
-        _configured = True
-
-# Expose a ready‑to‑use logger for the rest of the codebase.
-_ensure_logging_configured()
-logger: logging.Logger = logging.getLogger(__name__)
 
 __all__ = [
     "BaseConfig",
     "DevelopmentConfig",
     "TestingConfig",
     "ProductionConfig",
-    "get_config",
-    "config",
-    "logger",
+    "load_config",
+    "configure_logging",
 ]
