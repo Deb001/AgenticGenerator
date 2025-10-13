@@ -1,101 +1,161 @@
+#!/usr/bin/env python3
+"""
+calculator.py
+
+Core arithmetic logic with robust input validation and logging.
+"""
+
+from __future__ import annotations
+
 import logging
+from typing import Any, Iterable, Tuple
 
-# Configure logging for this module.
-# In a larger Flask application, logging might be configured centrally in __init__.py
-# or a dedicated configuration file. For this module, a basic setup is sufficient
-# to log operations and errors.
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+# Configure module-level logger
 logger = logging.getLogger(__name__)
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter(
+        fmt="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
 
-def add(num1: float, num2: float) -> float:
+
+class Calculator:
     """
-    Performs addition of two numbers.
+    Encapsulates basic arithmetic operations with input validation.
 
-    Args:
-        num1 (float): The first number.
-        num2 (float): The second number.
-
-    Returns:
-        float: The sum of num1 and num2.
-
-    Raises:
-        TypeError: If either num1 or num2 is not a valid number (int or float).
+    Methods
+    -------
+    add(a, b)
+        Returns the sum of a and b.
+    subtract(a, b)
+        Returns the difference of a and b.
+    multiply(a, b)
+        Returns the product of a and b.
+    divide(a, b)
+        Returns the quotient of a and b. Raises ZeroDivisionError if b is zero.
     """
-    if not isinstance(num1, (int, float)) or not isinstance(num2, (int, float)):
-        logger.error(f"Invalid input types for add operation: num1={num1} (type={type(num1)}), num2={num2} (type={type(num2)})")
-        raise TypeError("Both inputs must be numbers (integers or floats).")
-    
-    result = num1 + num2
-    logger.info(f"Performed addition: {num1} + {num2} = {result}")
-    return result
 
-def subtract(num1: float, num2: float) -> float:
-    """
-    Performs subtraction of the second number from the first.
+    def __init__(self) -> None:
+        """Initializes the Calculator instance."""
+        logger.debug("Calculator instance created")
 
-    Args:
-        num1 (float): The number to subtract from.
-        num2 (float): The number to subtract.
+    @staticmethod
+    def _validate_input(*args: Any) -> None:
+        """
+        Internal helper to validate if all inputs are valid numbers.
 
-    Returns:
-        float: The difference between num1 and num2.
+        Parameters
+        ----------
+        *args : Any
+            Variable length argument list of values to validate.
 
-    Raises:
-        TypeError: If either num1 or num2 is not a valid number (int or float).
-    """
-    if not isinstance(num1, (int, float)) or not isinstance(num2, (int, float)):
-        logger.error(f"Invalid input types for subtract operation: num1={num1} (type={type(num1)}), num2={num2} (type={type(num2)})")
-        raise TypeError("Both inputs must be numbers (integers or floats).")
-        
-    result = num1 - num2
-    logger.info(f"Performed subtraction: {num1} - {num2} = {result}")
-    return result
+        Raises
+        ------
+        ValueError
+            If any input is not an int or float.
+        """
+        for idx, value in enumerate(args):
+            if not isinstance(value, (int, float)):
+                logger.error(
+                    "Invalid input at position %d: %r is not a number", idx, value
+                )
+                raise ValueError(
+                    f"All inputs must be int or float. Invalid value at position {idx}: {value!r}"
+                )
+        logger.debug("All inputs validated: %s", args)
 
-def multiply(num1: float, num2: float) -> float:
-    """
-    Performs multiplication of two numbers.
+    def add(self, a: float | int, b: float | int) -> float | int:
+        """
+        Returns the sum of a and b.
 
-    Args:
-        num1 (float): The first number.
-        num2 (float): The second number.
+        Parameters
+        ----------
+        a : number
+            First addend.
+        b : number
+            Second addend.
 
-    Returns:
-        float: The product of num1 and num2.
+        Returns
+        -------
+        number
+            The sum of a and b.
+        """
+        self._validate_input(a, b)
+        result = a + b
+        logger.info("add(%s, %s) = %s", a, b, result)
+        return result
 
-    Raises:
-        TypeError: If either num1 or num2 is not a valid number (int or float).
-    """
-    if not isinstance(num1, (int, float)) or not isinstance(num2, (int, float)):
-        logger.error(f"Invalid input types for multiply operation: num1={num1} (type={type(num1)}), num2={num2} (type={type(num2)})")
-        raise TypeError("Both inputs must be numbers (integers or floats).")
-        
-    result = num1 * num2
-    logger.info(f"Performed multiplication: {num1} * {num2} = {result}")
-    return result
+    def subtract(self, a: float | int, b: float | int) -> float | int:
+        """
+        Returns the difference of a and b.
 
-def divide(num1: float, num2: float) -> float:
-    """
-    Performs division of the first number by the second number.
+        Parameters
+        ----------
+        a : number
+            Minuend.
+        b : number
+            Subtrahend.
 
-    Args:
-        num1 (float): The numerator.
-        num2 (float): The denominator.
+        Returns
+        -------
+        number
+            The difference of a and b.
+        """
+        self._validate_input(a, b)
+        result = a - b
+        logger.info("subtract(%s, %s) = %s", a, b, result)
+        return result
 
-    Returns:
-        float: The quotient of num1 and num2.
+    def multiply(self, a: float | int, b: float | int) -> float | int:
+        """
+        Returns the product of a and b.
 
-    Raises:
-        TypeError: If either num1 or num2 is not a valid number (int or float).
-        ValueError: If num2 is zero, indicating division by zero.
-    """
-    if not isinstance(num1, (int, float)) or not isinstance(num2, (int, float)):
-        logger.error(f"Invalid input types for divide operation: num1={num1} (type={type(num1)}), num2={num2} (type={type(num2)})")
-        raise TypeError("Both inputs must be numbers (integers or floats).")
-        
-    if num2 == 0:
-        logger.error(f"Attempted division by zero: num1={num1}, num2={num2}")
-        raise ValueError("Cannot divide by zero.")
-        
-    result = num1 / num2
-    logger.info(f"Performed division: {num1} / {num2} = {result}")
-    return result
+        Parameters
+        ----------
+        a : number
+            First factor.
+        b : number
+            Second factor.
+
+        Returns
+        -------
+        number
+            The product of a and b.
+        """
+        self._validate_input(a, b)
+        result = a * b
+        logger.info("multiply(%s, %s) = %s", a, b, result)
+        return result
+
+    def divide(self, a: float | int, b: float | int) -> float:
+        """
+        Returns the quotient of a and b.
+
+        Parameters
+        ----------
+        a : number
+            Dividend.
+        b : number
+            Divisor.
+
+        Returns
+        -------
+        float
+            The quotient of a and b.
+
+        Raises
+        ------
+        ZeroDivisionError
+            If the divisor is zero.
+        """
+        self._validate_input(a, b)
+        if b == 0:
+            logger.error("Attempted division by zero: %s / %s", a, b)
+            raise ZeroDivisionError("Cannot divide by zero.")
+        result = a / b
+        logger.info("divide(%s, %s) = %s", a, b, result)
+        return result
