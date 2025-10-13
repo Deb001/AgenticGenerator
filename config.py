@@ -4,221 +4,213 @@ config.py
 
 Central configuration module for the project.
 
-The module defines a :class:`Settings` class based on *pydantic*'s
-``BaseSettings`` which reads configuration values from environment
-variables, a ``.env`` file or defaults.  It also provides a ready‑to‑use
-logger configured according to the loaded settings.
+The module defines a hierarchy of configuration classes that can be
+instantiated based on the ``CONFIG_ENV`` environment variable.  It also
+exposes a ready‑to‑use ``logger`` instance configured according to the
+selected configuration.
 
 Typical usage::
 
-    from config import settings, get_logger
+    from config import get_config, logger
 
-    logger = get_logger(__name__)
-    logger.info("Application started")
-    if settings.DEBUG:
-        ...
+    cfg = get_config()
+    logger.info("Application started in %s mode", cfg.ENV)
 
-The configuration values are deliberately kept generic so they can be
-re‑used by any component of the project (e.g. a Flask API, background
-workers, CLI tools, etc.).
+The implementation relies only on the Python standard library so that it
+remains lightweight and easy to test.
 """
 
 from __future__ import annotations
 
 import logging
-import logging.config
 import os
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Optional
-
-from pydantic import BaseSettings, Field, validator
+from typing import Any, Dict, Mapping, Optional
 
 # --------------------------------------------------------------------------- #
-# Settings definition
+# Configuration data structures
 # --------------------------------------------------------------------------- #
 
 
-class Settings(BaseSettings):
+@dataclass(frozen=True)
+class BaseConfig:
     """
-    Application settings loaded from environment variables.
+    Base configuration shared by all environments.
 
-    The class automatically reads a ``.env`` file located in the project
-    root (if present) and validates the values.  All fields are typed,
-    documented and have sensible defaults for a production environment.
-    """
-
-    # Core flags -------------------------------------------------------------
-    DEBUG: bool = Field(
-        default=False,
-        description="Enable debug mode (verbose logging, auto‑reload, etc.).",
-    )
-    TESTING: bool = Field(
-        default=False,
-        description="Indicates that the application is running under test.",
-    )
-
-    # Security ---------------------------------------------------------------
-    SECRET_KEY: str = Field(
-        ...,
-        description="Secret key used for cryptographic signing (e.g. Flask sessions).",
-    )
-    ALLOWED_HOSTS: List[str] = Field(
-        default_factory=lambda: ["*"],
-        description="List of hostnames/IPs the server will accept requests from.",
-    )
-
-    # Database ---------------------------------------------------------------
-    DATABASE_URL: str = Field(
-        ...,
-        description="SQLAlchemy compatible database URL, e.g. "
-        "'postgresql://user:pass@host:5432/dbname'.",
-    )
-    DATABASE_POOL_SIZE: int = Field(
-        default=10,
-        ge=1,
-        description="Maximum number of connections in the DB pool.",
-    )
-
-    # Logging ----------------------------------------------------------------
-    LOG_LEVEL: str = Field(
-        default="INFO",
-        description="Root logger level. One of DEBUG, INFO, WARNING, ERROR, CRITICAL.",
-    )
-    LOG_FORMAT: str = Field(
-        default="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
-        description="Format string used by the default logger.",
-    )
-    LOG_FILE: Optional[Path] = Field(
-        default=None,
-        description="If set, logs are also written to this file (rotated daily).",
-    )
-
-    # Misc -------------------------------------------------------------------
-    STATIC_ROOT: Path = Field(
-        default_factory=lambda: Path(__file__).resolve().parent.parent / "static",
-        description="Directory that contains static assets (HTML, CSS, JS).",
-    )
-    TEMPLATE_ROOT: Path = Field(
-        default_factory=lambda: Path(__file__).resolve().parent.parent / "templates",
-        description="Directory that contains Jinja2 templates (if used).",
-    )
-
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = False
-
-    # --------------------------------------------------------------------- #
-    # Validators
-    # --------------------------------------------------------------------- #
-
-    @validator("LOG_LEVEL")
-    def _validate_log_level(cls, v: str) -> str:
-        allowed = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
-        v_upper = v.upper()
-        if v_upper not in allowed:
-            raise ValueError(f"LOG_LEVEL must be one of {allowed}, got '{v}'.")
-        return v_upper
-
-    @validator("ALLOWED_HOSTS", pre=True)
-    def _split_allowed_hosts(cls, v):
-        """
-        Accept a comma‑separated string or a list.
-        """
-        if isinstance(v, str):
-            return [host.strip() for host in v.split(",") if host.strip()]
-        return v
-
-    @validator("STATIC_ROOT", "TEMPLATE_ROOT", pre=True)
-    def _ensure_path(cls, v):
-        return Path(v).expanduser().resolve()
-
-
-# --------------------------------------------------------------------------- #
-# Global settings instance (singleton)
-# --------------------------------------------------------------------------- #
-
-settings: Settings = Settings()  # type: ignore[assignment]
-
-
-# --------------------------------------------------------------------------- #
-# Logging configuration utilities
-# --------------------------------------------------------------------------- #
-
-
-def _build_logging_config() -> dict:
-    """
-    Construct a dict compatible with ``logging.config.dictConfig`` based on
-    the current :data:`settings`.
-    """
-    handlers = {
-        "console": {
-            "class": "logging.StreamHandler",
-            "formatter": "standard",
-            "level": settings.LOG_LEVEL,
-        }
-    }
-
-    if settings.LOG_FILE:
-        handlers["file"] = {
-            "class": "logging.handlers.TimedRotatingFileHandler",
-            "formatter": "standard",
-            "level": settings.LOG_LEVEL,
-            "filename": str(settings.LOG_FILE),
-            "when": "midnight",
-            "backupCount": 7,
-            "encoding": "utf-8",
-        }
-
-    config = {
-        "version": 1,
-        "disable_existing_loggers": False,
-        "formatters": {
-            "standard": {
-                "format": settings.LOG_FORMAT,
-                "datefmt": "%Y-%m-%d %H:%M:%S",
-            }
-        },
-        "handlers": handlers,
-        "root": {
-            "level": settings.LOG_LEVEL,
-            "handlers": list(handlers.keys()),
-        },
-    }
-    return config
-
-
-def configure_logging() -> None:
-    """
-    Apply the logging configuration globally.  This function is idempotent;
-    calling it multiple times will simply re‑configure the logging system.
-    """
-    config_dict = _build_logging_config()
-    logging.config.dictConfig(config_dict)
-
-
-def get_logger(name: str | None = None) -> logging.Logger:
-    """
-    Return a logger instance with the name ``name`` (or the caller's module
-    name if ``None``).  The logging system is configured on first call.
-
-    Parameters
+    Attributes
     ----------
-    name:
-        Optional logger name.  If omitted, ``logging.getLogger(__name__)`` is used.
+    ENV: str
+        Human readable name of the environment (e.g. ``development``).
+    DEBUG: bool
+        Enable/disable debug mode.
+    TESTING: bool
+        Enable/disable testing mode.
+    DATABASE_URL: str
+        URL used by the data layer.  Defaults to an SQLite file in the project
+        root for local development.
+    LOG_LEVEL: int
+        Logging level used by the default logger.
+    LOG_FORMAT: str
+        Format string for log messages.
+    LOG_FILE: Optional[Path]
+        Optional file path for log output.  If ``None`` logs go to ``stderr``.
+    STATIC_ROOT: Path
+        Directory that holds static assets (used by the web UI).
+    TEMPLATE_ROOT: Path
+        Directory that holds HTML templates.
+    """
+
+    ENV: str = "base"
+    DEBUG: bool = False
+    TESTING: bool = False
+    DATABASE_URL: str = "sqlite:///./data.db"
+    LOG_LEVEL: int = logging.INFO
+    LOG_FORMAT: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    LOG_FILE: Optional[Path] = None
+    STATIC_ROOT: Path = field(default_factory=lambda: Path(__file__).parent / "static")
+    TEMPLATE_ROOT: Path = field(default_factory=lambda: Path(__file__).parent / "templates")
+
+    @classmethod
+    def from_env(cls) -> "BaseConfig":
+        """
+        Create a configuration instance populated from environment variables.
+        Only variables that are explicitly defined in the subclass are read.
+        """
+        env_vars: Mapping[str, Any] = {
+            "ENV": os.getenv("APP_ENV", cls.ENV),
+            "DEBUG": os.getenv("APP_DEBUG", str(cls.DEBUG)).lower() in ("1", "true", "yes"),
+            "TESTING": os.getenv("APP_TESTING", str(cls.TESTING)).lower() in ("1", "true", "yes"),
+            "DATABASE_URL": os.getenv("DATABASE_URL", cls.DATABASE_URL),
+            "LOG_LEVEL": getattr(logging, os.getenv("LOG_LEVEL", "").upper(), cls.LOG_LEVEL),
+            "LOG_FILE": Path(os.getenv("LOG_FILE")) if os.getenv("LOG_FILE") else cls.LOG_FILE,
+            "STATIC_ROOT": Path(os.getenv("STATIC_ROOT", cls.STATIC_ROOT)),
+            "TEMPLATE_ROOT": Path(os.getenv("TEMPLATE_ROOT", cls.TEMPLATE_ROOT)),
+        }
+
+        # Filter out any keys that the subclass does not accept
+        field_names = {f.name for f in cls.__dataclass_fields__.values()}
+        filtered = {k: v for k, v in env_vars.items() if k in field_names}
+        return cls(**filtered)  # type: ignore[arg-type]
+
+
+@dataclass(frozen=True)
+class DevelopmentConfig(BaseConfig):
+    """Configuration tuned for local development."""
+
+    ENV: str = "development"
+    DEBUG: bool = True
+    LOG_LEVEL: int = logging.DEBUG
+    DATABASE_URL: str = "sqlite:///./dev_data.db"
+
+
+@dataclass(frozen=True)
+class TestingConfig(BaseConfig):
+    """Configuration used when running the test suite."""
+
+    ENV: str = "testing"
+    DEBUG: bool = True
+    TESTING: bool = True
+    LOG_LEVEL: int = logging.DEBUG
+    DATABASE_URL: str = "sqlite:///./test_data.db"
+
+
+@dataclass(frozen=True)
+class ProductionConfig(BaseConfig):
+    """Configuration for production deployments."""
+
+    ENV: str = "production"
+    DEBUG: bool = False
+    LOG_LEVEL: int = logging.WARNING
+    # In production the database URL must be supplied via env var
+    DATABASE_URL: str = field(default_factory=lambda: os.getenv("DATABASE_URL", ""))
+
+
+# --------------------------------------------------------------------------- #
+# Helper functions
+# --------------------------------------------------------------------------- #
+
+
+def get_config() -> BaseConfig:
+    """
+    Resolve and return the appropriate configuration instance.
+
+    The environment variable ``CONFIG_ENV`` determines which subclass is used.
+    Accepted values are ``development``, ``testing`` and ``production``.
+    If the variable is missing or contains an unknown value, ``DevelopmentConfig``
+    is used as a safe default.
 
     Returns
     -------
-    logging.Logger
-        Configured logger.
+    BaseConfig
+        An immutable configuration object.
     """
-    if not logging.getLogger().handlers:
-        configure_logging()
-    return logging.getLogger(name)
+    env = os.getenv("CONFIG_ENV", "development").lower()
+    config_cls: type[BaseConfig]
+
+    if env == "production":
+        config_cls = ProductionConfig
+    elif env == "testing":
+        config_cls = TestingConfig
+    else:
+        config_cls = DevelopmentConfig
+
+    return config_cls.from_env()
+
+
+def _configure_logging(cfg: BaseConfig) -> None:
+    """
+    Apply logging configuration based on the supplied ``BaseConfig`` instance.
+
+    Parameters
+    ----------
+    cfg : BaseConfig
+        The configuration object containing logging preferences.
+    """
+    handlers: list[logging.Handler] = []
+
+    # Console handler (stderr)
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(cfg.LOG_LEVEL)
+    console_handler.setFormatter(logging.Formatter(cfg.LOG_FORMAT))
+    handlers.append(console_handler)
+
+    # Optional file handler
+    if cfg.LOG_FILE:
+        file_handler = logging.FileHandler(cfg.LOG_FILE, encoding="utf-8")
+        file_handler.setLevel(cfg.LOG_LEVEL)
+        file_handler.setFormatter(logging.Formatter(cfg.LOG_FORMAT))
+        handlers.append(file_handler)
+
+    logging.basicConfig(level=cfg.LOG_LEVEL, handlers=handlers)
 
 
 # --------------------------------------------------------------------------- #
-# Exported symbols
+# Public objects
 # --------------------------------------------------------------------------- #
 
-__all__ = ["settings", "configure_logging", "get_logger", "Settings"]
+# Resolve configuration at import time – this is cheap and ensures a single
+# source of truth throughout the process.
+config: BaseConfig = get_config()
+_configured = False
+
+def _ensure_logging_configured() -> None:
+    """Idempotent wrapper to guarantee logging is configured exactly once."""
+    global _configured
+    if not _configured:
+        _configure_logging(config)
+        _configured = True
+
+# Expose a ready‑to‑use logger for the rest of the codebase.
+_ensure_logging_configured()
+logger: logging.Logger = logging.getLogger(__name__)
+
+__all__ = [
+    "BaseConfig",
+    "DevelopmentConfig",
+    "TestingConfig",
+    "ProductionConfig",
+    "get_config",
+    "config",
+    "logger",
+]
