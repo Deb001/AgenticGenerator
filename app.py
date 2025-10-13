@@ -1,142 +1,183 @@
 #!/usr/bin/env python3
 """
-app.py - Main Flask application entry point for the calculator service.
+app.py - Main Flask application entry point for the calculator project.
 
-This module defines the Flask app, routes, and calculation logic.
-It imports configuration from config.py and serves static files
-from the templates and static directories.
+This module provides a factory function `create_app` that sets up a Flask
+application, configures it, and registers the necessary routes. The core
+business logic is encapsulated in the `calculate` function, which validates
+input, performs arithmetic operations, handles errors, and renders the
+result back to the user.
 
 Author: AI-1 Team
 """
 
+from __future__ import annotations
+
 import logging
-from typing import Any, Dict
+from typing import Dict, Callable
 
-from flask import Flask, jsonify, request, render_template, current_app
-import config  # Local configuration module
+from flask import Flask, render_template, request, Response
 
 # --------------------------------------------------------------------------- #
-# Logging Configuration
+# Configuration
 # --------------------------------------------------------------------------- #
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
+# Mapping of operation names to their corresponding lambda functions.
+OPERATIONS: Dict[str, Callable[[float, float], float]] = {
+    "add": lambda a, b: a + b,
+    "subtract": lambda a, b: a - b,
+    "multiply": lambda a, b: a * b,
+    "divide": lambda a, b: a / b if b != 0 else (_ for _ in ()).throw(ZeroDivisionError("division by zero")),
+}
+
+# --------------------------------------------------------------------------- #
+# Logging
+# --------------------------------------------------------------------------- #
+
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
 
 # --------------------------------------------------------------------------- #
-# Flask Application Factory
+# Core business logic
 # --------------------------------------------------------------------------- #
 
-def create_app() -> Flask:
+def calculate(req: request) -> Response:
     """
-    Create and configure a Flask application instance.
+    Handle a POST request from the calculator form.
+
+    Parameters
+    ----------
+    req : flask.Request
+        The incoming Flask request object containing form data.
 
     Returns
     -------
-    Flask
-        Configured Flask application.
+    flask.Response
+        Rendered HTML page with the calculation result or an error message.
+
+    Raises
+    ------
+    ValueError
+        If input values cannot be converted to floats.
+    KeyError
+        If required form fields are missing.
+    ZeroDivisionError
+        If division by zero is attempted.
     """
-    app = Flask(__name__, template_folder="templates", static_folder="static")
-    # Load configuration from config.py
-    app.config.from_object(config)
+    try:
+        # Extract form data
+        num1_raw = req.form["num1"]
+        num2_raw = req.form["num2"]
+        operation = req.form["operation"]
+
+        logger.debug("Received form data: num1=%s, num2=%s, operation=%s", num1_raw, num2_raw, operation)
+
+        # Convert to floats
+        try:
+            num1 = float(num1_raw)
+            num2 = float(num2_raw)
+        except ValueError as exc:
+            logger.warning("Non-numeric input: %s, %s", num1_raw, num2_raw)
+            raise ValueError("Both inputs must be numeric.") from exc
+
+        # Retrieve operation function
+        try:
+            op_func = OPERATIONS[operation]
+        except KeyError as exc:
+            logger.warning("Unsupported operation requested: %s", operation)
+            raise KeyError(f"Unsupported operation '{operation}'.") from exc
+
+        # Perform calculation
+        result = op_func(num1, num2)
+        logger.info("Calculation successful: %s %s %s = %s", num1, operation, num2, result)
+
+        return render_template(
+            "index.html",
+            result=result,
+            error=None,
+            num1=num1_raw,
+            num2=num2_raw,
+            operation=operation,
+        )
+
+    except ZeroDivisionError:
+        error_msg = "Cannot divide by zero."
+        logger.error(error_msg)
+        return render_template(
+            "index.html",
+            result=None,
+            error=error_msg,
+            num1=req.form.get("num1", ""),
+            num2=req.form.get("num2", ""),
+            operation=req.form.get("operation", ""),
+        )
+    except (ValueError, KeyError) as exc:
+        error_msg = str(exc)
+        logger.error("Input validation failed: %s", error_msg)
+        return render_template(
+            "index.html",
+            result=None,
+            error=error_msg,
+            num1=req.form.get("num1", ""),
+            num2=req.form.get("num2", ""),
+            operation=req.form.get("operation", ""),
+        )
+    except Exception as exc:  # pragma: no cover
+        logger.exception("Unexpected error during calculation.")
+        return render_template(
+            "index.html",
+            result=None,
+            error="An unexpected error occurred.",
+            num1=req.form.get("num1", ""),
+            num2=req.form.get("num2", ""),
+            operation=req.form.get("operation", ""),
+        )
+
+
+# --------------------------------------------------------------------------- #
+# Flask application factory
+# --------------------------------------------------------------------------- #
+
+def create_app(config: dict | None = None) -> Flask:
+    """
+    Factory function to create and configure a Flask application.
+
+    Parameters
+    ----------
+    config : dict, optional
+        A dictionary of configuration values to override the default settings.
+
+    Returns
+    -------
+    flask.Flask
+        The configured Flask application instance.
+    """
+    app = Flask(__name__, template_folder="templates")
+
+    # Default configuration
+    app.config.update(
+        SECRET_KEY="dev",  # In production, override with a secure key
+    )
+
+    if config:
+        app.config.update(config)
 
     @app.route("/", methods=["GET"])
-    def index() -> Any:
-        """
-        Render the main calculator UI.
-
-        Returns
-        -------
-        Response
-            HTML page rendered from templates/index.html.
-        """
-        logger.debug("Serving index page")
-        return render_template("index.html")
+    def index() -> Response:
+        """Render the calculator form."""
+        return render_template(
+            "index.html",
+            result=None,
+            error=None,
+            num1="",
+            num2="",
+            operation="add",
+        )
 
     @app.route("/calculate", methods=["POST"])
-    def calculate() -> Any:
-        """
-        Perform arithmetic calculation based on JSON payload.
-
-        Expected JSON structure:
-            {
-                "operand1": <number>,
-                "operand2": <number>,
-                "operator": "<+|-|*|/>"
-            }
-
-        Returns
-        -------
-        Response
-            JSON with either 'result' or 'error'.
-        """
-        logger.debug("Received calculation request")
-        try:
-            data: Dict[str, Any] = request.get_json(force=True)
-        except Exception as exc:
-            logger.exception("Invalid JSON payload")
-            return jsonify(error="Malformed JSON"), 400
-
-        # Validate presence of required keys
-        for key in ("operand1", "operand2", "operator"):
-            if key not in data:
-                logger.warning("Missing parameter: %s", key)
-                return jsonify(error=f"Missing parameter: {key}"), 400
-
-        # Validate operands are numeric
-        try:
-            operand1 = float(data["operand1"])
-            operand2 = float(data["operand2"])
-        except (TypeError, ValueError) as exc:
-            logger.warning("Non-numeric operands: %s", data)
-            return jsonify(error="Operands must be numeric"), 400
-
-        operator = str(data["operator"])
-        operations = {
-            "+": lambda a, b: a + b,
-            "-": lambda a, b: a - b,
-            "*": lambda a, b: a * b,
-            "/": lambda a, b: a / b if b != 0 else (_ for _ in ()).throw(ZeroDivisionError),
-        }
-
-        if operator not in operations:
-            logger.warning("Unsupported operator: %s", operator)
-            return jsonify(error=f"Unsupported operator '{operator}'"), 400
-
-        try:
-            result = operations[operator](operand1, operand2)
-        except ZeroDivisionError:
-            logger.warning("Division by zero attempted")
-            return jsonify(error="Division by zero is undefined"), 400
-        except Exception as exc:
-            logger.exception("Unexpected error during calculation")
-            return jsonify(error="Internal server error"), 500
-
-        logger.info("Calculation successful: %s %s %s = %s", operand1, operator, operand2, result)
-        return jsonify(result=result), 200
-
-    @app.errorhandler(404)
-    def page_not_found(e):
-        logger.warning("404 Not Found: %s", request.path)
-        return jsonify(error="Resource not found"), 404
-
-    @app.errorhandler(500)
-    def internal_error(e):
-        logger.exception("Internal server error")
-        return jsonify(error="An unexpected error occurred"), 500
+    def calculate_route() -> Response:
+        """Endpoint to process calculator form submissions."""
+        return calculate(request)
 
     return app
-
-
-# --------------------------------------------------------------------------- #
-# Application Entry Point
-# --------------------------------------------------------------------------- #
-
-app = create_app()
-
-if __name__ == "__main__":
-    # Run the Flask development server
-    app.run(host="0.0.0.0", port=5000, debug=config.DEBUG)
