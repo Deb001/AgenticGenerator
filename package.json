@@ -1,0 +1,44 @@
+{
+  "name": "accessible-calculator",
+  "version": "1.0.0",
+  "description": "A small, accessible web calculator with a pure calculation engine and unit tests.",
+  "type": "module",
+  "main": "src/calculator.js",
+  "scripts": {
+    "start": "http-server ./ -p 5000 -c-1",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watchAll",
+    "lint": "eslint . --ext .js",
+    "pretest": "npm run lint"
+  },
+  "keywords": [
+    "calculator",
+    "accessible",
+    "arithmetic",
+    "js",
+    "web"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16"
+  },
+  "devDependencies": {
+    "eslint": "^8.50.0",
+    "http-server": "^14.1.1",
+    "jest": "^29.6.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "extensionsToTreatAsEsm": [
+      ".js"
+    ],
+    "coverageDirectory": "coverage",
+    "collectCoverageFrom": [
+      "src/**/*.js"
+    ],
+    "testMatch": [
+      "<rootDir>/tests/**/*.test.js"
+    ]
+  }
+}
