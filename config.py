@@ -1,123 +1,207 @@
-# config.py
 """
-Centralized configuration settings for the Flask application.
+config.py
+~~~~~~~~~~
 
-This module defines a :class:`Config` base class and environment-specific
-subclasses.  The configuration is loaded from environment variables with sane
-defaults, making the application suitable for both development and production.
+Production‑ready configuration module for the application.
+
+This module uses :class:`pydantic.BaseSettings` to load configuration
+values from environment variables (and optionally a ``.env`` file).  It
+provides a singleton ``Settings`` instance, a helper to initialise
+logging, and a convenient ``get_logger`` function.
+
+Typical usage from other modules:
+
+    from config import get_settings, get_logger
+
+    settings = get_settings()
+    logger = get_logger(__name__)
+
 """
 
-import os
+from __future__ import annotations
+
 import logging
-from dataclasses import dataclass, field
+import os
+from pathlib import Path
+from typing import Optional
 
-# Configure module-level logger
-logger = logging.getLogger(__name__)
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(module)s:%(lineno)d - %(message)s",
-)
+try:
+    from pydantic import BaseSettings, Field, ValidationError
+except ImportError as exc:
+    raise ImportError(
+        "pydantic is required for configuration handling. "
+        "Install it with `pip install pydantic`."
+    ) from exc
 
-def _get_env_variable(name: str, default: str | None = None) -> str:
+# --------------------------------------------------------------------------- #
+# Settings definition
+# --------------------------------------------------------------------------- #
+
+class Settings(BaseSettings):
     """
-    Retrieve an environment variable or return a default value.
+    Application configuration settings.
+
+    Values are loaded from environment variables or a ``.env`` file.
+    The ``env_file`` attribute is set to ``.env`` in the project root,
+    making it convenient to run locally without setting all env vars.
+    """
+
+    # General application flags
+    DEBUG: bool = Field(False, description="Enable debug mode")
+    LOG_LEVEL: str = Field(
+        "INFO",
+        description="Logging level (e.g., DEBUG, INFO, WARNING, ERROR, CRITICAL)",
+    )
+
+    # Database configuration
+    DATABASE_URL: str = Field(
+        ...,
+        description="Database connection URL",
+        env="DATABASE_URL",
+    )
+
+    # Optional external service key
+    API_KEY: Optional[str] = Field(
+        None,
+        description="API key for external services",
+        env="API_KEY",
+    )
+
+    # Server settings
+    PORT: int = Field(
+        8000,
+        description="Port on which the application will listen",
+        env="PORT",
+    )
+    TIMEOUT: float = Field(
+        30.0,
+        description="Request timeout in seconds",
+        env="TIMEOUT",
+    )
+
+    class Config:
+        """Pydantic configuration."""
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+        case_sensitive = False
+
+# --------------------------------------------------------------------------- #
+# Singleton pattern for Settings
+# --------------------------------------------------------------------------- #
+
+_settings_instance: Optional[Settings] = None
+
+def get_settings() -> Settings:
+    """
+    Return a singleton instance of :class:`Settings`.
+
+    The first call loads the configuration; subsequent calls return the
+    cached instance.
+
+    Raises
+    ------
+    ValidationError
+        If required environment variables are missing or invalid.
+    """
+    global _settings_instance
+    if _settings_instance is None:
+        try:
+            _settings_instance = Settings()
+        except ValidationError as exc:
+            # Provide a clear error message for missing env vars
+            missing = ", ".join(
+                f"{e['loc'][0]}" for e in exc.errors() if e["type"] == "missing"
+            )
+            raise RuntimeError(
+                f"Missing required configuration values: {missing}"
+            ) from exc
+    return _settings_instance
+
+# --------------------------------------------------------------------------- #
+# Logging utilities
+# --------------------------------------------------------------------------- #
+
+def init_logging(settings: Settings | None = None) -> None:
+    """
+    Initialise the root logger based on the provided settings.
+
+    Parameters
+    ----------
+    settings : Settings, optional
+        Configuration instance. If ``None``, :func:`get_settings` is used.
+    """
+    if settings is None:
+        settings = get_settings()
+
+    log_level = getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO)
+    logging.basicConfig(
+        level=log_level,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+    # Avoid duplicate handlers if init_logging is called multiple times
+    for handler in logging.root.handlers[:]:
+        logging.root.removeHandler(handler)
+
+    # Re‑add the handler with the correct level
+    handler = logging.StreamHandler()
+    handler.setLevel(log_level)
+    formatter = logging.Formatter(
+        "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+    handler.setFormatter(formatter)
+    logging.root.addHandler(handler)
+
+def get_logger(name: str) -> logging.Logger:
+    """
+    Return a logger instance configured with the application settings.
 
     Parameters
     ----------
     name : str
-        The name of the environment variable.
-    default : str | None, optional
-        Default value if the variable is not set.
+        Name of the logger (typically ``__name__``).
 
     Returns
     -------
-    str
-        The resolved environment variable value.
+    logging.Logger
+        Configured logger.
     """
-    try:
-        return os.environ[name]
-    except KeyError as exc:
-        if default is None:
-            logger.error(f"Required environment variable '{name}' not set.")
-            raise RuntimeError(
-                f"Missing required configuration: {name}"
-            ) from exc
-        logger.warning(f"Environment variable '{name}' not set. Using default.")
-        return default
+    init_logging()  # Ensure logging is configured
+    return logging.getLogger(name)
 
+# --------------------------------------------------------------------------- #
+# Environment validation helper
+# --------------------------------------------------------------------------- #
 
-@dataclass
-class Config:
+def validate_environment(required_vars: list[str]) -> None:
     """
-    Base configuration class.
+    Ensure that all required environment variables are set.
 
-    Attributes
+    Parameters
     ----------
-    DEBUG : bool
-        Enable or disable debug mode.
-    SECRET_KEY : str
-        Secret key for session management and CSRF protection.
-    DATABASE_URI : str
-        Database connection string (optional).
+    required_vars : list[str]
+        List of environment variable names that must be present.
+
+    Raises
+    ------
+    RuntimeError
+        If any required variable is missing.
     """
+    missing = [var for var in required_vars if os.getenv(var) is None]
+    if missing:
+        raise RuntimeError(
+            f"Missing required environment variables: {', '.join(missing)}"
+        )
 
-    DEBUG: bool = field(default_factory=lambda: _get_env_variable("FLASK_DEBUG", "0") == "1")
-    SECRET_KEY: str = field(default_factory=lambda: _get_env_variable("SECRET_KEY", "dev-secret-key"))
-    DATABASE_URI: str | None = field(default_factory=lambda: _get_env_variable("DATABASE_URL", None))
+# --------------------------------------------------------------------------- #
+# Public API
+# --------------------------------------------------------------------------- #
 
-    @classmethod
-    def from_env(cls):
-        """
-        Create a configuration instance based on the FLASK_ENV environment variable.
-
-        Returns
-        -------
-        Config
-            An instance of :class:`Config` or one of its subclasses.
-        """
-        env = _get_env_variable("FLASK_ENV", "production").lower()
-        if env == "development":
-            return DevelopmentConfig()
-        elif env == "testing":
-            return TestingConfig()
-        else:
-            return ProductionConfig()
-
-
-class DevelopmentConfig(Config):
-    """
-    Configuration for development environment.
-
-    Enables debug mode and uses a local SQLite database by default.
-    """
-    DEBUG: bool = True
-    DATABASE_URI: str | None = field(default_factory=lambda: _get_env_variable("DEV_DATABASE_URL", "sqlite:///dev.db"))
-
-
-class TestingConfig(Config):
-    """
-    Configuration for testing environment.
-
-    Uses an in-memory SQLite database and disables CSRF protection.
-    """
-    DEBUG: bool = False
-    DATABASE_URI: str | None = field(default_factory=lambda: "sqlite:///:memory:")
-    TESTING: bool = True
-    WTF_CSRF_ENABLED: bool = False
-
-
-class ProductionConfig(Config):
-    """
-    Configuration for production environment.
-
-    Debug mode is disabled and a secure secret key must be provided.
-    """
-    DEBUG: bool = False
-    # SECRET_KEY should be set via environment variable; no default to enforce security.
-    @property
-    def SECRET_KEY(self):
-        return _get_env_variable("SECRET_KEY")
-
-
-# Expose the active configuration
-config = Config.from_env()
+__all__ = [
+    "Settings",
+    "get_settings",
+    "init_logging",
+    "get_logger",
+    "validate_environment",
+]
