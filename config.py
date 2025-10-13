@@ -4,17 +4,23 @@ config.py
 
 Production‑ready configuration module for the application.
 
-This module uses :class:`pydantic.BaseSettings` to load configuration
-values from environment variables (and optionally a ``.env`` file).  It
-provides a singleton ``Settings`` instance, a helper to initialise
-logging, and a convenient ``get_logger`` function.
+This module uses :class:`pydantic.BaseSettings` to load configuration from
+environment variables (or a ``.env`` file) and provides a singleton
+``Config`` instance that can be imported anywhere in the codebase.
+It also exposes a helper ``get_logger`` function that returns a
+pre‑configured :class:`logging.Logger` instance.
 
-Typical usage from other modules:
+Typical usage:
 
-    from config import get_settings, get_logger
+    from config import config, get_logger
 
-    settings = get_settings()
-    logger = get_logger(__name__)
+    logger = get_logger()
+    logger.info(f"Application started: {config.APP_NAME}")
+
+The configuration values are type‑checked at import time, and missing
+required variables raise a clear error.  The module is fully typed,
+well documented, and ready for deployment in a Docker or cloud
+environment.
 
 """
 
@@ -23,185 +29,143 @@ from __future__ import annotations
 import logging
 import os
 from pathlib import Path
-from typing import Optional
+from typing import Any, Dict, Optional
 
-try:
-    from pydantic import BaseSettings, Field, ValidationError
-except ImportError as exc:
-    raise ImportError(
-        "pydantic is required for configuration handling. "
-        "Install it with `pip install pydantic`."
-    ) from exc
+from pydantic import BaseSettings, Field, ValidationError, validator
 
 # --------------------------------------------------------------------------- #
-# Settings definition
+# Settings model
 # --------------------------------------------------------------------------- #
+
 
 class Settings(BaseSettings):
     """
-    Application configuration settings.
+    Application settings loaded from environment variables.
 
-    Values are loaded from environment variables or a ``.env`` file.
-    The ``env_file`` attribute is set to ``.env`` in the project root,
-    making it convenient to run locally without setting all env vars.
+    Attributes
+    ----------
+    APP_NAME : str
+        Human‑readable name of the application.
+    DEBUG : bool
+        Flag to enable debug mode.
+    DATABASE_URL : str
+        Connection string for the database.
+    SECRET_KEY : str
+        Secret key used for cryptographic operations.
+    LOG_LEVEL : str
+        Logging level (e.g. ``"INFO"``, ``"DEBUG"``, ``"WARNING"``).
+    ENVIRONMENT : str
+        Deployment environment (``"development"``, ``"staging"``, ``"production"``).
     """
 
-    # General application flags
-    DEBUG: bool = Field(False, description="Enable debug mode")
-    LOG_LEVEL: str = Field(
-        "INFO",
-        description="Logging level (e.g., DEBUG, INFO, WARNING, ERROR, CRITICAL)",
-    )
+    APP_NAME: str = Field(..., env="APP_NAME")
+    DEBUG: bool = Field(False, env="DEBUG")
+    DATABASE_URL: str = Field(..., env="DATABASE_URL")
+    SECRET_KEY: str = Field(..., env="SECRET_KEY")
+    LOG_LEVEL: str = Field("INFO", env="LOG_LEVEL")
+    ENVIRONMENT: str = Field("development", env="ENVIRONMENT")
 
-    # Database configuration
-    DATABASE_URL: str = Field(
-        ...,
-        description="Database connection URL",
-        env="DATABASE_URL",
-    )
-
-    # Optional external service key
-    API_KEY: Optional[str] = Field(
-        None,
-        description="API key for external services",
-        env="API_KEY",
-    )
-
-    # Server settings
-    PORT: int = Field(
-        8000,
-        description="Port on which the application will listen",
-        env="PORT",
-    )
-    TIMEOUT: float = Field(
-        30.0,
-        description="Request timeout in seconds",
-        env="TIMEOUT",
-    )
+    @validator("LOG_LEVEL")
+    def _validate_log_level(cls, value: str) -> str:
+        """Ensure the log level is a valid logging level."""
+        valid_levels = {"CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG", "NOTSET"}
+        upper = value.upper()
+        if upper not in valid_levels:
+            raise ValueError(f"Invalid LOG_LEVEL: {value!r}. Must be one of {valid_levels}.")
+        return upper
 
     class Config:
-        """Pydantic configuration."""
         env_file = ".env"
         env_file_encoding = "utf-8"
         case_sensitive = False
 
+
 # --------------------------------------------------------------------------- #
-# Singleton pattern for Settings
+# Singleton configuration instance
 # --------------------------------------------------------------------------- #
 
-_settings_instance: Optional[Settings] = None
 
-def get_settings() -> Settings:
+class Config:
     """
-    Return a singleton instance of :class:`Settings`.
+    Singleton wrapper around :class:`Settings`.
 
-    The first call loads the configuration; subsequent calls return the
-    cached instance.
+    The instance is created lazily on first import and cached for
+    subsequent accesses.  This pattern ensures that configuration is
+    loaded only once and is thread‑safe for typical use cases.
 
-    Raises
-    ------
-    ValidationError
-        If required environment variables are missing or invalid.
+    Example
+    -------
+    >>> from config import config
+    >>> config.APP_NAME
+    'MyApp'
     """
-    global _settings_instance
-    if _settings_instance is None:
-        try:
-            _settings_instance = Settings()
-        except ValidationError as exc:
-            # Provide a clear error message for missing env vars
-            missing = ", ".join(
-                f"{e['loc'][0]}" for e in exc.errors() if e["type"] == "missing"
-            )
-            raise RuntimeError(
-                f"Missing required configuration values: {missing}"
-            ) from exc
-    return _settings_instance
+
+    _instance: Optional[Settings] = None
+
+    def __new__(cls) -> Settings:
+        if cls._instance is None:
+            try:
+                cls._instance = Settings()
+            except ValidationError as exc:
+                # Provide a clear error message pointing to the missing
+                # environment variable(s) and exit the process.
+                missing = ", ".join([e["loc"][0] for e in exc.errors()])
+                raise RuntimeError(
+                    f"Missing required configuration values: {missing}"
+                ) from exc
+        return cls._instance
+
+
+# Create a module‑level singleton instance that can be imported
+config: Settings = Config()
+
 
 # --------------------------------------------------------------------------- #
-# Logging utilities
+# Logging helper
 # --------------------------------------------------------------------------- #
 
-def init_logging(settings: Settings | None = None) -> None:
+
+def get_logger(name: str = __name__) -> logging.Logger:
     """
-    Initialise the root logger based on the provided settings.
+    Return a logger configured according to the application settings.
 
     Parameters
     ----------
-    settings : Settings, optional
-        Configuration instance. If ``None``, :func:`get_settings` is used.
-    """
-    if settings is None:
-        settings = get_settings()
-
-    log_level = getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO)
-    logging.basicConfig(
-        level=log_level,
-        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
-    # Avoid duplicate handlers if init_logging is called multiple times
-    for handler in logging.root.handlers[:]:
-        logging.root.removeHandler(handler)
-
-    # Re‑add the handler with the correct level
-    handler = logging.StreamHandler()
-    handler.setLevel(log_level)
-    formatter = logging.Formatter(
-        "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
-    handler.setFormatter(formatter)
-    logging.root.addHandler(handler)
-
-def get_logger(name: str) -> logging.Logger:
-    """
-    Return a logger instance configured with the application settings.
-
-    Parameters
-    ----------
-    name : str
-        Name of the logger (typically ``__name__``).
+    name : str, optional
+        Name of the logger. Defaults to the module name.
 
     Returns
     -------
     logging.Logger
-        Configured logger.
+        Configured logger instance.
     """
-    init_logging()  # Ensure logging is configured
-    return logging.getLogger(name)
+    logger = logging.getLogger(name)
 
-# --------------------------------------------------------------------------- #
-# Environment validation helper
-# --------------------------------------------------------------------------- #
+    # Avoid adding multiple handlers if get_logger is called repeatedly.
+    if logger.handlers:
+        return logger
 
-def validate_environment(required_vars: list[str]) -> None:
-    """
-    Ensure that all required environment variables are set.
+    logger.setLevel(config.LOG_LEVEL)
 
-    Parameters
-    ----------
-    required_vars : list[str]
-        List of environment variable names that must be present.
+    # Create console handler with a simple format.
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(config.LOG_LEVEL)
 
-    Raises
-    ------
-    RuntimeError
-        If any required variable is missing.
-    """
-    missing = [var for var in required_vars if os.getenv(var) is None]
-    if missing:
-        raise RuntimeError(
-            f"Missing required environment variables: {', '.join(missing)}"
-        )
+    formatter = logging.Formatter(
+        fmt="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+    console_handler.setFormatter(formatter)
 
-# --------------------------------------------------------------------------- #
-# Public API
-# --------------------------------------------------------------------------- #
+    logger.addHandler(console_handler)
 
-__all__ = [
-    "Settings",
-    "get_settings",
-    "init_logging",
-    "get_logger",
-    "validate_environment",
-]
+    # Optional: add file handler in production environments.
+    if config.ENVIRONMENT == "production":
+        log_file = Path("logs") / f"{config.APP_NAME}.log"
+        log_file.parent.mkdir(parents=True, exist_ok=True)
+        file_handler = logging.FileHandler(log_file, encoding="utf-8")
+        file_handler.setLevel(config.LOG_LEVEL)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+
+    return logger
