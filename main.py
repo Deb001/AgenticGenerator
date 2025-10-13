@@ -1,233 +1,192 @@
 #!/usr/bin/env python3
 """
-Main application entry point for the project.
+main.py
 
-This module sets up logging, parses command‑line arguments, and
-provides a simple arithmetic CLI.  It imports configuration
-settings from :mod:`config` and uses them to configure the logger
-and display application metadata.
+Main application entry point for the project. This script provides a
+command‑line interface to build, serve, and test the Node.js + React
+application. It uses configuration values defined in :mod:`config` and
+offers robust logging and error handling.
 
-The code follows best practices for production Python code:
-* type hints
-* comprehensive docstrings
-* robust error handling
-* logging
-* command‑line interface via :mod:`argparse`
+The script is intentionally lightweight and can be extended with
+additional commands or integrated into CI/CD pipelines.
+
+Author: AI-1
 """
-
-from __future__ import annotations
 
 import argparse
 import logging
+import os
+import subprocess
 import sys
-from dataclasses import dataclass
-from typing import Callable, Dict, Tuple
+from pathlib import Path
+from typing import List, Optional
 
-# Import configuration from the project
+# Import configuration constants from config.py
 try:
-    from config import LOG_LEVEL, APP_NAME, VERSION
+    import config
 except ImportError as exc:
-    # If config.py is missing or incomplete, provide a clear error.
     raise ImportError(
-        "Failed to import configuration from 'config.py'. "
-        "Ensure that LOG_LEVEL, APP_NAME, and VERSION are defined."
+        "Failed to import configuration module 'config.py'. "
+        "Ensure it exists in the same directory as this script."
     ) from exc
-
 
 # --------------------------------------------------------------------------- #
 # Logging configuration
 # --------------------------------------------------------------------------- #
-def get_logger(name: str = __name__) -> logging.Logger:
+
+LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
+logging.basicConfig(
+    level=logging.INFO,
+    format=LOG_FORMAT,
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger(__name__)
+
+# --------------------------------------------------------------------------- #
+# Helper functions
+# --------------------------------------------------------------------------- #
+
+def run_command(
+    command: List[str],
+    cwd: Optional[Path] = None,
+    env: Optional[dict] = None,
+) -> int:
     """
-    Create and configure a logger for the application.
+    Execute a shell command and stream its output to the logger.
 
     Parameters
     ----------
-    name : str, optional
-        Name of the logger. Defaults to the module name.
-
-    Returns
-    -------
-    logging.Logger
-        Configured logger instance.
-    """
-    logger = logging.getLogger(name)
-    if not logger.handlers:
-        logger.setLevel(LOG_LEVEL)
-        handler = logging.StreamHandler(sys.stdout)
-        formatter = logging.Formatter(
-            fmt="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-        )
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
-    return logger
-
-
-# --------------------------------------------------------------------------- #
-# Arithmetic operations
-# --------------------------------------------------------------------------- #
-@dataclass(frozen=True)
-class Operation:
-    """Container for an arithmetic operation."""
-
-    name: str
-    func: Callable[[float, float], float]
-    description: str
-
-
-def add(a: float, b: float) -> float:
-    """Return the sum of two numbers."""
-    return a + b
-
-
-def subtract(a: float, b: float) -> float:
-    """Return the difference of two numbers."""
-    return a - b
-
-
-def multiply(a: float, b: float) -> float:
-    """Return the product of two numbers."""
-    return a * b
-
-
-def divide(a: float, b: float) -> float:
-    """Return the quotient of two numbers.
-
-    Raises
-    ------
-    ZeroDivisionError
-        If ``b`` is zero.
-    """
-    if b == 0:
-        raise ZeroDivisionError("Division by zero is undefined.")
-    return a / b
-
-
-OPERATIONS: Dict[str, Operation] = {
-    "add": Operation("add", add, "Add two numbers"),
-    "sub": Operation("sub", subtract, "Subtract second number from first"),
-    "mul": Operation("mul", multiply, "Multiply two numbers"),
-    "div": Operation("div", divide, "Divide first number by second"),
-}
-
-
-# --------------------------------------------------------------------------- #
-# Argument parsing
-# --------------------------------------------------------------------------- #
-def build_parser() -> argparse.ArgumentParser:
-    """
-    Build the command‑line argument parser.
-
-    Returns
-    -------
-    argparse.ArgumentParser
-        Configured argument parser.
-    """
-    parser = argparse.ArgumentParser(
-        prog=APP_NAME,
-        description=f"{APP_NAME} v{VERSION} - Simple arithmetic CLI",
-    )
-    parser.add_argument(
-        "operation",
-        choices=OPERATIONS.keys(),
-        help="Arithmetic operation to perform",
-    )
-    parser.add_argument(
-        "operands",
-        nargs=2,
-        type=float,
-        metavar=("NUM1", "NUM2"),
-        help="Two numeric operands",
-    )
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        help="Enable verbose logging",
-    )
-    return parser
-
-
-# --------------------------------------------------------------------------- #
-# Core execution logic
-# --------------------------------------------------------------------------- #
-def perform_operation(op_name: str, a: float, b: float) -> float:
-    """
-    Execute the specified arithmetic operation.
-
-    Parameters
-    ----------
-    op_name : str
-        Key of the operation in :data:`OPERATIONS`.
-    a : float
-        First operand.
-    b : float
-        Second operand.
-
-    Returns
-    -------
-    float
-        Result of the operation.
-
-    Raises
-    ------
-    ValueError
-        If the operation name is unknown.
-    """
-    if op_name not in OPERATIONS:
-        raise ValueError(f"Unsupported operation: {op_name}")
-
-    operation = OPERATIONS[op_name]
-    return operation.func(a, b)
-
-
-def main(argv: list[str] | None = None) -> int:
-    """
-    Main entry point for the application.
-
-    Parameters
-    ----------
-    argv : list[str] | None, optional
-        Command‑line arguments. If ``None``, :data:`sys.argv` is used.
+    command : List[str]
+        The command and its arguments to execute.
+    cwd : Optional[Path]
+        Working directory for the command. Defaults to the current
+        directory.
+    env : Optional[dict]
+        Environment variables for the subprocess. If None, the current
+        environment is used.
 
     Returns
     -------
     int
-        Exit code (0 for success, non‑zero for failure).
+        The return code of the subprocess.
     """
-    logger = get_logger()
-    parser = build_parser()
-    args = parser.parse_args(argv)
+    logger.debug("Running command: %s", " ".join(command))
+    try:
+        process = subprocess.Popen(
+            command,
+            cwd=cwd,
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+        assert process.stdout is not None  # for type checker
+        for line in process.stdout:
+            logger.info(line.rstrip())
+        return_code = process.wait()
+        if return_code != 0:
+            logger.error("Command failed with exit code %s", return_code)
+        return return_code
+    except FileNotFoundError as exc:
+        logger.exception("Command not found: %s", command[0])
+        return 127
+    except Exception as exc:
+        logger.exception("Unexpected error while running command: %s", command)
+        return 1
 
-    if args.verbose:
-        logger.setLevel(logging.DEBUG)
+def validate_project_root() -> Path:
+    """
+    Ensure the script is executed from the project root.
 
-    logger.debug("Parsed arguments: %s", args)
+    Returns
+    -------
+    Path
+        Path to the project root directory.
+
+    Raises
+    ------
+    RuntimeError
+        If the expected package.json file is not found.
+    """
+    root = Path.cwd()
+    package_json = root / "package.json"
+    if not package_json.is_file():
+        raise RuntimeError(
+            f"package.json not found in {root}. "
+            "Please run this script from the project root."
+        )
+    return root
+
+# --------------------------------------------------------------------------- #
+# Command implementations
+# --------------------------------------------------------------------------- #
+
+def build() -> None:
+    """
+    Build the React application using the command defined in config.
+    """
+    root = validate_project_root()
+    logger.info("Starting build process...")
+    ret = run_command(config.BUILD_COMMAND.split(), cwd=root)
+    if ret != 0:
+        logger.error("Build failed.")
+        sys.exit(ret)
+    logger.info("Build completed successfully.")
+
+def serve() -> None:
+    """
+    Serve the React application locally using the command defined in config.
+    """
+    root = validate_project_root()
+    logger.info("Starting development server...")
+    ret = run_command(config.SERVE_COMMAND.split(), cwd=root)
+    if ret != 0:
+        logger.error("Server exited with errors.")
+        sys.exit(ret)
+
+def test() -> None:
+    """
+    Run the test suite using the command defined in config.
+    """
+    root = validate_project_root()
+    logger.info("Running tests...")
+    ret = run_command(config.TEST_COMMAND.split(), cwd=root)
+    if ret != 0:
+        logger.error("Tests failed.")
+        sys.exit(ret)
+    logger.info("All tests passed successfully.")
+
+# --------------------------------------------------------------------------- #
+# CLI entry point
+# --------------------------------------------------------------------------- #
+
+def main() -> None:
+    """
+    Parse command‑line arguments and dispatch to the appropriate command.
+    """
+    parser = argparse.ArgumentParser(
+        description="Project management CLI for the React calculator app."
+    )
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    subparsers.add_parser("build", help="Build the production bundle.")
+    subparsers.add_parser("serve", help="Start the development server.")
+    subparsers.add_parser("test", help="Run the test suite.")
+
+    args = parser.parse_args()
 
     try:
-        result = perform_operation(args.operation, *args.operands)
-        logger.info(
-            "%s operation on %s and %s yields: %s",
-            args.operation,
-            args.operands[0],
-            args.operands[1],
-            result,
-        )
-        print(result)
-        return 0
-    except ZeroDivisionError as exc:
-        logger.error("Error: %s", exc)
-        print(f"Error: {exc}", file=sys.stderr)
-        return 1
-    except Exception as exc:  # pylint: disable=broad-except
-        logger.exception("Unexpected error occurred")
-        print(f"Unexpected error: {exc}", file=sys.stderr)
-        return 1
+        if args.command == "build":
+            build()
+        elif args.command == "serve":
+            serve()
+        elif args.command == "test":
+            test()
+        else:
+            parser.error(f"Unknown command: {args.command}")
+    except Exception as exc:
+        logger.exception("Unhandled exception: %s", exc)
+        sys.exit(1)
 
-
-# --------------------------------------------------------------------------- #
-# Script execution guard
-# --------------------------------------------------------------------------- #
 if __name__ == "__main__":
-    sys.exit(main())
+    main()
