@@ -7,7 +7,6 @@ __pycache__/
 *.so
 
 # Distribution / packaging
-.Python
 build/
 develop-eggs/
 dist/
@@ -30,47 +29,84 @@ pip-delete-this-directory.txt
 # Unit test / coverage reports
 htmlcov/
 .tox/
-.nox/
 .coverage
+.coverage.*
+.cache
+nosetests.xml
 coverage.xml
 *.cover
-*.py,cover
-.hypothesis/
 
 # Pytest cache
-.cache
+.pytest_cache/
 
-# Translations
-*.mo
-*.pot
+# mypy
+.mypy_cache/
+.dmypy.json
 
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-
-# Flask stuff:
-instance/
-.webassets-cache
+# Pyright type checker
+.pyright/
 
 # VS Code settings
 .vscode/
+.settings/
 
-# PyCharm settings
+# JetBrains IDEs
 .idea/
+*.iml
 
-# OS generated files
-.DS_Store
-Thumbs.db
+# Spyder project settings
+.spyproject/
 
-# Virtual environment
+# Rope project settings
+.ropeproject
+
+# PyCharm
+*.pyc
+*.pyo
+*.pyd
+*.swp
+*.swo
+
+# Environments
+.env/
+.venv/
+env/
+ENV/
+env.bak/
+venv/
+
+# Python virtual environment
 venv/
 ENV/
 env/
 .venv/
+.env/
 
-# Python package lock files
-pipfile.lock
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
 
-# Environment variables
-.env
+# PyInstaller
+*.spec
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# Poetry
+poetry.lock
+
+# pyproject.toml
+pyproject.toml
+
+# Docker
+docker-compose.yml
+Dockerfile
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
