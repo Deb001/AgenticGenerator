@@ -1,48 +1,48 @@
-# Flask Calculator
+# Simple Calculator
 
-A lightweight web application that demonstrates a simple calculator built with **Flask** on the backend and vanilla JavaScript, HTML, and CSS on the frontend.  
-The project follows best practices for code quality, testing, and deployment.
+A lightweight Python library that provides basic arithmetic operations with robust input validation and a friendly command‑line interface.  
+The project is structured to support easy contribution, testing, and continuous integration.
 
 ---
 
 ## Table of Contents
 
+- [Project Overview](#project-overview)
 - [Features](#features)
-- [Prerequisites](#prerequisites)
 - [Installation](#installation)
-  - [Clone the Repository](#clone-the-repository)
-  - [Create a Virtual Environment](#create-a-virtual-environment)
-  - [Install Dependencies](#install-dependencies)
-- [Configuration](#configuration)
-- [Running the Application](#running-the-application)
-  - [Development Mode](#development-mode)
-  - [Production Mode](#production-mode)
-- [Testing](#testing)
-- [Project Structure](#project-structure)
-- [API Endpoints](#api-endpoints)
+- [Usage](#usage)
+  - [Command‑Line Interface](#command-line-interface)
+  - [Library API](#library-api)
+- [Running Tests](#running-tests)
+- [Continuous Integration](#continuous-integration)
+- [Contributing](#contributing)
 - [License](#license)
+
+---
+
+## Project Overview
+
+The calculator implements four core operations:
+
+| Operation | Method |
+|-----------|--------|
+| Addition  | `add(a, b)` |
+| Subtraction | `subtract(a, b)` |
+| Multiplication | `multiply(a, b)` |
+| Division | `divide(a, b)` |
+
+All methods validate that inputs are numeric and raise a custom `CalculatorError` on invalid input or division by zero. The command‑line interface (`src/main.py`) offers an interactive prompt and supports passing arguments directly.
 
 ---
 
 ## Features
 
-| Feature | Description |
-|---------|-------------|
-| **Arithmetic Operations** | Supports addition, subtraction, multiplication, and division. |
-| **Input Validation** | Client‑side validation prevents non‑numeric input; server validates again. |
-| **RESTful API** | `/api/calculate` accepts JSON payloads and returns results. |
-| **Unit Tests** | 100% coverage for calculation logic (`test_app.py`). |
-| **Responsive UI** | Clean, mobile‑friendly design using CSS Grid. |
-
----
-
-## Prerequisites
-
-- Python 3.10+  
-- `pip` (Python package installer)  
+- **Type‑safe arithmetic** – accepts `int` or `float`; rejects strings, lists, etc.
+- **Clear error messages** – custom exception with descriptive text.
+- **Unit‑tested** – 100 % coverage on core logic (`tests/test_calculator.py`).
+- **CI‑enabled** – GitHub Actions workflow runs tests, linting, and style checks on every push.
+- **Documentation** – generated with Sphinx (see `docs/`).
 
 ---
 
 ## Installation
-
-### Clone the Repository
