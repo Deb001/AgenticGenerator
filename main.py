@@ -1,144 +1,184 @@
 """
-main.py - Application entry point.
+main.py - Entry point for the calculator application.
 
-This module creates and runs a Flask web application that serves the static
-frontend assets (HTML, CSS, JavaScript) for the calculator project.  It also
-exposes a simple health‑check endpoint and configures structured logging.
+This module provides a command‑line interface (CLI) for basic arithmetic
+operations (add, subtract, multiply, divide).  It reads configuration from
+`config.py`, validates user input, performs the requested calculation, and
+outputs the result.
 
-The configuration values are loaded from :pymod:`config`.  If a setting is not
-present, sensible defaults are used.
-
-Typical usage::
-    $ python -m main
+The design follows best practices:
+- Uses `argparse` for robust CLI parsing.
+- Implements a `Calculator` class with static methods for each operation.
+- Handles division‑by‑zero and other runtime errors gracefully.
+- Configurable logging based on settings from `config.py`.
+- Includes type hints and comprehensive docstrings.
 """
 
 from __future__ import annotations
 
+import argparse
 import logging
-import os
 import sys
-from pathlib import Path
-from typing import Any, Dict
+from typing import Callable, Tuple
 
-from flask import Flask, send_from_directory, jsonify
-
-# --------------------------------------------------------------------------- #
-# Configuration handling
-# --------------------------------------------------------------------------- #
+# Local imports
 try:
-    # Import user‑defined configuration.  The file may not exist in every
-    # environment; we fall back to defaults.
-    import config  # type: ignore
-except Exception as exc:  # pragma: no cover
-    # If config cannot be imported, create a dummy module with defaults.
-    logging.basicConfig(level=logging.WARNING)
-    logging.getLogger(__name__).warning(
-        "Could not import config module (%s). Using built‑in defaults.", exc
-    )
+    import config
+except ImportError as exc:
+    raise ImportError("Failed to import configuration module 'config.py'.") from exc
 
-    class _ConfigFallback:
-        DEBUG: bool = False
-        HOST: str = "0.0.0.0"
-        PORT: int = 8000
-        LOG_LEVEL: str = "INFO"
-        STATIC_FOLDER: str = "static"
-        TEMPLATE_FOLDER: str = "templates"
-
-    config = _ConfigFallback()  # type: ignore
 
 # --------------------------------------------------------------------------- #
 # Logging configuration
 # --------------------------------------------------------------------------- #
-def _setup_logging() -> None:
-    """Configure root logger based on configuration."""
-    log_level = getattr(logging, getattr(config, "LOG_LEVEL", "INFO").upper(), logging.INFO)
+def _configure_logging() -> None:
+    """Configure the root logger using settings from ``config``."""
+    log_level = getattr(logging, config.LOG_LEVEL.upper(), logging.INFO)
     logging.basicConfig(
         level=log_level,
-        format="%(asctime)s %(levelname)s %(name)s %(message)s",
-        handlers=[logging.StreamHandler(sys.stdout)],
+        format="%(asctime)s - %(levelname)s - %(message)s",
+        handlers=[logging.StreamHandler(sys.stderr)],
     )
-    # Reduce noise from Flask's internal logger when not in debug mode.
-    if not getattr(config, "DEBUG", False):
-        logging.getLogger("werkzeug").setLevel(logging.WARNING)
 
-
-_setup_logging()
-logger = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------- #
-# Flask application factory
+# Core calculator logic
 # --------------------------------------------------------------------------- #
-def create_app() -> Flask:
+class Calculator:
+    """Utility class offering static arithmetic operations."""
+
+    @staticmethod
+    def add(a: float, b: float) -> float:
+        """Return the sum of *a* and *b*."""
+        return a + b
+
+    @staticmethod
+    def subtract(a: float, b: float) -> float:
+        """Return the difference of *a* and *b* (a - b)."""
+        return a - b
+
+    @staticmethod
+    def multiply(a: float, b: float) -> float:
+        """Return the product of *a* and *b*."""
+        return a * b
+
+    @staticmethod
+    def divide(a: float, b: float) -> float:
+        """
+        Return the quotient of *a* divided by *b*.
+
+        Raises:
+            ZeroDivisionError: If *b* is zero.
+        """
+        if b == 0:
+            raise ZeroDivisionError("Division by zero is undefined.")
+        return a / b
+
+
+# Mapping of operation names to the corresponding Calculator methods
+_OPERATIONS: dict[str, Callable[[float, float], float]] = {
+    "add": Calculator.add,
+    "sub": Calculator.subtract,
+    "subtract": Calculator.subtract,
+    "mul": Calculator.multiply,
+    "multiply": Calculator.multiply,
+    "div": Calculator.divide,
+    "divide": Calculator.divide,
+}
+
+
+# --------------------------------------------------------------------------- #
+# Argument parsing
+# --------------------------------------------------------------------------- #
+def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     """
-    Application factory that creates and configures the Flask app.
+    Parse command‑line arguments.
+
+    Parameters
+    ----------
+    argv : list[str] | None
+        Argument list to parse (defaults to ``sys.argv[1:]``).
 
     Returns
     -------
-    Flask
-        Configured Flask application instance.
+    argparse.Namespace
+        Parsed arguments.
     """
-    static_folder = Path(__file__).parent / getattr(config, "STATIC_FOLDER", "static")
-    template_folder = Path(__file__).parent / getattr(config, "TEMPLATE_FOLDER", "templates")
-
-    app = Flask(
-        __name__,
-        static_folder=str(static_folder),
-        template_folder=str(template_folder),
-        static_url_path="/static",
+    parser = argparse.ArgumentParser(
+        description="Simple CLI calculator supporting add, sub, mul, and div."
     )
-
-    # ------------------------------------------------------------------- #
-    # Configuration
-    # ------------------------------------------------------------------- #
-    app.config.from_mapping(
-        DEBUG=getattr(config, "DEBUG", False),
-        SECRET_KEY=os.getenv("FLASK_SECRET_KEY", "change-me-in-production"),
+    parser.add_argument(
+        "operation",
+        type=str,
+        choices=sorted(_OPERATIONS.keys()),
+        help="Arithmetic operation to perform.",
     )
-
-    # ------------------------------------------------------------------- #
-    # Routes
-    # ------------------------------------------------------------------- #
-    @app.route("/")
-    def index() -> Any:
-        """Serve the main HTML page."""
-        index_path = static_folder / "index.html"
-        if not index_path.is_file():
-            logger.error("index.html not found in %s", static_folder)
-            return "Application error: index.html missing.", 500
-        return send_from_directory(static_folder, "index.html")
-
-    @app.route("/health")
-    def health() -> Dict[str, str]:
-        """Simple health‑check endpoint used by monitoring tools."""
-        return {"status": "ok"}
-
-    # ------------------------------------------------------------------- #
-    # Error handlers
-    # ------------------------------------------------------------------- #
-    @app.errorhandler(404)
-    def not_found(error) -> Any:
-        logger.info("404 Not Found: %s", error)
-        return jsonify({"error": "Resource not found"}), 404
-
-    @app.errorhandler(500)
-    def internal_error(error) -> Any:
-        logger.exception("500 Internal Server Error: %s", error)
-        return jsonify({"error": "Internal server error"}), 500
-
-    return app
+    parser.add_argument(
+        "operands",
+        type=float,
+        nargs=2,
+        metavar=("X", "Y"),
+        help="Two numeric operands (e.g., 3 5).",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Enable verbose (DEBUG) logging output.",
+    )
+    return parser.parse_args(argv)
 
 
 # --------------------------------------------------------------------------- #
-# Entry point
+# Main execution flow
 # --------------------------------------------------------------------------- #
-if __name__ == "__main__":
+def main(argv: list[str] | None = None) -> int:
+    """
+    Entry point for the calculator CLI.
+
+    Parameters
+    ----------
+    argv : list[str] | None
+        Optional list of arguments for testing; defaults to ``sys.argv[1:]``.
+
+    Returns
+    -------
+    int
+        Exit status code (0 for success, non‑zero for failure).
+    """
+    args = _parse_args(argv)
+
+    # Adjust logging level if verbose flag is set
+    if args.verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
+
+    logger = logging.getLogger(__name__)
+    logger.debug("Parsed arguments: %s", args)
+
+    operation_func = _OPERATIONS.get(args.operation.lower())
+    if operation_func is None:
+        logger.error("Unsupported operation: %s", args.operation)
+        return 1
+
+    a, b = args.operands
+    logger.debug("Operands received: a=%s, b=%s", a, b)
+
     try:
-        flask_app = create_app()
-        host = getattr(config, "HOST", "0.0.0.0")
-        port = getattr(config, "PORT", 8000)
-        debug = getattr(config, "DEBUG", False)
-        logger.info("Starting Flask server on %s:%s (debug=%s)", host, port, debug)
-        flask_app.run(host=host, port=port, debug=debug)
-    except Exception as exc:  # pragma: no cover
-        logger.exception("Failed to start the application: %s", exc)
-        sys.exit(1)
+        result = operation_func(a, b)
+    except ZeroDivisionError as zde:
+        logger.error("Error during calculation: %s", zde)
+        print(f"Error: {zde}", file=sys.stderr)
+        return 1
+    except Exception as exc:  # pragma: no cover - safeguard
+        logger.exception("Unexpected error during calculation.")
+        print(f"Unexpected error: {exc}", file=sys.stderr)
+        return 1
+
+    print(f"Result: {result}")
+    logger.info("Calculation successful: %s %s %s = %s", a, args.operation, b, result)
+    return 0
+
+
+if __name__ == "__main__":
+    _configure_logging()
+    sys.exit(main())
