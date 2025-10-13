@@ -1,13 +1,2 @@
-# requirements.txt
-
-# Core dependencies for the calculator project
-click==8.1.7          # Command-line interface library
-numpy==2.0.1           # Numerical operations (optional, for advanced math)
-
-# Development and testing tools
-pytest==8.3.2          # Unit testing framework
-coverage==7.6.1        # Test coverage reporting
-flake8==7.0.0          # Code linting and style checking
-
-# Optional: Documentation generation
-sphinx==8.0.2          # Documentation builder
+Flask==3.0.0
+Jinja2==3.1.4
