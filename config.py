@@ -1,40 +1,40 @@
 """
 config.py
-~~~~~~~~~~
+---------
 
-Production‑ready configuration module for the application.
+Central configuration module for the project.
 
-This module uses :class:`pydantic.BaseSettings` to load configuration from
-environment variables (or a ``.env`` file) and provides a singleton
-``Config`` instance that can be imported anywhere in the codebase.
-It also exposes a helper ``get_logger`` function that returns a
-pre‑configured :class:`logging.Logger` instance.
+The module defines a :class:`Settings` class based on *pydantic*'s
+``BaseSettings`` which reads configuration values from environment
+variables, a ``.env`` file or defaults.  It also provides a ready‑to‑use
+logger configured according to the loaded settings.
 
-Typical usage:
+Typical usage::
 
-    from config import config, get_logger
+    from config import settings, get_logger
 
-    logger = get_logger()
-    logger.info(f"Application started: {config.APP_NAME}")
+    logger = get_logger(__name__)
+    logger.info("Application started")
+    if settings.DEBUG:
+        ...
 
-The configuration values are type‑checked at import time, and missing
-required variables raise a clear error.  The module is fully typed,
-well documented, and ready for deployment in a Docker or cloud
-environment.
-
+The configuration values are deliberately kept generic so they can be
+re‑used by any component of the project (e.g. a Flask API, background
+workers, CLI tools, etc.).
 """
 
 from __future__ import annotations
 
 import logging
+import logging.config
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import List, Optional
 
-from pydantic import BaseSettings, Field, ValidationError, validator
+from pydantic import BaseSettings, Field, validator
 
 # --------------------------------------------------------------------------- #
-# Settings model
+# Settings definition
 # --------------------------------------------------------------------------- #
 
 
@@ -42,130 +42,183 @@ class Settings(BaseSettings):
     """
     Application settings loaded from environment variables.
 
-    Attributes
-    ----------
-    APP_NAME : str
-        Human‑readable name of the application.
-    DEBUG : bool
-        Flag to enable debug mode.
-    DATABASE_URL : str
-        Connection string for the database.
-    SECRET_KEY : str
-        Secret key used for cryptographic operations.
-    LOG_LEVEL : str
-        Logging level (e.g. ``"INFO"``, ``"DEBUG"``, ``"WARNING"``).
-    ENVIRONMENT : str
-        Deployment environment (``"development"``, ``"staging"``, ``"production"``).
+    The class automatically reads a ``.env`` file located in the project
+    root (if present) and validates the values.  All fields are typed,
+    documented and have sensible defaults for a production environment.
     """
 
-    APP_NAME: str = Field(..., env="APP_NAME")
-    DEBUG: bool = Field(False, env="DEBUG")
-    DATABASE_URL: str = Field(..., env="DATABASE_URL")
-    SECRET_KEY: str = Field(..., env="SECRET_KEY")
-    LOG_LEVEL: str = Field("INFO", env="LOG_LEVEL")
-    ENVIRONMENT: str = Field("development", env="ENVIRONMENT")
+    # Core flags -------------------------------------------------------------
+    DEBUG: bool = Field(
+        default=False,
+        description="Enable debug mode (verbose logging, auto‑reload, etc.).",
+    )
+    TESTING: bool = Field(
+        default=False,
+        description="Indicates that the application is running under test.",
+    )
 
-    @validator("LOG_LEVEL")
-    def _validate_log_level(cls, value: str) -> str:
-        """Ensure the log level is a valid logging level."""
-        valid_levels = {"CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG", "NOTSET"}
-        upper = value.upper()
-        if upper not in valid_levels:
-            raise ValueError(f"Invalid LOG_LEVEL: {value!r}. Must be one of {valid_levels}.")
-        return upper
+    # Security ---------------------------------------------------------------
+    SECRET_KEY: str = Field(
+        ...,
+        description="Secret key used for cryptographic signing (e.g. Flask sessions).",
+    )
+    ALLOWED_HOSTS: List[str] = Field(
+        default_factory=lambda: ["*"],
+        description="List of hostnames/IPs the server will accept requests from.",
+    )
+
+    # Database ---------------------------------------------------------------
+    DATABASE_URL: str = Field(
+        ...,
+        description="SQLAlchemy compatible database URL, e.g. "
+        "'postgresql://user:pass@host:5432/dbname'.",
+    )
+    DATABASE_POOL_SIZE: int = Field(
+        default=10,
+        ge=1,
+        description="Maximum number of connections in the DB pool.",
+    )
+
+    # Logging ----------------------------------------------------------------
+    LOG_LEVEL: str = Field(
+        default="INFO",
+        description="Root logger level. One of DEBUG, INFO, WARNING, ERROR, CRITICAL.",
+    )
+    LOG_FORMAT: str = Field(
+        default="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+        description="Format string used by the default logger.",
+    )
+    LOG_FILE: Optional[Path] = Field(
+        default=None,
+        description="If set, logs are also written to this file (rotated daily).",
+    )
+
+    # Misc -------------------------------------------------------------------
+    STATIC_ROOT: Path = Field(
+        default_factory=lambda: Path(__file__).resolve().parent.parent / "static",
+        description="Directory that contains static assets (HTML, CSS, JS).",
+    )
+    TEMPLATE_ROOT: Path = Field(
+        default_factory=lambda: Path(__file__).resolve().parent.parent / "templates",
+        description="Directory that contains Jinja2 templates (if used).",
+    )
 
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
         case_sensitive = False
 
+    # --------------------------------------------------------------------- #
+    # Validators
+    # --------------------------------------------------------------------- #
+
+    @validator("LOG_LEVEL")
+    def _validate_log_level(cls, v: str) -> str:
+        allowed = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
+        v_upper = v.upper()
+        if v_upper not in allowed:
+            raise ValueError(f"LOG_LEVEL must be one of {allowed}, got '{v}'.")
+        return v_upper
+
+    @validator("ALLOWED_HOSTS", pre=True)
+    def _split_allowed_hosts(cls, v):
+        """
+        Accept a comma‑separated string or a list.
+        """
+        if isinstance(v, str):
+            return [host.strip() for host in v.split(",") if host.strip()]
+        return v
+
+    @validator("STATIC_ROOT", "TEMPLATE_ROOT", pre=True)
+    def _ensure_path(cls, v):
+        return Path(v).expanduser().resolve()
+
 
 # --------------------------------------------------------------------------- #
-# Singleton configuration instance
+# Global settings instance (singleton)
+# --------------------------------------------------------------------------- #
+
+settings: Settings = Settings()  # type: ignore[assignment]
+
+
+# --------------------------------------------------------------------------- #
+# Logging configuration utilities
 # --------------------------------------------------------------------------- #
 
 
-class Config:
+def _build_logging_config() -> dict:
     """
-    Singleton wrapper around :class:`Settings`.
-
-    The instance is created lazily on first import and cached for
-    subsequent accesses.  This pattern ensures that configuration is
-    loaded only once and is thread‑safe for typical use cases.
-
-    Example
-    -------
-    >>> from config import config
-    >>> config.APP_NAME
-    'MyApp'
+    Construct a dict compatible with ``logging.config.dictConfig`` based on
+    the current :data:`settings`.
     """
+    handlers = {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "standard",
+            "level": settings.LOG_LEVEL,
+        }
+    }
 
-    _instance: Optional[Settings] = None
+    if settings.LOG_FILE:
+        handlers["file"] = {
+            "class": "logging.handlers.TimedRotatingFileHandler",
+            "formatter": "standard",
+            "level": settings.LOG_LEVEL,
+            "filename": str(settings.LOG_FILE),
+            "when": "midnight",
+            "backupCount": 7,
+            "encoding": "utf-8",
+        }
 
-    def __new__(cls) -> Settings:
-        if cls._instance is None:
-            try:
-                cls._instance = Settings()
-            except ValidationError as exc:
-                # Provide a clear error message pointing to the missing
-                # environment variable(s) and exit the process.
-                missing = ", ".join([e["loc"][0] for e in exc.errors()])
-                raise RuntimeError(
-                    f"Missing required configuration values: {missing}"
-                ) from exc
-        return cls._instance
+    config = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "standard": {
+                "format": settings.LOG_FORMAT,
+                "datefmt": "%Y-%m-%d %H:%M:%S",
+            }
+        },
+        "handlers": handlers,
+        "root": {
+            "level": settings.LOG_LEVEL,
+            "handlers": list(handlers.keys()),
+        },
+    }
+    return config
 
 
-# Create a module‑level singleton instance that can be imported
-config: Settings = Config()
-
-
-# --------------------------------------------------------------------------- #
-# Logging helper
-# --------------------------------------------------------------------------- #
-
-
-def get_logger(name: str = __name__) -> logging.Logger:
+def configure_logging() -> None:
     """
-    Return a logger configured according to the application settings.
+    Apply the logging configuration globally.  This function is idempotent;
+    calling it multiple times will simply re‑configure the logging system.
+    """
+    config_dict = _build_logging_config()
+    logging.config.dictConfig(config_dict)
+
+
+def get_logger(name: str | None = None) -> logging.Logger:
+    """
+    Return a logger instance with the name ``name`` (or the caller's module
+    name if ``None``).  The logging system is configured on first call.
 
     Parameters
     ----------
-    name : str, optional
-        Name of the logger. Defaults to the module name.
+    name:
+        Optional logger name.  If omitted, ``logging.getLogger(__name__)`` is used.
 
     Returns
     -------
     logging.Logger
-        Configured logger instance.
+        Configured logger.
     """
-    logger = logging.getLogger(name)
+    if not logging.getLogger().handlers:
+        configure_logging()
+    return logging.getLogger(name)
 
-    # Avoid adding multiple handlers if get_logger is called repeatedly.
-    if logger.handlers:
-        return logger
 
-    logger.setLevel(config.LOG_LEVEL)
+# --------------------------------------------------------------------------- #
+# Exported symbols
+# --------------------------------------------------------------------------- #
 
-    # Create console handler with a simple format.
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(config.LOG_LEVEL)
-
-    formatter = logging.Formatter(
-        fmt="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
-    console_handler.setFormatter(formatter)
-
-    logger.addHandler(console_handler)
-
-    # Optional: add file handler in production environments.
-    if config.ENVIRONMENT == "production":
-        log_file = Path("logs") / f"{config.APP_NAME}.log"
-        log_file.parent.mkdir(parents=True, exist_ok=True)
-        file_handler = logging.FileHandler(log_file, encoding="utf-8")
-        file_handler.setLevel(config.LOG_LEVEL)
-        file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
-
-    return logger
+__all__ = ["settings", "configure_logging", "get_logger", "Settings"]
