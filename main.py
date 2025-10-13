@@ -1,192 +1,144 @@
-#!/usr/bin/env python3
 """
-main.py
+main.py - Application entry point.
 
-Main application entry point for the project. This script provides a
-command‑line interface to build, serve, and test the Node.js + React
-application. It uses configuration values defined in :mod:`config` and
-offers robust logging and error handling.
+This module creates and runs a Flask web application that serves the static
+frontend assets (HTML, CSS, JavaScript) for the calculator project.  It also
+exposes a simple health‑check endpoint and configures structured logging.
 
-The script is intentionally lightweight and can be extended with
-additional commands or integrated into CI/CD pipelines.
+The configuration values are loaded from :pymod:`config`.  If a setting is not
+present, sensible defaults are used.
 
-Author: AI-1
+Typical usage::
+    $ python -m main
 """
 
-import argparse
+from __future__ import annotations
+
 import logging
 import os
-import subprocess
 import sys
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict
 
-# Import configuration constants from config.py
+from flask import Flask, send_from_directory, jsonify
+
+# --------------------------------------------------------------------------- #
+# Configuration handling
+# --------------------------------------------------------------------------- #
 try:
-    import config
-except ImportError as exc:
-    raise ImportError(
-        "Failed to import configuration module 'config.py'. "
-        "Ensure it exists in the same directory as this script."
-    ) from exc
+    # Import user‑defined configuration.  The file may not exist in every
+    # environment; we fall back to defaults.
+    import config  # type: ignore
+except Exception as exc:  # pragma: no cover
+    # If config cannot be imported, create a dummy module with defaults.
+    logging.basicConfig(level=logging.WARNING)
+    logging.getLogger(__name__).warning(
+        "Could not import config module (%s). Using built‑in defaults.", exc
+    )
+
+    class _ConfigFallback:
+        DEBUG: bool = False
+        HOST: str = "0.0.0.0"
+        PORT: int = 8000
+        LOG_LEVEL: str = "INFO"
+        STATIC_FOLDER: str = "static"
+        TEMPLATE_FOLDER: str = "templates"
+
+    config = _ConfigFallback()  # type: ignore
 
 # --------------------------------------------------------------------------- #
 # Logging configuration
 # --------------------------------------------------------------------------- #
+def _setup_logging() -> None:
+    """Configure root logger based on configuration."""
+    log_level = getattr(logging, getattr(config, "LOG_LEVEL", "INFO").upper(), logging.INFO)
+    logging.basicConfig(
+        level=log_level,
+        format="%(asctime)s %(levelname)s %(name)s %(message)s",
+        handlers=[logging.StreamHandler(sys.stdout)],
+    )
+    # Reduce noise from Flask's internal logger when not in debug mode.
+    if not getattr(config, "DEBUG", False):
+        logging.getLogger("werkzeug").setLevel(logging.WARNING)
 
-LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
-logging.basicConfig(
-    level=logging.INFO,
-    format=LOG_FORMAT,
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
+
+_setup_logging()
 logger = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------- #
-# Helper functions
+# Flask application factory
 # --------------------------------------------------------------------------- #
-
-def run_command(
-    command: List[str],
-    cwd: Optional[Path] = None,
-    env: Optional[dict] = None,
-) -> int:
+def create_app() -> Flask:
     """
-    Execute a shell command and stream its output to the logger.
-
-    Parameters
-    ----------
-    command : List[str]
-        The command and its arguments to execute.
-    cwd : Optional[Path]
-        Working directory for the command. Defaults to the current
-        directory.
-    env : Optional[dict]
-        Environment variables for the subprocess. If None, the current
-        environment is used.
+    Application factory that creates and configures the Flask app.
 
     Returns
     -------
-    int
-        The return code of the subprocess.
+    Flask
+        Configured Flask application instance.
     """
-    logger.debug("Running command: %s", " ".join(command))
-    try:
-        process = subprocess.Popen(
-            command,
-            cwd=cwd,
-            env=env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-        )
-        assert process.stdout is not None  # for type checker
-        for line in process.stdout:
-            logger.info(line.rstrip())
-        return_code = process.wait()
-        if return_code != 0:
-            logger.error("Command failed with exit code %s", return_code)
-        return return_code
-    except FileNotFoundError as exc:
-        logger.exception("Command not found: %s", command[0])
-        return 127
-    except Exception as exc:
-        logger.exception("Unexpected error while running command: %s", command)
-        return 1
+    static_folder = Path(__file__).parent / getattr(config, "STATIC_FOLDER", "static")
+    template_folder = Path(__file__).parent / getattr(config, "TEMPLATE_FOLDER", "templates")
 
-def validate_project_root() -> Path:
-    """
-    Ensure the script is executed from the project root.
-
-    Returns
-    -------
-    Path
-        Path to the project root directory.
-
-    Raises
-    ------
-    RuntimeError
-        If the expected package.json file is not found.
-    """
-    root = Path.cwd()
-    package_json = root / "package.json"
-    if not package_json.is_file():
-        raise RuntimeError(
-            f"package.json not found in {root}. "
-            "Please run this script from the project root."
-        )
-    return root
-
-# --------------------------------------------------------------------------- #
-# Command implementations
-# --------------------------------------------------------------------------- #
-
-def build() -> None:
-    """
-    Build the React application using the command defined in config.
-    """
-    root = validate_project_root()
-    logger.info("Starting build process...")
-    ret = run_command(config.BUILD_COMMAND.split(), cwd=root)
-    if ret != 0:
-        logger.error("Build failed.")
-        sys.exit(ret)
-    logger.info("Build completed successfully.")
-
-def serve() -> None:
-    """
-    Serve the React application locally using the command defined in config.
-    """
-    root = validate_project_root()
-    logger.info("Starting development server...")
-    ret = run_command(config.SERVE_COMMAND.split(), cwd=root)
-    if ret != 0:
-        logger.error("Server exited with errors.")
-        sys.exit(ret)
-
-def test() -> None:
-    """
-    Run the test suite using the command defined in config.
-    """
-    root = validate_project_root()
-    logger.info("Running tests...")
-    ret = run_command(config.TEST_COMMAND.split(), cwd=root)
-    if ret != 0:
-        logger.error("Tests failed.")
-        sys.exit(ret)
-    logger.info("All tests passed successfully.")
-
-# --------------------------------------------------------------------------- #
-# CLI entry point
-# --------------------------------------------------------------------------- #
-
-def main() -> None:
-    """
-    Parse command‑line arguments and dispatch to the appropriate command.
-    """
-    parser = argparse.ArgumentParser(
-        description="Project management CLI for the React calculator app."
+    app = Flask(
+        __name__,
+        static_folder=str(static_folder),
+        template_folder=str(template_folder),
+        static_url_path="/static",
     )
-    subparsers = parser.add_subparsers(dest="command", required=True)
 
-    subparsers.add_parser("build", help="Build the production bundle.")
-    subparsers.add_parser("serve", help="Start the development server.")
-    subparsers.add_parser("test", help="Run the test suite.")
+    # ------------------------------------------------------------------- #
+    # Configuration
+    # ------------------------------------------------------------------- #
+    app.config.from_mapping(
+        DEBUG=getattr(config, "DEBUG", False),
+        SECRET_KEY=os.getenv("FLASK_SECRET_KEY", "change-me-in-production"),
+    )
 
-    args = parser.parse_args()
+    # ------------------------------------------------------------------- #
+    # Routes
+    # ------------------------------------------------------------------- #
+    @app.route("/")
+    def index() -> Any:
+        """Serve the main HTML page."""
+        index_path = static_folder / "index.html"
+        if not index_path.is_file():
+            logger.error("index.html not found in %s", static_folder)
+            return "Application error: index.html missing.", 500
+        return send_from_directory(static_folder, "index.html")
 
-    try:
-        if args.command == "build":
-            build()
-        elif args.command == "serve":
-            serve()
-        elif args.command == "test":
-            test()
-        else:
-            parser.error(f"Unknown command: {args.command}")
-    except Exception as exc:
-        logger.exception("Unhandled exception: %s", exc)
-        sys.exit(1)
+    @app.route("/health")
+    def health() -> Dict[str, str]:
+        """Simple health‑check endpoint used by monitoring tools."""
+        return {"status": "ok"}
 
+    # ------------------------------------------------------------------- #
+    # Error handlers
+    # ------------------------------------------------------------------- #
+    @app.errorhandler(404)
+    def not_found(error) -> Any:
+        logger.info("404 Not Found: %s", error)
+        return jsonify({"error": "Resource not found"}), 404
+
+    @app.errorhandler(500)
+    def internal_error(error) -> Any:
+        logger.exception("500 Internal Server Error: %s", error)
+        return jsonify({"error": "Internal server error"}), 500
+
+    return app
+
+
+# --------------------------------------------------------------------------- #
+# Entry point
+# --------------------------------------------------------------------------- #
 if __name__ == "__main__":
-    main()
+    try:
+        flask_app = create_app()
+        host = getattr(config, "HOST", "0.0.0.0")
+        port = getattr(config, "PORT", 8000)
+        debug = getattr(config, "DEBUG", False)
+        logger.info("Starting Flask server on %s:%s (debug=%s)", host, port, debug)
+        flask_app.run(host=host, port=port, debug=debug)
+    except Exception as exc:  # pragma: no cover
+        logger.exception("Failed to start the application: %s", exc)
+        sys.exit(1)
