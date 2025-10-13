@@ -1,10 +1,13 @@
 # requirements.txt
 
-# Core web framework
-Flask==3.0.3
+# Core dependencies for the calculator project
+click==8.1.7          # Command-line interface library
+numpy==2.0.1           # Numerical operations (optional, for advanced math)
 
-# Environment variable support for Flask development
-python-dotenv==1.0.1
+# Development and testing tools
+pytest==8.3.2          # Unit testing framework
+coverage==7.6.1        # Test coverage reporting
+flake8==7.0.0          # Code linting and style checking
 
-# Testing framework
-pytest==8.3.2
+# Optional: Documentation generation
+sphinx==8.0.2          # Documentation builder
