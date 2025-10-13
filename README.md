@@ -1,48 +1,43 @@
-# Simple Calculator
+# Accessible Calculator
 
-A lightweight Python library that provides basic arithmetic operations with robust input validation and a friendly command‑line interface.  
-The project is structured to support easy contribution, testing, and continuous integration.
+A small, production-ready, accessible calculator web app and a pure calculation engine. The project separates concerns:
 
----
+- `src/calculator.js` — pure arithmetic engine that safely parses and evaluates mathematical expressions (no eval).
+- `index.html` + `styles.css` — accessible, responsive UI.
+- `src/app.js` — UI/controller connecting the engine and the UI (keyboard and mouse handling, state management).
+- `tests/` — unit tests for the engine.
 
-## Table of Contents
-
-- [Project Overview](#project-overview)
-- [Features](#features)
-- [Installation](#installation)
-- [Usage](#usage)
-  - [Command‑Line Interface](#command-line-interface)
-  - [Library API](#library-api)
-- [Running Tests](#running-tests)
-- [Continuous Integration](#continuous-integration)
-- [Contributing](#contributing)
-- [License](#license)
+This README documents setup, usage, file mapping, error handling for integrators, accessibility notes, and contribution/linting guidance.
 
 ---
 
-## Project Overview
+## Quick Links
 
-The calculator implements four core operations:
-
-| Operation | Method |
-|-----------|--------|
-| Addition  | `add(a, b)` |
-| Subtraction | `subtract(a, b)` |
-| Multiplication | `multiply(a, b)` |
-| Division | `divide(a, b)` |
-
-All methods validate that inputs are numeric and raise a custom `CalculatorError` on invalid input or division by zero. The command‑line interface (`src/main.py`) offers an interactive prompt and supports passing arguments directly.
+- Entry UI: `index.html`
+- Styling: `styles.css`
+- Engine: `src/calculator.js` (exports `evaluate(expression)`)
+- UI controller: `src/app.js` (imports engine)
+- Tests: `tests/calculator.test.js`
 
 ---
 
-## Features
+## Project purpose
 
-- **Type‑safe arithmetic** – accepts `int` or `float`; rejects strings, lists, etc.
-- **Clear error messages** – custom exception with descriptive text.
-- **Unit‑tested** – 100 % coverage on core logic (`tests/test_calculator.py`).
-- **CI‑enabled** – GitHub Actions workflow runs tests, linting, and style checks on every push.
-- **Documentation** – generated with Sphinx (see `docs/`).
+This project is intended to provide:
+
+- A small, well-documented JS calculation engine (safe parsing, operator precedence).
+- A simple, keyboard- and screen-reader-friendly web UI demonstrating integration.
+- Unit tests for the engine so it can be used by other projects or embedded in a site.
 
 ---
 
-## Installation
+## Requirements / Environment
+
+- Modern browser (Chrome, Firefox, Edge, Safari).
+- Node.js (optional, for running tests and dev server). Node 14+ recommended.
+
+---
+
+## Getting started (local)
+
+Clone the repo:
