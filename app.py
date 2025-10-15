@@ -1,183 +1,173 @@
-#!/usr/bin/env python3
 """
-app.py - Main Flask application entry point for the calculator project.
+app.py
+Flask backend for a simple arithmetic calculator.
 
-This module provides a factory function `create_app` that sets up a Flask
-application, configures it, and registers the necessary routes. The core
-business logic is encapsulated in the `calculate` function, which validates
-input, performs arithmetic operations, handles errors, and renders the
-result back to the user.
+Provides:
+- Basic arithmetic functions (add, subtract, multiply, divide)
+- A dispatcher `calculate` that selects the operation based on a string token
+- A single route '/' that renders a form, validates input, performs the calculation,
+  and displays the result or an error message.
 
-Author: AI-1 Team
+The template `templates/index.html` and static stylesheet `static/style.css`
+must exist in the project for proper rendering.
 """
 
 from __future__ import annotations
 
 import logging
-from typing import Dict, Callable
+from typing import Callable, Dict
 
-from flask import Flask, render_template, request, Response
-
-# --------------------------------------------------------------------------- #
-# Configuration
-# --------------------------------------------------------------------------- #
-
-# Mapping of operation names to their corresponding lambda functions.
-OPERATIONS: Dict[str, Callable[[float, float], float]] = {
-    "add": lambda a, b: a + b,
-    "subtract": lambda a, b: a - b,
-    "multiply": lambda a, b: a * b,
-    "divide": lambda a, b: a / b if b != 0 else (_ for _ in ()).throw(ZeroDivisionError("division by zero")),
-}
+from flask import Flask, abort, render_template, request
 
 # --------------------------------------------------------------------------- #
-# Logging
+# Logging configuration
 # --------------------------------------------------------------------------- #
-
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
-
-
-# --------------------------------------------------------------------------- #
-# Core business logic
-# --------------------------------------------------------------------------- #
-
-def calculate(req: request) -> Response:
-    """
-    Handle a POST request from the calculator form.
-
-    Parameters
-    ----------
-    req : flask.Request
-        The incoming Flask request object containing form data.
-
-    Returns
-    -------
-    flask.Response
-        Rendered HTML page with the calculation result or an error message.
-
-    Raises
-    ------
-    ValueError
-        If input values cannot be converted to floats.
-    KeyError
-        If required form fields are missing.
-    ZeroDivisionError
-        If division by zero is attempted.
-    """
-    try:
-        # Extract form data
-        num1_raw = req.form["num1"]
-        num2_raw = req.form["num2"]
-        operation = req.form["operation"]
-
-        logger.debug("Received form data: num1=%s, num2=%s, operation=%s", num1_raw, num2_raw, operation)
-
-        # Convert to floats
-        try:
-            num1 = float(num1_raw)
-            num2 = float(num2_raw)
-        except ValueError as exc:
-            logger.warning("Non-numeric input: %s, %s", num1_raw, num2_raw)
-            raise ValueError("Both inputs must be numeric.") from exc
-
-        # Retrieve operation function
-        try:
-            op_func = OPERATIONS[operation]
-        except KeyError as exc:
-            logger.warning("Unsupported operation requested: %s", operation)
-            raise KeyError(f"Unsupported operation '{operation}'.") from exc
-
-        # Perform calculation
-        result = op_func(num1, num2)
-        logger.info("Calculation successful: %s %s %s = %s", num1, operation, num2, result)
-
-        return render_template(
-            "index.html",
-            result=result,
-            error=None,
-            num1=num1_raw,
-            num2=num2_raw,
-            operation=operation,
-        )
-
-    except ZeroDivisionError:
-        error_msg = "Cannot divide by zero."
-        logger.error(error_msg)
-        return render_template(
-            "index.html",
-            result=None,
-            error=error_msg,
-            num1=req.form.get("num1", ""),
-            num2=req.form.get("num2", ""),
-            operation=req.form.get("operation", ""),
-        )
-    except (ValueError, KeyError) as exc:
-        error_msg = str(exc)
-        logger.error("Input validation failed: %s", error_msg)
-        return render_template(
-            "index.html",
-            result=None,
-            error=error_msg,
-            num1=req.form.get("num1", ""),
-            num2=req.form.get("num2", ""),
-            operation=req.form.get("operation", ""),
-        )
-    except Exception as exc:  # pragma: no cover
-        logger.exception("Unexpected error during calculation.")
-        return render_template(
-            "index.html",
-            result=None,
-            error="An unexpected error occurred.",
-            num1=req.form.get("num1", ""),
-            num2=req.form.get("num2", ""),
-            operation=req.form.get("operation", ""),
-        )
-
 
 # --------------------------------------------------------------------------- #
 # Flask application factory
 # --------------------------------------------------------------------------- #
+app = Flask(__name__)
 
-def create_app(config: dict | None = None) -> Flask:
+
+# --------------------------------------------------------------------------- #
+# Arithmetic operation implementations
+# --------------------------------------------------------------------------- #
+def add(a: float, b: float) -> float:
+    """Return the sum of *a* and *b*."""
+    return a + b
+
+
+def subtract(a: float, b: float) -> float:
+    """Return the difference of *a* and *b* (a - b)."""
+    return a - b
+
+
+def multiply(a: float, b: float) -> float:
+    """Return the product of *a* and *b*."""
+    return a * b
+
+
+def divide(a: float, b: float) -> float:
     """
-    Factory function to create and configure a Flask application.
+    Return the quotient of *a* divided by *b*.
 
-    Parameters
-    ----------
-    config : dict, optional
-        A dictionary of configuration values to override the default settings.
-
-    Returns
-    -------
-    flask.Flask
-        The configured Flask application instance.
+    Raises:
+        ZeroDivisionError: If *b* is zero.
     """
-    app = Flask(__name__, template_folder="templates")
+    if b == 0:
+        raise ZeroDivisionError("Division by zero")
+    return a / b
 
-    # Default configuration
-    app.config.update(
-        SECRET_KEY="dev",  # In production, override with a secure key
+
+# Mapping from operator token to the corresponding function
+operator_map: Dict[str, Callable[[float, float], float]] = {
+    "+": add,
+    "-": subtract,
+    "*": multiply,
+    "/": divide,
+}
+
+
+def calculate(a: float, b: float, op: str) -> float:
+    """
+    Dispatch to the appropriate arithmetic function based on *op*.
+
+    Args:
+        a: First operand.
+        b: Second operand.
+        op: Operator string (one of '+', '-', '*', '/').
+
+    Returns:
+        The result of the arithmetic operation.
+
+    Raises:
+        ValueError: If *op* is not a supported operator.
+        ZeroDivisionError: Propagated from :func:`divide` when dividing by zero.
+    """
+    logger.debug("Calculating: %s %s %s", a, op, b)
+    func = operator_map.get(op)
+    if func is None:
+        raise ValueError(f"Unsupported operator: {op!r}")
+    return func(a, b)
+
+
+# --------------------------------------------------------------------------- #
+# View functions
+# --------------------------------------------------------------------------- #
+@app.route("/", methods=["GET", "POST"])
+def index():
+    """
+    Render the calculator form and display the result if provided.
+
+    GET:
+        Render an empty form.
+
+    POST:
+        - Extract ``a``, ``b`` and ``op`` from the submitted form.
+        - Validate presence and numeric conversion.
+        - Perform the calculation.
+        - Render the template with the original inputs, result, and any error.
+    """
+    result: float | None = None
+    error_message: str | None = None
+    a_val: str = ""
+    b_val: str = ""
+    op_val: str = ""
+
+    if request.method == "POST":
+        # Extract raw values
+        a_val = request.form.get("a", "").strip()
+        b_val = request.form.get("b", "").strip()
+        op_val = request.form.get("op", "").strip()
+
+        logger.info("Received POST data: a=%s, b=%s, op=%s", a_val, b_val, op_val)
+
+        # Validate required fields
+        if not a_val or not b_val or not op_val:
+            logger.warning("Missing required form fields")
+            abort(400, description="Missing required fields: a, b, and op must be provided.")
+
+        try:
+            a_num = float(a_val)
+            b_num = float(b_val)
+        except ValueError as exc:
+            error_message = "Both a and b must be valid numbers."
+            logger.exception("Invalid numeric input")
+        else:
+            try:
+                result = calculate(a_num, b_num, op_val)
+                logger.info("Calculation successful: %s %s %s = %s", a_num, op_val, b_num, result)
+            except ZeroDivisionError:
+                error_message = "Division by zero is not allowed."
+                logger.exception("Division by zero attempted")
+            except ValueError as exc:
+                error_message = str(exc)
+                logger.exception("Unsupported operator")
+
+    # Render the template with context
+    return render_template(
+        "index.html",
+        result=result,
+        error=error_message,
+        a=a_val,
+        b=b_val,
+        op=op_val,
+        operators=sorted(operator_map.keys()),
     )
 
-    if config:
-        app.config.update(config)
 
-    @app.route("/", methods=["GET"])
-    def index() -> Response:
-        """Render the calculator form."""
-        return render_template(
-            "index.html",
-            result=None,
-            error=None,
-            num1="",
-            num2="",
-            operation="add",
-        )
+# --------------------------------------------------------------------------- #
+# Application entry point
+# --------------------------------------------------------------------------- #
+if __name__ == "__main__":
+    # Enable debug mode only when explicitly requested via environment variable
+    import os
 
-    @app.route("/calculate", methods=["POST"])
-    def calculate_route() -> Response:
-        """Endpoint to process calculator form submissions."""
-        return calculate(request)
-
-    return app
+    debug_mode = os.getenv("FLASK_DEBUG", "0") == "1"
+    app.run(host="0.0.0.0", port=5000, debug=debug_mode)
