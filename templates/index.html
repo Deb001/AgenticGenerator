@@ -4,53 +4,201 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simple Calculator</title>
-    <!-- Link to the shared stylesheet -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* Basic layout – production ready styling can be extended */
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 0;
+            padding: 2rem;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        .calculator {
+            max-width: 400px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.1);
+        }
+        .field {
+            margin-bottom: 1rem;
+        }
+        label {
+            display: block;
+            margin-bottom: .3rem;
+            font-weight: bold;
+        }
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: .5rem;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            width: 100%;
+            padding: .7rem;
+            font-size: 1rem;
+            background-color: #0069d9;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0053ba;
+        }
+        #result {
+            margin-top: 1rem;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #155724;
+        }
+        #error {
+            margin-top: 1rem;
+            color: #721c24;
+            background: #f8d7da;
+            padding: .5rem;
+            border-radius: 4px;
+        }
+    </style>
 </head>
 <body>
-    <main class="calculator">
-        <h1>Simple Calculator</h1>
+    <section class="calculator" aria-labelledby="calc-title">
+        <h1 id="calc-title">Simple Calculator</h1>
 
-        <!-- Display error messages, if any -->
-        {% if error %}
-            <div class="alert alert-error" role="alert">
-                {{ error }}
-            </div>
-        {% endif %}
-
-        <!-- Display calculation result, if any -->
-        {% if result is not none %}
-            <div class="alert alert-success" role="alert">
-                Result: <strong>{{ result }}</strong>
-            </div>
-        {% endif %}
-
-        <!-- Calculator input form -->
-        <form action="{{ url_for('index') }}" method="post" class="calc-form" novalidate>
-            <div class="form-group">
-                <label for="num1">First Number</label>
-                <input type="number" step="any" id="num1" name="num1" required
-                       value="{{ request.form.num1 or '' }}">
+        <form id="calcForm" novalidate>
+            <div class="field">
+                <label for="num1">First number</label>
+                <input type="number" id="num1" name="num1" required aria-required="true" step="any">
             </div>
 
-            <div class="form-group">
+            <div class="field">
                 <label for="operator">Operator</label>
-                <select id="operator" name="operator" required>
-                    <option value="+" {% if request.form.operator == '+' %}selected{% endif %}>+</option>
-                    <option value="-" {% if request.form.operator == '-' %}selected{% endif %}>-</option>
-                    <option value="*" {% if request.form.operator == '*' %}selected{% endif %}>×</option>
-                    <option value="/" {% if request.form.operator == '/' %}selected{% endif %}>÷</option>
+                <select id="operator" name="operator" required aria-required="true">
+                    <option value="+">+</option>
+                    <option value="-">−</option>
+                    <option value="*">×</option>
+                    <option value="/">÷</option>
                 </select>
             </div>
 
-            <div class="form-group">
-                <label for="num2">Second Number</label>
-                <input type="number" step="any" id="num2" name="num2" required
-                       value="{{ request.form.num2 or '' }}">
+            <div class="field">
+                <label for="num2">Second number</label>
+                <input type="number" id="num2" name="num2" required aria-required="true" step="any">
             </div>
 
-            <button type="submit" class="btn-primary">Calculate</button>
+            <button type="submit" id="calcBtn">Calculate</button>
         </form>
-    </main>
+
+        <div id="result" role="status" aria-live="polite"></div>
+        <div id="error" role="alert" aria-live="assertive"></div>
+    </section>
+
+    <script>
+        /**
+         * Collects user input, validates it, sends a POST request to '/api/calculate',
+         * and displays the result or error.
+         *
+         * No parameters, no return value.
+         */
+        async function performCalculation() {
+            // Grab DOM elements
+            const num1El = document.getElementById('num1');
+            const num2El = document.getElementById('num2');
+            const operatorEl = document.getElementById('operator');
+            const resultEl = document.getElementById('result');
+            const errorEl = document.getElementById('error');
+
+            // Reset previous messages
+            resultEl.textContent = '';
+            errorEl.textContent = '';
+
+            // Trim and read values
+            const rawNum1 = num1El.value.trim();
+            const rawNum2 = num2El.value.trim();
+            const operator = operatorEl.value;
+
+            // Client‑side validation
+            const errors = [];
+
+            if (rawNum1 === '') {
+                errors.push('First number is required.');
+            }
+            if (rawNum2 === '') {
+                errors.push('Second number is required.');
+            }
+
+            const num1 = parseFloat(rawNum1);
+            const num2 = parseFloat(rawNum2);
+
+            if (!Number.isFinite(num1)) {
+                errors.push('First number must be a valid numeric value.');
+            }
+            if (!Number.isFinite(num2)) {
+                errors.push('Second number must be a valid numeric value.');
+            }
+
+            const validOperators = ['+', '-', '*', '/'];
+            if (!validOperators.includes(operator)) {
+                errors.push('Selected operator is not supported.');
+            }
+
+            // If any validation errors, display them and abort
+            if (errors.length > 0) {
+                errorEl.innerHTML = errors.map(e => `<div>${e}</div>`).join('');
+                return;
+            }
+
+            // Build request payload
+            const payload = {
+                operand1: num1,
+                operand2: num2,
+                operator: operator
+            };
+
+            try {
+                const response = await fetch('/api/calculate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    // Server responded with an error status
+                    const serverError = data.error || 'An unexpected error occurred.';
+                    errorEl.textContent = serverError;
+                    return;
+                }
+
+                // Expecting { "result": <number> } on success
+                if (typeof data.result === 'number') {
+                    resultEl.textContent = `Result: ${data.result}`;
+                } else {
+                    // Unexpected payload shape
+                    errorEl.textContent = 'Invalid response from server.';
+                }
+            } catch (networkError) {
+                // Network‑level failure (e.g., connection lost)
+                console.error('Network error while calling /api/calculate:', networkError);
+                errorEl.textContent = 'Unable to reach the server. Please try again later.';
+            }
+        }
+
+        // Attach event listener once the DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('calcForm');
+            form.addEventListener('submit', (event) => {
+                event.preventDefault(); // Prevent traditional form submission
+                performCalculation();
+            });
+        });
+    </script>
 </body>
 </html>
