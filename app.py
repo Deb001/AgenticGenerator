@@ -1,23 +1,20 @@
 """
 app.py
-Flask backend for a simple arithmetic calculator.
+Flask backend that serves a simple calculator UI and provides an API endpoint
+for arithmetic operations.
 
 Provides:
-- Basic arithmetic functions (add, subtract, multiply, divide)
-- A dispatcher `calculate` that selects the operation based on a string token
-- A single route '/' that renders a form, validates input, performs the calculation,
-  and displays the result or an error message.
-
-The template `templates/index.html` and static stylesheet `static/style.css`
-must exist in the project for proper rendering.
+- create_app(): builds and configures the Flask application.
+- calculate(): performs basic arithmetic based on an operator.
+- run_tests(): lightweight unit tests for the calculate function.
 """
 
 from __future__ import annotations
 
 import logging
-from typing import Callable, Dict
+from typing import Any, Dict
 
-from flask import Flask, abort, render_template, request
+from flask import Flask, jsonify, request, render_template
 
 # --------------------------------------------------------------------------- #
 # Logging configuration
@@ -25,149 +22,166 @@ from flask import Flask, abort, render_template, request
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(name)s %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------- #
-# Flask application factory
+# Core arithmetic logic
 # --------------------------------------------------------------------------- #
-app = Flask(__name__)
-
-
-# --------------------------------------------------------------------------- #
-# Arithmetic operation implementations
-# --------------------------------------------------------------------------- #
-def add(a: float, b: float) -> float:
-    """Return the sum of *a* and *b*."""
-    return a + b
-
-
-def subtract(a: float, b: float) -> float:
-    """Return the difference of *a* and *b* (a - b)."""
-    return a - b
-
-
-def multiply(a: float, b: float) -> float:
-    """Return the product of *a* and *b*."""
-    return a * b
-
-
-def divide(a: float, b: float) -> float:
+def calculate(operand1: float, operand2: float, operator: str) -> float:
     """
-    Return the quotient of *a* divided by *b*.
-
-    Raises:
-        ZeroDivisionError: If *b* is zero.
-    """
-    if b == 0:
-        raise ZeroDivisionError("Division by zero")
-    return a / b
-
-
-# Mapping from operator token to the corresponding function
-operator_map: Dict[str, Callable[[float, float], float]] = {
-    "+": add,
-    "-": subtract,
-    "*": multiply,
-    "/": divide,
-}
-
-
-def calculate(a: float, b: float, op: str) -> float:
-    """
-    Dispatch to the appropriate arithmetic function based on *op*.
+    Perform an arithmetic operation.
 
     Args:
-        a: First operand.
-        b: Second operand.
-        op: Operator string (one of '+', '-', '*', '/').
+        operand1: First numeric operand.
+        operand2: Second numeric operand.
+        operator: One of '+', '-', '*', '/'.
 
     Returns:
-        The result of the arithmetic operation.
+        The result of the operation.
 
     Raises:
-        ValueError: If *op* is not a supported operator.
-        ZeroDivisionError: Propagated from :func:`divide` when dividing by zero.
+        ValueError: If the operator is unsupported.
+        ZeroDivisionError: If division by zero is attempted.
     """
-    logger.debug("Calculating: %s %s %s", a, op, b)
-    func = operator_map.get(op)
-    if func is None:
-        raise ValueError(f"Unsupported operator: {op!r}")
-    return func(a, b)
+    logger.debug(
+        "Calculating: %s %s %s", operand1, operator, operand2
+    )  # noqa: G004
+
+    if operator == "+":
+        return operand1 + operand2
+    if operator == "-":
+        return operand1 - operand2
+    if operator == "*":
+        return operand1 * operand2
+    if operator == "/":
+        # Let Python raise ZeroDivisionError naturally
+        return operand1 / operand2
+
+    raise ValueError(f"Unsupported operator '{operator}'. Expected one of +, -, *, /.")
 
 
 # --------------------------------------------------------------------------- #
-# View functions
+# Flask application factory
 # --------------------------------------------------------------------------- #
-@app.route("/", methods=["GET", "POST"])
-def index():
+def create_app() -> Flask:
     """
-    Render the calculator form and display the result if provided.
+    Initialise the Flask application, register routes and return the app instance.
 
-    GET:
-        Render an empty form.
-
-    POST:
-        - Extract ``a``, ``b`` and ``op`` from the submitted form.
-        - Validate presence and numeric conversion.
-        - Perform the calculation.
-        - Render the template with the original inputs, result, and any error.
+    Returns:
+        Configured Flask app.
     """
-    result: float | None = None
-    error_message: str | None = None
-    a_val: str = ""
-    b_val: str = ""
-    op_val: str = ""
+    app = Flask(__name__)
 
-    if request.method == "POST":
-        # Extract raw values
-        a_val = request.form.get("a", "").strip()
-        b_val = request.form.get("b", "").strip()
-        op_val = request.form.get("op", "").strip()
+    # ----------------------------------------------------------------------- #
+    # Routes
+    # ----------------------------------------------------------------------- #
+    @app.route("/", methods=["GET"])
+    def index() -> Any:
+        """Render the calculator UI."""
+        logger.info("Serving index page")
+        return render_template("index.html")
 
-        logger.info("Received POST data: a=%s, b=%s, op=%s", a_val, b_val, op_val)
+    @app.route("/api/calculate", methods=["POST"])
+    def api_calculate() -> Any:
+        """
+        API endpoint that expects a JSON payload:
+        {
+            "operand1": <float>,
+            "operand2": <float>,
+            "operator": "<+|-|*|/>"
+        }
 
-        # Validate required fields
-        if not a_val or not b_val or not op_val:
-            logger.warning("Missing required form fields")
-            abort(400, description="Missing required fields: a, b, and op must be provided.")
-
+        Returns JSON with either:
+        - {"result": <float>}
+        - {"error": "<message>"} with appropriate HTTP status code.
+        """
         try:
-            a_num = float(a_val)
-            b_num = float(b_val)
-        except ValueError as exc:
-            error_message = "Both a and b must be valid numbers."
-            logger.exception("Invalid numeric input")
-        else:
-            try:
-                result = calculate(a_num, b_num, op_val)
-                logger.info("Calculation successful: %s %s %s = %s", a_num, op_val, b_num, result)
-            except ZeroDivisionError:
-                error_message = "Division by zero is not allowed."
-                logger.exception("Division by zero attempted")
-            except ValueError as exc:
-                error_message = str(exc)
-                logger.exception("Unsupported operator")
+            payload: Dict[str, Any] = request.get_json(force=True)
+            logger.debug("Received payload: %s", payload)
 
-    # Render the template with context
-    return render_template(
-        "index.html",
-        result=result,
-        error=error_message,
-        a=a_val,
-        b=b_val,
-        op=op_val,
-        operators=sorted(operator_map.keys()),
-    )
+            # Validate presence of required fields
+            for field in ("operand1", "operand2", "operator"):
+                if field not in payload:
+                    msg = f"Missing field '{field}' in request payload."
+                    logger.warning(msg)
+                    return jsonify(error=msg), 400
+
+            # Type conversion & validation
+            try:
+                op1 = float(payload["operand1"])
+                op2 = float(payload["operand2"])
+            except (TypeError, ValueError) as exc:
+                msg = "Operands must be numeric."
+                logger.warning("%s (%s)", msg, exc)
+                return jsonify(error=msg), 400
+
+            operator = str(payload["operator"]).strip()
+            if operator not in {"+", "-", "*", "/"}:
+                msg = f"Invalid operator '{operator}'. Allowed: +, -, *, /."
+                logger.warning(msg)
+                return jsonify(error=msg), 400
+
+            # Perform calculation
+            result = calculate(op1, op2, operator)
+            logger.info(
+                "Calculation successful: %s %s %s = %s", op1, operator, op2, result
+            )
+            return jsonify(result=result), 200
+
+        except ZeroDivisionError:
+            msg = "Division by zero is not allowed."
+            logger.error(msg)
+            return jsonify(error=msg), 400
+
+        except Exception as exc:  # pragma: no cover
+            # Unexpected errors – log stack trace and return generic message
+            logger.exception("Unexpected error during calculation")
+            return jsonify(error="Internal server error."), 500
+
+    return app
 
 
 # --------------------------------------------------------------------------- #
-# Application entry point
+# Simple unit tests for the calculate function
+# --------------------------------------------------------------------------- #
+def run_tests() -> None:
+    """
+    Execute a minimal set of assertions for the calculate() helper.
+    This function runs when the module is executed directly.
+    """
+    logger.info("Running calculate() unit tests...")
+
+    # Positive cases
+    assert calculate(1, 2, "+") == 3, "Addition failed"
+    assert calculate(5, 3, "-") == 2, "Subtraction failed"
+    assert calculate(4, 2.5, "*") == 10, "Multiplication failed"
+    assert calculate(9, 3, "/") == 3, "Division failed"
+
+    # Division by zero should raise
+    try:
+        calculate(1, 0, "/")
+    except ZeroDivisionError:
+        pass
+    else:
+        raise AssertionError("ZeroDivisionError not raised for division by zero")
+
+    # Invalid operator should raise ValueError
+    try:
+        calculate(1, 2, "%")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("ValueError not raised for unsupported operator")
+
+    logger.info("All calculate() tests passed.")
+
+
+# --------------------------------------------------------------------------- #
+# Entrypoint
 # --------------------------------------------------------------------------- #
 if __name__ == "__main__":
-    # Enable debug mode only when explicitly requested via environment variable
-    import os
-
-    debug_mode = os.getenv("FLASK_DEBUG", "0") == "1"
-    app.run(host="0.0.0.0", port=5000, debug=debug_mode)
+    run_tests()
+    app = create_app()
+    # Use 0.0.0.0 to be reachable from Docker or external hosts if needed
+    app.run(host="0.0.0.0", port=5000, debug=False)
