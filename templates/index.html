@@ -3,203 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web Calculator</title>
-    <style>
-        /* Reset & basic layout */
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: Arial, Helvetica, sans-serif;
-            background: #f4f4f9;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-        }
-        .calculator {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,.1);
-            width: 320px;
-            max-width: 100%;
-            padding: 20px;
-        }
-        .display {
-            width: 100%;
-            height: 50px;
-            font-size: 1.5rem;
-            text-align: right;
-            padding: 0 10px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            background: #fafafa;
-        }
-        .display:focus { outline: none; }
-        .buttons {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-        }
-        button {
-            font-size: 1.2rem;
-            padding: 15px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background .2s;
-        }
-        button[data-type="number"] { background: #e0e0e0; }
-        button[data-type="operator"] { background: #ffb74d; color: #fff; }
-        button[data-type="clear"] { background: #e57373; color: #fff; grid-column: span 2; }
-        button[data-type="equals"] { background: #81c784; color: #fff; grid-column: span 2; }
-        button:hover { opacity: .9; }
-    </style>
+    <title>Simple Calculator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <div class="calculator">
-        <input type="text" id="display" class="display" readonly placeholder="0">
-        <div class="buttons">
-            <button data-type="clear" id="clearBtn">C</button>
-            <button data-type="operator" data-value="/">÷</button>
+    <main class="calculator">
+        <h1>Calculator</h1>
+        <form id="calc-form" autocomplete="off" aria-label="Calculator form">
+            <label for="expression">Enter expression:</label>
+            <input type="text"
+                   id="expression"
+                   name="expression"
+                   placeholder="e.g., 2 + 2 * 3"
+                   required
+                   aria-required="true"
+                   aria-describedby="expr-help">
+            <small id="expr-help" class="help-text">
+                Use basic arithmetic operators (+, -, *, /). No variables or functions allowed.
+            </small>
+            <button type="submit">Calculate</button>
+        </form>
+        <section id="result-section" aria-live="polite" aria-atomic="true">
+            <h2>Result</h2>
+            <p id="result">--</p>
+        </section>
+    </main>
 
-            <button data-type="number" data-value="7">7</button>
-            <button data-type="number" data-value="8">8</button>
-            <button data-type="number" data-value="9">9</button>
-            <button data-type="operator" data-value="*">×</button>
-
-            <button data-type="number" data-value="4">4</button>
-            <button data-type="number" data-value="5">5</button>
-            <button data-type="number" data-value="6">6</button>
-            <button data-type="operator" data-value="-">−</button>
-
-            <button data-type="number" data-value="1">1</button>
-            <button data-type="number" data-value="2">2</button>
-            <button data-type="number" data-value="3">3</button>
-            <button data-type="operator" data-value="+">+</button>
-
-            <button data-type="number" data-value="0" style="grid-column: span 2;">0</button>
-            <button data-type="operator" data-value=".">.</button>
-            <button data-type="equals" id="equalsBtn">=</button>
-        </div>
-    </div>
-
-    <script>
-        'use strict';
-
-        /**
-         * Current arithmetic expression entered by the user.
-         * @type {string}
-         */
-        let currentExpression = '';
-
-        const displayEl = document.getElementById('display');
-
-        /**
-         * Updates the calculator display.
-         * @param {string} value - Text to show in the display.
-         */
-        function updateDisplay(value) {
-            displayEl.value = value || '0';
-        }
-
-        /**
-         * Handles button click events for numbers, operators, clear and equals.
-         * @param {Event} event - Click event from a calculator button.
-         */
-        function handleButtonClick(event) {
-            const btn = event.target.closest('button');
-            if (!btn) return; // Click not on a button
-
-            const type = btn.dataset.type;
-            const value = btn.dataset.value;
-
-            switch (type) {
-                case 'number':
-                case 'operator':
-                    // Append the pressed character to the expression
-                    currentExpression += value;
-                    updateDisplay(currentExpression);
-                    break;
-
-                case 'clear':
-                    // Reset everything
-                    currentExpression = '';
-                    updateDisplay('');
-                    break;
-
-                case 'equals':
-                    // Trigger calculation
-                    calculateResult();
-                    break;
-
-                default:
-                    console.warn(`Unhandled button type: ${type}`);
-            }
-        }
-
-        /**
-         * Sends the current expression to the backend for evaluation and updates the UI.
-         * Uses POST /api/evaluate expecting JSON { expression: "..."} and returns
-         * JSON { result: "..."} or { error: "..." }.
-         */
-        async function calculateResult() {
-            // Guard against empty submissions
-            if (!currentExpression.trim()) {
-                updateDisplay('Error');
-                console.error('Attempted to evaluate an empty expression.');
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/evaluate', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({ expression: currentExpression })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Server responded with ${response.status}`);
-                }
-
-                const data = await response.json();
-
-                if (data.error) {
-                    updateDisplay('Error');
-                    console.error('Evaluation error:', data.error);
-                } else {
-                    updateDisplay(data.result);
-                    // After a successful evaluation, start a new expression with the result
-                    currentExpression = String(data.result);
-                }
-            } catch (err) {
-                updateDisplay('Error');
-                console.error('Failed to evaluate expression:', err);
-            }
-        }
-
-        // Attach a single event listener to the button container (event delegation)
-        document.querySelector('.buttons').addEventListener('click', handleButtonClick);
-
-        // Optional: allow keyboard input (enhances accessibility)
-        document.addEventListener('keydown', (e) => {
-            const key = e.key;
-            if (/[0-9]/.test(key)) {
-                currentExpression += key;
-                updateDisplay(currentExpression);
-            } else if (['+', '-', '*', '/', '.'].includes(key)) {
-                currentExpression += key;
-                updateDisplay(currentExpression);
-            } else if (key === 'Enter') {
-                e.preventDefault();
-                calculateResult();
-            } else if (key === 'Escape') {
-                currentExpression = '';
-                updateDisplay('');
-            }
-        });
-    </script>
+    <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
 </body>
 </html>
