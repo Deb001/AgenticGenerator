@@ -1,188 +1,156 @@
-"""
-app.py
-Flask application that serves a simple calculator UI and provides an API endpoint
-for safe arithmetic expression evaluation.
-
-Factory function:
-    create_app() -> Flask
-"""
-
 import ast
 import logging
-from typing import Union
+import operator
+import os
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, Response, jsonify, render_template, request
 
-# --------------------------------------------------------------------------- #
-# Logging configuration
-# --------------------------------------------------------------------------- #
+from config import Config
+
+# Configure module-level logger
 logger = logging.getLogger(__name__)
 if not logger.handlers:
-    # Configure root logger only once
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s %(message)s",
     )
-
-# --------------------------------------------------------------------------- #
-# Expression evaluation utilities
-# --------------------------------------------------------------------------- #
-_ALLOWED_NODES = (
-    ast.Expression,
-    ast.BinOp,
-    ast.UnaryOp,
-    ast.Num,          # Python <3.8
-    ast.Constant,    # Python >=3.8
-    ast.Add,
-    ast.Sub,
-    ast.Mult,
-    ast.Div,
-    ast.Mod,
-    ast.Pow,
-    ast.UAdd,
-    ast.USub,
-    ast.Load,
-)
+    logger.setLevel(logging.INFO)
 
 
-def _is_allowed(node: ast.AST) -> bool:
-    """Recursively verify that every node in the AST is allowed."""
-    if not isinstance(node, _ALLOWED_NODES):
-        return False
-    for child in ast.iter_child_nodes(node):
-        if not _is_allowed(child):
-            return False
-    return True
+# Mapping of allowed AST operator nodes to their corresponding functions
+ALLOWED_OPERATORS = {
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.truediv,
+}
 
 
-def evaluate_expression(expression: str) -> Union[float, str]:
-    """
-    Safely evaluate a simple arithmetic expression.
+def evaluate_expression(expr: str) -> float:
+    """Safely evaluate a simple arithmetic expression.
 
-    Supported operators: +, -, *, /, %, ** (power), unary +/-
-    Operands must be numeric literals.
+    Supported features:
+        - Binary operators: +, -, *, /
+        - Unary plus/minus
+        - Parentheses
+        - Integer and floating‑point literals
 
-    Parameters
-    ----------
-    expression: str
-        The arithmetic expression to evaluate.
+    Args:
+        expr: The arithmetic expression as a string.
 
-    Returns
-    -------
-    float
-        The numeric result of the expression.
+    Returns:
+        The computed result as a float.
 
-    str
-        An error message if evaluation fails.
+    Raises:
+        ValueError: If the expression contains unsupported syntax or operators.
+        ZeroDivisionError: If a division by zero occurs.
     """
     try:
-        logger.debug("Evaluating expression: %s", expression)
-        # Parse the expression into an AST node
-        tree = ast.parse(expression, mode="eval")
-        if not _is_allowed(tree):
-            raise ValueError("Expression contains unsupported elements.")
-        # Compile the AST safely
-        compiled = compile(tree, filename="<ast>", mode="eval")
-        result = eval(compiled, {"__builtins__": {}}, {})
-        # Ensure the result is a number
-        if not isinstance(result, (int, float)):
-            raise ValueError("Result is not a numeric type.")
-        return float(result)
+        parsed = ast.parse(expr, mode="eval")
     except SyntaxError as exc:
-        logger.warning("Syntax error in expression %r: %s", expression, exc)
-        return "Invalid syntax."
-    except ZeroDivisionError:
-        logger.warning("Division by zero in expression %r", expression)
-        return "Division by zero."
-    except ValueError as exc:
-        logger.warning("Value error for expression %r: %s", expression, exc)
-        return str(exc)
-    except Exception as exc:  # pragma: no cover
-        # Catch‑all for unexpected errors; log stack trace for debugging.
-        logger.exception("Unexpected error evaluating expression %r", expression)
-        return "An unexpected error occurred."
+        raise ValueError("Expression syntax is invalid.") from exc
+
+    def _eval(node: ast.AST) -> float:
+        if isinstance(node, ast.Expression):
+            return _eval(node.body)
+
+        if isinstance(node, ast.BinOp):
+            left = _eval(node.left)
+            right = _eval(node.right)
+            op_type = type(node.op)
+            if op_type in ALLOWED_OPERATORS:
+                return ALLOWED_OPERATORS[op_type](left, right)
+            raise ValueError(f"Unsupported binary operator: {op_type.__name__}")
+
+        if isinstance(node, ast.UnaryOp):
+            operand = _eval(node.operand)
+            if isinstance(node.op, ast.UAdd):
+                return +operand
+            if isinstance(node.op, ast.USub):
+                return -operand
+            raise ValueError(f"Unsupported unary operator: {type(node.op).__name__}")
+
+        if isinstance(node, ast.Num):  # For Python < 3.8
+            return float(node.n)
+
+        if isinstance(node, ast.Constant):  # For Python >= 3.8
+            if isinstance(node.value, (int, float)):
+                return float(node.value)
+            raise ValueError("Only numeric constants are allowed.")
+
+        raise ValueError(f"Unsupported expression element: {type(node).__name__}")
+
+    result = _eval(parsed)
+    return float(result)
 
 
-# --------------------------------------------------------------------------- #
-# Flask application factory
-# --------------------------------------------------------------------------- #
 def create_app() -> Flask:
-    """
-    Application factory that creates and configures the Flask app.
+    """Create and configure the Flask application.
 
-    Returns
-    -------
-    Flask
-        Configured Flask application instance.
+    Returns:
+        A fully configured Flask app instance.
     """
     app = Flask(__name__)
+    app.config.from_object(Config)
 
-    # ------------------------------------------------------------------- #
-    # Routes
-    # ------------------------------------------------------------------- #
     @app.route("/", methods=["GET"])
-    def index():
+    def index() -> Response:
         """Render the calculator UI."""
+        logger.info("GET / - Rendering index page.")
         return render_template("index.html")
 
-    @app.route("/api/evaluate", methods=["POST"])
-    def api_evaluate():
-        """
-        API endpoint that receives a JSON payload:
-            { "expression": "2 + 3 * (4 - 1)" }
+    @app.route("/calculate", methods=["POST"])
+    def calculate() -> Response:
+        """Calculate the result of a submitted arithmetic expression.
+
+        Expects JSON payload:
+            {"expression": "1 + 2 * (3 - 4)"}
 
         Returns JSON:
-            { "result": 11.0, "error": null }   on success
-            { "result": null, "error": "Message" } on failure
+            {"result": -1.0}
+        or an error response with status 400.
         """
+        logger.info("POST /calculate - Received calculation request.")
         if not request.is_json:
-            logger.info("Non‑JSON request received at /api/evaluate")
-            return (
-                jsonify({"result": None, "error": "Request payload must be JSON."}),
-                400,
-            )
-        payload = request.get_json(silent=True)
-        if not payload or "expression" not in payload:
-            logger.info("Malformed JSON payload: %s", payload)
-            return (
-                jsonify({"result": None, "error": "Missing 'expression' field."}),
-                400,
-            )
+            logger.warning("Request does not contain JSON.")
+            return jsonify(error="Request must be in JSON format."), 400
 
-        expression = payload["expression"]
-        if not isinstance(expression, str):
-            logger.info("Invalid type for expression: %r", expression)
-            return (
-                jsonify({"result": None, "error": "'expression' must be a string."}),
-                400,
-            )
+        data = request.get_json()
+        expr = data.get("expression") if isinstance(data, dict) else None
 
-        eval_result = evaluate_expression(expression)
-        if isinstance(eval_result, str):
-            # An error string was returned
-            response = {"result": None, "error": eval_result}
-            status_code = 400
-        else:
-            response = {"result": eval_result, "error": None}
-            status_code = 200
+        if not isinstance(expr, str):
+            logger.warning("Missing or invalid 'expression' field.")
+            return jsonify(error="Field 'expression' must be a string."), 400
 
-        logger.info(
-            "Evaluation request: %s -> %s (status %s)",
-            expression,
-            response,
-            status_code,
-        )
-        return jsonify(response), status_code
+        logger.debug("Evaluating expression: %s", expr)
+        try:
+            result = evaluate_expression(expr)
+        except ZeroDivisionError as exc:
+            logger.error("Division by zero in expression: %s", expr)
+            return jsonify(error="Division by zero is not allowed."), 400
+        except ValueError as exc:
+            logger.error("Invalid expression: %s; error: %s", expr, exc)
+            return jsonify(error=str(exc)), 400
+        except Exception as exc:  # Catch‑all for unexpected errors
+            logger.exception("Unexpected error while evaluating expression.")
+            return jsonify(error="Internal server error."), 500
+
+        logger.info("Expression evaluated successfully: %s = %s", expr, result)
+        return jsonify(result=result)
+
+    @app.errorhandler(404)
+    def not_found(error) -> Response:  # pragma: no cover
+        """Return JSON for 404 errors."""
+        logger.warning("404 Not Found: %s", request.path)
+        return jsonify(error="Resource not found."), 404
 
     return app
 
 
-# --------------------------------------------------------------------------- #
-# Development entry point
-# --------------------------------------------------------------------------- #
+# Application instance for production / testing
+app = create_app()
+
 if __name__ == "__main__":
-    # When executed directly, start a development server.
-    # In production, a WSGI server (gunicorn, uWSGI, etc.) should import
-    # `create_app` and serve the returned Flask instance.
-    flask_app = create_app()
-    flask_app.run(host="0.0.0.0", port=5000, debug=False)
+    port = int(os.getenv("PORT", 5000))
+    logger.info("Starting Flask app on port %s", port)
+    app.run(host="0.0.0.0", port=port)
