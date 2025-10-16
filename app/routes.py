@@ -1,130 +1,85 @@
+"""Flask routes for the calculator application.
+
+This module defines a Blueprint that provides two endpoints:
+- ``/`` (GET): renders the main calculator UI.
+- ``/api/calculate`` (POST): accepts a JSON payload with an arithmetic
+  expression, evaluates it using :func:`calculate_expression`, and returns
+  the result as JSON.
+
+All request validation, error handling, and logging are performed here.
 """
-app/routes.py
-
-Defines the Flask blueprint that serves the calculator UI and API endpoints.
-
-Endpoints
----------
-GET /
-    Render the main calculator page (templates/index.html).
-
-POST /api/calculate
-    Accept a JSON payload:
-        {
-            "operand1": <number>,
-            "operand2": <number>,
-            "operator": "+", "-", "*", "/"
-        }
-    Returns JSON:
-        {"result": <number>} on success
-        {"error": "<message>"} on failure with appropriate HTTP status.
-"""
-
-from __future__ import annotations
 
 import logging
 from typing import Any, Dict
 
-from flask import Blueprint, jsonify, request, render_template
+from flask import Blueprint, jsonify, render_template, request
 
-from .calculator import calculate
+from .calculator import calculate_expression
 
-# --------------------------------------------------------------------------- #
-# Blueprint definition
-# --------------------------------------------------------------------------- #
-calculator_bp = Blueprint("calculator", __name__, template_folder="templates", static_folder="static")
-
-# Configure a module‑level logger
+# Configure module‑level logger
 logger = logging.getLogger(__name__)
 if not logger.handlers:
-    # Prevent adding multiple handlers in case of reloads
+    # Prevent duplicate handlers in case of multiple imports
     handler = logging.StreamHandler()
     formatter = logging.Formatter(
-        fmt="%(asctime)s %(levelname)s %(name)s %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
+        "[%(asctime)s] %(levelname)s in %(module)s: %(message)s"
     )
     handler.setFormatter(formatter)
     logger.addHandler(handler)
     logger.setLevel(logging.INFO)
 
+# Blueprint registration
+calculator_bp = Blueprint("calculator", __name__)
 
-# --------------------------------------------------------------------------- #
-# Routes
-# --------------------------------------------------------------------------- #
+
 @calculator_bp.route("/", methods=["GET"])
 def index() -> Any:
-    """
-    Render the calculator UI.
+    """Render the calculator's main page.
 
-    Returns
-    -------
-    Response
-        Rendered HTML page.
+    Returns:
+        A Flask response object containing the rendered ``index.html`` template.
     """
-    logger.debug("Rendering calculator UI")
+    logger.debug("Rendering index page.")
     return render_template("index.html")
 
 
 @calculator_bp.route("/api/calculate", methods=["POST"])
-def api_calculate() -> Any:
-    """
-    Perform a calculation based on JSON payload.
+def calculate() -> Any:
+    """Evaluate an arithmetic expression sent via JSON.
 
     Expected JSON payload:
         {
-            "operand1": <number>,
-            "operand2": <number>,
-            "operator": "+", "-", "*", "/"
+            "expression": "<arithmetic expression as string>"
         }
 
-    Returns
-    -------
-    Response
-        JSON with either ``{"result": <value>}`` or ``{"error": "<msg>"}``
-        and an appropriate HTTP status code.
+    Returns:
+        JSON response with either ``{"result": <value>}`` on success or
+        ``{"error": "<message>"}`` with a 400 status code on failure.
+
+    Raises:
+        None. All errors are captured and transformed into JSON responses.
     """
+    if not request.is_json:
+        logger.warning("Request content type is not JSON.")
+        return jsonify(error="Invalid content type: application/json required."), 400
+
+    payload: Dict[str, Any] = request.get_json(silent=True) or {}
+    expression = payload.get("expression")
+
+    if not isinstance(expression, str) or not expression.strip():
+        logger.warning("Missing or empty 'expression' in request payload: %s", payload)
+        return jsonify(error="Missing or empty 'expression' field."), 400
+
+    logger.info("Received expression for evaluation: %s", expression)
+
     try:
-        payload: Dict[str, Any] = request.get_json(force=True)
-        logger.debug("Received payload: %s", payload)
+        result = calculate_expression(expression)
+    except ValueError as exc:
+        logger.error("Error evaluating expression '%s': %s", expression, exc)
+        return jsonify(error=str(exc)), 400
+    except Exception as exc:  # Catch unexpected errors
+        logger.exception("Unexpected error while evaluating expression.")
+        return jsonify(error="Internal server error."), 500
 
-        # Basic validation
-        if not isinstance(payload, dict):
-            raise ValueError("JSON payload must be an object")
-
-        required_keys = {"operand1", "operand2", "operator"}
-        missing = required_keys - payload.keys()
-        if missing:
-            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
-
-        operand1 = payload["operand1"]
-        operand2 = payload["operand2"]
-        operator = payload["operator"]
-
-        # Ensure numeric operands
-        if not isinstance(operand1, (int, float)):
-            raise ValueError("operand1 must be a number")
-        if not isinstance(operand2, (int, float)):
-            raise ValueError("operand2 must be a number")
-        if not isinstance(operator, str):
-            raise ValueError("operator must be a string")
-
-        logger.info(
-            "Calculating: %s %s %s",
-            operand1,
-            operator,
-            operand2,
-        )
-        result = calculate(operand1, operand2, operator)
-        logger.info("Calculation result: %s", result)
-
-        return jsonify({"result": result}), 200
-
-    except ValueError as ve:
-        # Client‑side error – bad request
-        logger.warning("ValueError in /api/calculate: %s", ve)
-        return jsonify({"error": str(ve)}), 400
-
-    except Exception as exc:  # pragma: no cover – unexpected errors
-        # Unexpected server error – log stack trace
-        logger.exception("Unexpected error in /api/calculate")
-        return jsonify({"error": "Internal server error"}), 500
+    logger.debug("Expression result: %s = %s", expression, result)
+    return jsonify(result=result)
