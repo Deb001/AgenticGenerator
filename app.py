@@ -1,64 +1,106 @@
 """
 app.py
-Flask backend that serves a simple calculator UI and provides an API endpoint
-for arithmetic operations.
+Flask application that serves a simple calculator UI and provides an API endpoint
+for safe arithmetic expression evaluation.
 
-Provides:
-- create_app(): builds and configures the Flask application.
-- calculate(): performs basic arithmetic based on an operator.
-- run_tests(): lightweight unit tests for the calculate function.
+Factory function:
+    create_app() -> Flask
 """
 
-from __future__ import annotations
-
+import ast
 import logging
-from typing import Any, Dict
+from typing import Union
 
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, render_template, request
 
 # --------------------------------------------------------------------------- #
 # Logging configuration
 # --------------------------------------------------------------------------- #
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(name)s %(message)s",
-)
 logger = logging.getLogger(__name__)
+if not logger.handlers:
+    # Configure root logger only once
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s %(message)s",
+    )
 
 # --------------------------------------------------------------------------- #
-# Core arithmetic logic
+# Expression evaluation utilities
 # --------------------------------------------------------------------------- #
-def calculate(operand1: float, operand2: float, operator: str) -> float:
+_ALLOWED_NODES = (
+    ast.Expression,
+    ast.BinOp,
+    ast.UnaryOp,
+    ast.Num,          # Python <3.8
+    ast.Constant,    # Python >=3.8
+    ast.Add,
+    ast.Sub,
+    ast.Mult,
+    ast.Div,
+    ast.Mod,
+    ast.Pow,
+    ast.UAdd,
+    ast.USub,
+    ast.Load,
+)
+
+
+def _is_allowed(node: ast.AST) -> bool:
+    """Recursively verify that every node in the AST is allowed."""
+    if not isinstance(node, _ALLOWED_NODES):
+        return False
+    for child in ast.iter_child_nodes(node):
+        if not _is_allowed(child):
+            return False
+    return True
+
+
+def evaluate_expression(expression: str) -> Union[float, str]:
     """
-    Perform an arithmetic operation.
+    Safely evaluate a simple arithmetic expression.
 
-    Args:
-        operand1: First numeric operand.
-        operand2: Second numeric operand.
-        operator: One of '+', '-', '*', '/'.
+    Supported operators: +, -, *, /, %, ** (power), unary +/-
+    Operands must be numeric literals.
 
-    Returns:
-        The result of the operation.
+    Parameters
+    ----------
+    expression: str
+        The arithmetic expression to evaluate.
 
-    Raises:
-        ValueError: If the operator is unsupported.
-        ZeroDivisionError: If division by zero is attempted.
+    Returns
+    -------
+    float
+        The numeric result of the expression.
+
+    str
+        An error message if evaluation fails.
     """
-    logger.debug(
-        "Calculating: %s %s %s", operand1, operator, operand2
-    )  # noqa: G004
-
-    if operator == "+":
-        return operand1 + operand2
-    if operator == "-":
-        return operand1 - operand2
-    if operator == "*":
-        return operand1 * operand2
-    if operator == "/":
-        # Let Python raise ZeroDivisionError naturally
-        return operand1 / operand2
-
-    raise ValueError(f"Unsupported operator '{operator}'. Expected one of +, -, *, /.")
+    try:
+        logger.debug("Evaluating expression: %s", expression)
+        # Parse the expression into an AST node
+        tree = ast.parse(expression, mode="eval")
+        if not _is_allowed(tree):
+            raise ValueError("Expression contains unsupported elements.")
+        # Compile the AST safely
+        compiled = compile(tree, filename="<ast>", mode="eval")
+        result = eval(compiled, {"__builtins__": {}}, {})
+        # Ensure the result is a number
+        if not isinstance(result, (int, float)):
+            raise ValueError("Result is not a numeric type.")
+        return float(result)
+    except SyntaxError as exc:
+        logger.warning("Syntax error in expression %r: %s", expression, exc)
+        return "Invalid syntax."
+    except ZeroDivisionError:
+        logger.warning("Division by zero in expression %r", expression)
+        return "Division by zero."
+    except ValueError as exc:
+        logger.warning("Value error for expression %r: %s", expression, exc)
+        return str(exc)
+    except Exception as exc:  # pragma: no cover
+        # Catch‑all for unexpected errors; log stack trace for debugging.
+        logger.exception("Unexpected error evaluating expression %r", expression)
+        return "An unexpected error occurred."
 
 
 # --------------------------------------------------------------------------- #
@@ -66,122 +108,81 @@ def calculate(operand1: float, operand2: float, operator: str) -> float:
 # --------------------------------------------------------------------------- #
 def create_app() -> Flask:
     """
-    Initialise the Flask application, register routes and return the app instance.
+    Application factory that creates and configures the Flask app.
 
-    Returns:
-        Configured Flask app.
+    Returns
+    -------
+    Flask
+        Configured Flask application instance.
     """
     app = Flask(__name__)
 
-    # ----------------------------------------------------------------------- #
+    # ------------------------------------------------------------------- #
     # Routes
-    # ----------------------------------------------------------------------- #
+    # ------------------------------------------------------------------- #
     @app.route("/", methods=["GET"])
-    def index() -> Any:
+    def index():
         """Render the calculator UI."""
-        logger.info("Serving index page")
         return render_template("index.html")
 
-    @app.route("/api/calculate", methods=["POST"])
-    def api_calculate() -> Any:
+    @app.route("/api/evaluate", methods=["POST"])
+    def api_evaluate():
         """
-        API endpoint that expects a JSON payload:
-        {
-            "operand1": <float>,
-            "operand2": <float>,
-            "operator": "<+|-|*|/>"
-        }
+        API endpoint that receives a JSON payload:
+            { "expression": "2 + 3 * (4 - 1)" }
 
-        Returns JSON with either:
-        - {"result": <float>}
-        - {"error": "<message>"} with appropriate HTTP status code.
+        Returns JSON:
+            { "result": 11.0, "error": null }   on success
+            { "result": null, "error": "Message" } on failure
         """
-        try:
-            payload: Dict[str, Any] = request.get_json(force=True)
-            logger.debug("Received payload: %s", payload)
-
-            # Validate presence of required fields
-            for field in ("operand1", "operand2", "operator"):
-                if field not in payload:
-                    msg = f"Missing field '{field}' in request payload."
-                    logger.warning(msg)
-                    return jsonify(error=msg), 400
-
-            # Type conversion & validation
-            try:
-                op1 = float(payload["operand1"])
-                op2 = float(payload["operand2"])
-            except (TypeError, ValueError) as exc:
-                msg = "Operands must be numeric."
-                logger.warning("%s (%s)", msg, exc)
-                return jsonify(error=msg), 400
-
-            operator = str(payload["operator"]).strip()
-            if operator not in {"+", "-", "*", "/"}:
-                msg = f"Invalid operator '{operator}'. Allowed: +, -, *, /."
-                logger.warning(msg)
-                return jsonify(error=msg), 400
-
-            # Perform calculation
-            result = calculate(op1, op2, operator)
-            logger.info(
-                "Calculation successful: %s %s %s = %s", op1, operator, op2, result
+        if not request.is_json:
+            logger.info("Non‑JSON request received at /api/evaluate")
+            return (
+                jsonify({"result": None, "error": "Request payload must be JSON."}),
+                400,
             )
-            return jsonify(result=result), 200
+        payload = request.get_json(silent=True)
+        if not payload or "expression" not in payload:
+            logger.info("Malformed JSON payload: %s", payload)
+            return (
+                jsonify({"result": None, "error": "Missing 'expression' field."}),
+                400,
+            )
 
-        except ZeroDivisionError:
-            msg = "Division by zero is not allowed."
-            logger.error(msg)
-            return jsonify(error=msg), 400
+        expression = payload["expression"]
+        if not isinstance(expression, str):
+            logger.info("Invalid type for expression: %r", expression)
+            return (
+                jsonify({"result": None, "error": "'expression' must be a string."}),
+                400,
+            )
 
-        except Exception as exc:  # pragma: no cover
-            # Unexpected errors – log stack trace and return generic message
-            logger.exception("Unexpected error during calculation")
-            return jsonify(error="Internal server error."), 500
+        eval_result = evaluate_expression(expression)
+        if isinstance(eval_result, str):
+            # An error string was returned
+            response = {"result": None, "error": eval_result}
+            status_code = 400
+        else:
+            response = {"result": eval_result, "error": None}
+            status_code = 200
+
+        logger.info(
+            "Evaluation request: %s -> %s (status %s)",
+            expression,
+            response,
+            status_code,
+        )
+        return jsonify(response), status_code
 
     return app
 
 
 # --------------------------------------------------------------------------- #
-# Simple unit tests for the calculate function
-# --------------------------------------------------------------------------- #
-def run_tests() -> None:
-    """
-    Execute a minimal set of assertions for the calculate() helper.
-    This function runs when the module is executed directly.
-    """
-    logger.info("Running calculate() unit tests...")
-
-    # Positive cases
-    assert calculate(1, 2, "+") == 3, "Addition failed"
-    assert calculate(5, 3, "-") == 2, "Subtraction failed"
-    assert calculate(4, 2.5, "*") == 10, "Multiplication failed"
-    assert calculate(9, 3, "/") == 3, "Division failed"
-
-    # Division by zero should raise
-    try:
-        calculate(1, 0, "/")
-    except ZeroDivisionError:
-        pass
-    else:
-        raise AssertionError("ZeroDivisionError not raised for division by zero")
-
-    # Invalid operator should raise ValueError
-    try:
-        calculate(1, 2, "%")
-    except ValueError:
-        pass
-    else:
-        raise AssertionError("ValueError not raised for unsupported operator")
-
-    logger.info("All calculate() tests passed.")
-
-
-# --------------------------------------------------------------------------- #
-# Entrypoint
+# Development entry point
 # --------------------------------------------------------------------------- #
 if __name__ == "__main__":
-    run_tests()
-    app = create_app()
-    # Use 0.0.0.0 to be reachable from Docker or external hosts if needed
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    # When executed directly, start a development server.
+    # In production, a WSGI server (gunicorn, uWSGI, etc.) should import
+    # `create_app` and serve the returned Flask instance.
+    flask_app = create_app()
+    flask_app.run(host="0.0.0.0", port=5000, debug=False)
