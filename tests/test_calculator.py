@@ -1,46 +1,36 @@
 import unittest
-from app.calculator import add, subtract, multiply, divide, calculate
+
+from app.calculator import calculate_expression
 
 
 class TestCalculator(unittest.TestCase):
-    """Unit test suite for arithmetic functions defined in ``app.calculator``."""
+    """Unit tests for the calculate_expression function."""
 
-    def test_add(self):
-        """Assert that ``add(2, 3)`` returns ``5``."""
-        self.assertEqual(add(2, 3), 5)
+    def test_addition(self) -> None:
+        """Verify simple addition."""
+        self.assertEqual(calculate_expression('2+3'), 5)
 
-    def test_subtract(self):
-        """Assert that ``subtract(5, 2)`` returns ``3``."""
-        self.assertEqual(subtract(5, 2), 3)
+    def test_subtraction(self) -> None:
+        """Verify simple subtraction."""
+        self.assertEqual(calculate_expression('5-2'), 3)
 
-    def test_multiply(self):
-        """Assert that ``multiply(4, 3)`` returns ``12``."""
-        self.assertEqual(multiply(4, 3), 12)
+    def test_multiplication(self) -> None:
+        """Verify simple multiplication."""
+        self.assertEqual(calculate_expression('4*3'), 12)
 
-    def test_divide(self):
-        """Assert that ``divide(10, 2)`` returns ``5`` and division by zero raises ``ValueError``."""
-        self.assertEqual(divide(10, 2), 5)
+    def test_division(self) -> None:
+        """Verify simple division."""
+        self.assertEqual(calculate_expression('10/2'), 5)
+
+    def test_divide_by_zero(self) -> None:
+        """Ensure division by zero raises a ValueError."""
         with self.assertRaises(ValueError):
-            divide(10, 0)
+            calculate_expression('5/0')
 
-    def test_calculate_dispatch(self):
-        """
-        Ensure ``calculate`` routes to the correct operation for each operator
-        and raises ``ValueError`` for an invalid operator.
-        """
-        # Valid operators
-        self.assertEqual(calculate('+', 2, 3), 5)
-        self.assertEqual(calculate('-', 5, 2), 3)
-        self.assertEqual(calculate('*', 4, 3), 12)
-        self.assertEqual(calculate('/', 10, 2), 5)
-
-        # Division by zero via calculate
+    def test_invalid_expression(self) -> None:
+        """Ensure malformed expressions raise a ValueError."""
         with self.assertRaises(ValueError):
-            calculate('/', 10, 0)
-
-        # Invalid operator
-        with self.assertRaises(ValueError):
-            calculate('%', 10, 2)
+            calculate_expression('2++2')
 
 
 if __name__ == '__main__':
