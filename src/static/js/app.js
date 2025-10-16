@@ -1,175 +1,166 @@
 /**
- * app.js
+ * @fileoverview Handles user interactions for the calculator UI,
+ * sends calculation requests to the backend, and updates the DOM
+ * with results or error messages.
  *
- * Handles the client‑side logic for the Primitive Calculator.
- * - Captures form submission
- * - Validates input values
- * - Sends a POST request to the Flask API (`/api/calculate`)
- * - Updates the UI with the calculation result or an error message
- *
- * This script is written in vanilla JavaScript and follows modern best practices
- * (ES6+, async/await, strict mode). It is deliberately self‑contained so it can
- * be included directly in `src/templates/index.html` via a <script> tag.
+ * Expected HTML structure:
+ * <form id="calc-form">
+ *   <input id="operand1" name="operand1" type="text" />
+ *   <input id="operand2" name="operand2" type="text" />
+ *   <select id="operation" name="operation">
+ *     <option value="add">+</option>
+ *     <option value="subtract">-</option>
+ *     <option value="multiply">*</option>
+ *     <option value="divide">/</option>
+ *   </select>
+ *   <button type="submit">Calculate</button>
+ * </form>
+ * <div id="loading" hidden>Loading...</div>
+ * <div id="result" role="status"></div>
+ * <div id="error" role="alert"></div>
  */
 
 'use strict';
 
 /**
- * Utility: Retrieve an element by ID and assert its existence.
- * @param {string} id - The element's ID.
- * @returns {HTMLElement} The requested element.
- * @throws {Error} If the element cannot be found.
+ * Displays a message in the given element.
+ *
+ * @param {HTMLElement} element - The element where the message will be shown.
+ * @param {string} message - The message text.
+ * @param {boolean} [isError=false] - Whether the message is an error.
  */
-function getElement(id) {
-  const el = document.getElementById(id);
-  if (!el) {
-    throw new Error(`Element with id="${id}" not found in DOM.`);
+function showMessage(element, message, isError = false) {
+  element.textContent = message;
+  element.hidden = false;
+  element.style.color = isError ? '#d9534f' : '#5cb85c';
+}
+
+/**
+ * Clears the content of the given element and hides it.
+ *
+ * @param {HTMLElement} element - The element to clear.
+ */
+function clearMessage(element) {
+  element.textContent = '';
+  element.hidden = true;
+}
+
+/**
+ * Toggles the loading state UI.
+ *
+ * @param {boolean} isLoading - True to show loading, false to hide.
+ * @param {HTMLFormElement} form - The calculator form to enable/disable.
+ */
+function setLoading(isLoading, form) {
+  const loadingEl = document.getElementById('loading');
+  if (isLoading) {
+    loadingEl.hidden = false;
+    form.querySelectorAll('input, select, button').forEach((el) => {
+      el.disabled = true;
+    });
+  } else {
+    loadingEl.hidden = true;
+    form.querySelectorAll('input, select, button').forEach((el) => {
+      el.disabled = false;
+    });
   }
-  return el;
 }
 
 /**
- * Show a loading spinner / message.
- */
-function showLoading() {
-  const loadingEl = getElement('loading');
-  loadingEl.style.display = 'inline-block';
-}
-
-/**
- * Hide the loading spinner / message.
- */
-function hideLoading() {
-  const loadingEl = getElement('loading');
-  loadingEl.style.display = 'none';
-}
-
-/**
- * Clear any previous result or error messages.
- */
-function clearMessages() {
-  getElement('result').textContent = '';
-  getElement('error').textContent = '';
-}
-
-/**
- * Render the successful calculation result.
- * @param {number|string} value - The result returned by the API.
- */
-function displayResult(value) {
-  const resultEl = getElement('result');
-  resultEl.textContent = `Result: ${value}`;
-}
-
-/**
- * Render an error message.
- * @param {string} message - Human‑readable error description.
- */
-function displayError(message) {
-  const errorEl = getElement('error');
-  errorEl.textContent = `Error: ${message}`;
-}
-
-/**
- * Validate that a string represents a finite number.
- * @param {string} value - Raw input value.
- * @returns {number|null} Parsed number or null if invalid.
- */
-function parseNumber(value) {
-  const num = parseFloat(value);
-  return Number.isFinite(num) ? num : null;
-}
-
-/**
- * Form submit handler.
+ * Handles the calculator form submission.
+ *
  * @param {Event} event - The submit event.
+ * @returns {Promise<void>}
  */
-async function handleSubmit(event) {
-  event.preventDefault(); // Prevent default form navigation
-  clearMessages();
+async function handleCalculate(event) {
+  event.preventDefault();
 
-  // Extract form fields
-  const num1Input = getElement('num1');
-  const num2Input = getElement('num2');
-  const operationSelect = getElement('operation');
+  const form = /** @type {HTMLFormElement} */ (event.target);
+  const operand1El = /** @type {HTMLInputElement} */ (document.getElementById('operand1'));
+  const operand2El = /** @type {HTMLInputElement} */ (document.getElementById('operand2'));
+  const operationEl = /** @type {HTMLSelectElement} */ (document.getElementById('operation'));
+  const resultEl = document.getElementById('result');
+  const errorEl = document.getElementById('error');
 
-  const num1 = parseNumber(num1Input.value.trim());
-  const num2 = parseNumber(num2Input.value.trim());
-  const operation = operationSelect.value;
+  clearMessage(resultEl);
+  clearMessage(errorEl);
+
+  const rawOperand1 = operand1El.value.trim();
+  const rawOperand2 = operand2El.value.trim();
+  const operation = operationEl.value;
+
+  const operand1 = parseFloat(rawOperand1);
+  const operand2 = parseFloat(rawOperand2);
 
   // Client‑side validation
-  if (num1 === null) {
-    displayError('First number is not a valid numeric value.');
+  if (!Number.isFinite(operand1) || !Number.isFinite(operand2)) {
+    showMessage(errorEl, 'Both operands must be valid numbers.', true);
     return;
   }
-  if (num2 === null) {
-    displayError('Second number is not a valid numeric value.');
-    return;
-  }
+
   if (!operation) {
-    displayError('Please select an operation.');
+    showMessage(errorEl, 'Please select an operation.', true);
     return;
   }
 
   const payload = {
-    num1,
-    num2,
+    operand1,
+    operand2,
     operation,
   };
 
-  showLoading();
+  setLoading(true, form);
 
   try {
     const response = await fetch('/api/calculate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        // Include CSRF token header if your Flask app uses one (optional)
+        // Include CSRF token header if your backend requires it.
       },
       body: JSON.stringify(payload),
     });
 
-    // HTTP error handling
-    if (!response.ok) {
-      // Attempt to read a JSON error body; fallback to generic message
-      let errorMsg = `Server responded with status ${response.status}`;
-      try {
-        const errData = await response.json();
-        if (errData && errData.error) {
-          errorMsg = errData.error;
-        }
-      } catch (_) {
-        // ignore JSON parsing errors
-      }
-      throw new Error(errorMsg);
-    }
-
     const data = await response.json();
 
-    // Expected shape: { result: <number> } or { error: <string> }
-    if (data.error) {
-      displayError(data.error);
-    } else if (typeof data.result !== 'undefined') {
-      displayResult(data.result);
-    } else {
-      displayError('Unexpected response format from server.');
+    if (!response.ok) {
+      const serverMessage = data.error || `Server responded with status ${response.status}`;
+      throw new Error(serverMessage);
     }
+
+    if (data.error) {
+      throw new Error(data.error);
+    }
+
+    if (typeof data.result === 'undefined') {
+      throw new Error('Unexpected response format: missing result.');
+    }
+
+    showMessage(resultEl, `Result: ${data.result}`);
   } catch (err) {
-    // Network errors, JSON parsing errors, or thrown above
     console.error('Calculation request failed:', err);
-    displayError(err.message || 'An unexpected error occurred.');
+    const userMessage = err instanceof Error ? err.message : 'An unexpected error occurred.';
+    showMessage(errorEl, userMessage, true);
   } finally {
-    hideLoading();
+    setLoading(false, form);
   }
 }
 
 /**
- * Initialise event listeners once the DOM is ready.
+ * Initializes event listeners once the DOM is fully loaded.
  */
-function init() {
-  const form = getElement('calc-form');
-  form.addEventListener('submit', handleSubmit);
+function initCalculator() {
+  const form = document.getElementById('calc-form');
+  if (!form) {
+    console.error('Calculator form element with id "calc-form" not found.');
+    return;
+  }
+  form.addEventListener('submit', handleCalculate);
 }
 
-// Ensure the script runs after the DOM is fully parsed.
-document.addEventListener('DOMContentLoaded', init);
+// Ensure initialization runs after the document is ready.
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initCalculator);
+} else {
+  initCalculator();
+}
