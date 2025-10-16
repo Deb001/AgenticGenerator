@@ -1,98 +1,165 @@
-# Calculator Web Application
+# Flask Calculator API
 
-## Overview
-A lightweight web calculator built with **Flask** (Python) for the backend and vanilla JavaScript for the frontend.  
-The application provides a single-page UI where users can perform basic arithmetic operations.  
-All calculations are processed server‑side via a JSON API (`/api/calculate`) and the result is displayed instantly in the browser.
+A lightweight web application that provides a RESTful API for evaluating arithmetic expressions. The backend is built with Flask and Gunicorn, while the frontend offers a simple calculator UI built with HTML, CSS, and JavaScript.
 
-Key features:
-- RESTful API with clear request/response contract
-- Input validation and comprehensive error handling
-- Docker‑ready container image
-- Full test suite (unit & integration)
-- Contribution guidelines and CI‑friendly structure
+## Table of Contents
+
+- [Features](#features)
+- [Architecture](#architecture)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Running the Application](#running-the-application)
+  - [Locally with Python](#locally-with-python)
+  - [Using Docker](#using-docker)
+- [API Reference](#api-reference)
+- [Testing](#testing)
+- [Contribution Guidelines](#contribution-guidelines)
+- [License](#license)
+
+## Features
+
+- **Stateless calculation endpoint** – POST `/api/calculate` with a JSON payload containing an arithmetic expression.
+- **Input validation & safe evaluation** – Prevents code injection and handles malformed expressions gracefully.
+- **Dockerized deployment** – Multi‑stage Docker build with Gunicorn for production.
+- **Responsive UI** – Simple calculator UI that works on desktop and mobile browsers.
+- **Comprehensive test suite** – Unit tests covering valid calculations, division by zero, and malformed inputs.
+
+## Architecture
+
+root
+├── src
+│   ├── app.py          # Flask application factory
+│   ├── routes.py       # API endpoint implementation
+│   ├── templates
+│   │   └── index.html  # Front‑end UI
+│   └── static
+│       ├── css
+│       │   └── style.css
+│       └── js
+│           └── app.js
+├── tests
+│   ├── __init__.py
+│   └── test_app.py     # Test suite for the API
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+├── .env.example
+└── README.md
+
+The Flask app is created in `src/app.py`, registers the routes from `src/routes.py`, and serves static assets. The calculation logic validates the expression, evaluates it safely using Python's `ast` module, and returns a JSON response.
 
 ## Prerequisites
-| Tool | Minimum Version | Usage |
-|------|----------------|-------|
-| Python | 3.9 | Core language for the Flask backend |
-| pip | 21.0 | Dependency management |
-| Docker | 20.10 | Containerisation (optional but recommended) |
-| Docker Compose | 2.0 | Orchestrating multi‑container setup |
-| Git | 2.20 | Version control |
+
+- **Python 3.9+**
+- **Docker** (optional, for containerized execution)
+- **Git** (to clone the repository)
 
 ## Installation
 
-### 1. Clone the repository
-git clone https://github.com/your-org/calculator-webapp.git
-cd calculator-webapp
+# Clone the repository
+git clone https://github.com/yourusername/flask-calculator-api.git
+cd flask-calculator-api
 
-### 2. Set up a virtual environment (optional but recommended)
+# Create a virtual environment
 python -m venv .venv
-source .venv/bin/activate   # On Windows: .venv\Scripts\activate
+source .venv/bin/activate   # On Windows use `.venv\Scripts\activate`
 
-### 3. Install Python dependencies
+# Install Python dependencies
+pip install --upgrade pip
 pip install -r requirements.txt
 
-### 4. Configure environment variables
-Copy the example file and adjust values as needed:
+# Copy environment template and edit as needed
 cp .env.example .env
-Typical variables:
-- `FLASK_ENV=development` (or `production`)
-- `SECRET_KEY` – a random string used for session signing
 
-## Running
+## Running the Application
 
-### Local development server
-flask --app src/app.py run
-The app will be reachable at `http://127.0.0.1:5000`.
+### Locally with Python
 
-### Docker
-docker compose up --build
-The container exposes port **5000**; access the UI at `http://localhost:5000`.
+# Ensure the virtual environment is active
+source .venv/bin/activate
+
+# Export Flask configuration (optional)
+export FLASK_ENV=development
+export FLASK_APP=src/app.py
+
+# Run the development server
+flask run --host 0.0.0.0 --port 5000
+
+Visit `http://localhost:5000` to view the calculator UI or send API requests to `http://localhost:5000/api/calculate`.
+
+### Using Docker
+
+# Build and start the containers
+docker compose up --build -d
+
+# The API will be reachable at http://localhost:8000
+# (Gunicorn is bound to port 8000 inside the container)
+
+To stop and remove containers:
+
+docker compose down
+
+## API Reference
+
+### POST `/api/calculate`
+
+Evaluates a single arithmetic expression.
+
+**Request**
+
+{
+  "expression": "12 / (2 + 4) * 3"
+}
+
+- `expression` (string, required): A mathematical expression consisting of numbers, parentheses, and the operators `+`, `-`, `*`, `/`.
+
+**Response (200 OK)**
+
+{
+  "result": 6.0,
+  "expression": "12 / (2 + 4) * 3"
+}
+
+**Error Responses**
+
+- `400 Bad Request` – Invalid JSON, missing `expression`, or malformed expression.
+- `422 Unprocessable Entity` – Division by zero or other evaluation errors.
+
+**Example with `curl`**
+
+curl -X POST http://localhost:5000/api/calculate \
+     -H "Content-Type: application/json" \
+     -d '{"expression": "7 * (3 + 2)"}'
 
 ## Testing
 
-### Unit tests
-pytest tests/unit
+The project uses `pytest` for unit testing.
 
-### Integration / end‑to‑end tests
-pytest tests/integration
+# Install test dependencies (already in requirements.txt)
+pip install -r requirements.txt
 
-Both suites are also executed in the CI pipeline (`docker compose run --rm app pytest`).
+# Run the test suite
+pytest -v
 
-## Deployment
+All tests should pass:
 
-### Production Docker image
-docker build -t calculator-webapp:latest .
-docker run -d -p 80:5000 --env-file .env calculator-webapp:latest
+============================= test session starts ==============================
+collected 5 items
 
-### Cloud platforms
-The Docker image can be pushed to any container registry (Docker Hub, GitHub Packages, AWS ECR, etc.) and deployed to services such as **AWS ECS**, **Google Cloud Run**, or **Azure Container Apps**.  
-Ensure the environment variables (`FLASK_ENV=production`, `SECRET_KEY`) are supplied securely via the platform’s secret manager.
+tests/test_app.py .....                                                [100%]
 
-## Contributing
+============================== 5 passed in 0.42s ===============================
 
-1. **Fork** the repository and create a feature branch:
-      git checkout -b feature/your-feature
-   2. **Write code** adhering to the existing style (PEP 8, 4‑space indentation).  
-   Add or update tests to cover new functionality.
-3. **Run the full test suite** to ensure nothing breaks:
-      pytest
-   4. **Submit a Pull Request** with a clear description of the change and reference the related issue (e.g., `Fixes #AI-1`).
+## Contribution Guidelines
 
-### Code of Conduct
-All contributors must follow the [Contributor Covenant Code of Conduct](https://www.contributor-covenant.org/version/2/1/code_of_conduct/).
+1. **Fork the repository** and create a feature branch.
+2. **Write tests** for any new functionality.
+3. **Follow PEP 8** (Python) and the project's linting rules.
+4. **Document** public functions and modules with docstrings.
+5. **Submit a pull request** with a clear description of changes.
 
-### Reporting Issues
-Open a GitHub issue with:
-- A concise title
-- Steps to reproduce (if applicable)
-- Expected vs. actual behavior
-- Relevant logs or screenshots
+Please ensure that CI passes and that your code does not introduce new warnings.
 
---- 
+## License
 
-For detailed acceptance criteria, see `docs/acceptance_criteria.md`.  
-Architecture diagrams and design decisions are documented in `docs/architecture.md`.  
-Happy coding!
+This project is licensed under the **MIT License**. See the `LICENSE` file for details.
