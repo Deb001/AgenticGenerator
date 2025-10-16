@@ -1,140 +1,151 @@
-/* Root variables for theming */
+/* ==============================================================
+   Calculator UI Styles
+   --------------------------------------------------------------
+   Mobile‑first, BEM naming, CSS custom properties for easy theming
+   ============================================================== */
+
+/* --------------------------- Root Variables --------------------------- */
 :root {
-  --font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  --color-bg: #f5f7fa;
+  --font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-size-base: 1rem;
   --color-primary: #4a90e2;
-  --color-primary-hover: #357ab8;
+  --color-primary-dark: #357ab8;
+  --color-bg: #f5f7fa;
+  --color-surface: #ffffff;
+  --color-border: #dcdfe6;
   --color-text: #333333;
-  --color-input-bg: #ffffff;
-  --color-input-border: #cccccc;
-  --color-result-bg: #e8f0fe;
-  --border-radius: 0.5rem;
-  --spacing: 1rem;
-  --max-width: 420px;
+  --color-muted: #777777;
+  --radius: 0.5rem;
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --transition: 0.2s ease-in-out;
 }
 
-/* Global reset and base styling */
+/* --------------------------- Global Reset --------------------------- */
 *,
 *::before,
 *::after {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
 }
 
 html {
   font-size: 100%; /* 16px base */
-  scroll-behavior: smooth;
 }
 
 body {
+  margin: 0;
+  padding: 0;
   font-family: var(--font-family);
+  font-size: var(--font-size-base);
   background-color: var(--color-bg);
   color: var(--color-text);
   line-height: 1.5;
   display: flex;
+  align-items: center;
   justify-content: center;
-  align-items: flex-start;
   min-height: 100vh;
-  padding: var(--spacing);
 }
 
-/* Calculator container */
+/* --------------------------- Calculator Container --------------------------- */
 .calculator {
-  background-color: #ffffff;
-  border-radius: var(--border-radius);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   width: 100%;
-  max-width: var(--max-width);
-  padding: calc(var(--spacing) * 1.5);
-}
-
-/* Title */
-.calculator__title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-bottom: var(--spacing);
-  text-align: center;
-}
-
-/* Form layout */
-.calculator__form {
-  display: grid;
-  gap: var(--spacing);
-}
-
-/* Input groups */
-.calculator__group {
+  max-width: 380px;
+  background-color: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
+  gap: 1rem;
 }
 
-/* Labels */
-.calculator__label {
-  font-size: 0.9rem;
-  margin-bottom: 0.25rem;
-}
-
-/* Inputs */
-.calculator__input {
-  padding: 0.5rem 0.75rem;
-  font-size: 1rem;
-  border: 1px solid var(--color-input-border);
-  border-radius: var(--border-radius);
-  background-color: var(--color-input-bg);
-  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-}
-
-.calculator__input:focus {
+/* --------------------------- Display (Input) --------------------------- */
+.calculator__display {
+  width: 100%;
+  font-size: 1.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  text-align: right;
   outline: none;
+  transition: border-color var(--transition);
+}
+
+.calculator__display:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
 }
 
-/* Submit button */
-.calculator__button {
-  padding: 0.75rem;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #ffffff;
-  background-color: var(--color-primary);
-  border: none;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  transition: background-color 0.2s ease-in-out, transform 0.1s;
-}
-
-.calculator__button:hover {
-  background-color: var(--color-primary-hover);
-}
-
-.calculator__button:active {
-  transform: translateY(1px);
-}
-
-/* Result display */
+/* --------------------------- Result Area --------------------------- */
 .calculator__result {
-  margin-top: var(--spacing);
-  padding: 0.75rem;
-  background-color: var(--color-result-bg);
-  border-left: 4px solid var(--color-primary);
-  border-radius: var(--border-radius);
-  font-size: 1.1rem;
-  font-weight: 500;
-  word-break: break-word;
+  font-size: 1.25rem;
+  color: var(--color-muted);
+  text-align: right;
+  min-height: 1.5rem;
 }
 
-/* Responsive adjustments */
-@media (max-width: 480px) {
+/* --------------------------- Keypad Grid --------------------------- */
+.calculator__keys {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+}
+
+/* --------------------------- Individual Keys --------------------------- */
+.calculator__key {
+  font-size: 1.125rem;
+  padding: 0.75rem;
+  border: none;
+  border-radius: var(--radius);
+  background-color: var(--color-primary);
+  color: #ffffff;
+  cursor: pointer;
+  transition: background-color var(--transition), transform var(--transition);
+  user-select: none;
+}
+
+.calculator__key:hover,
+.calculator__key:focus {
+  background-color: var(--color-primary-dark);
+  outline: none;
+}
+
+.calculator__key:active {
+  transform: scale(0.97);
+}
+
+/* --------------------------- Special Key Modifiers --------------------------- */
+.calculator__key--operator {
+  background-color: #ff9500;
+}
+
+.calculator__key--operator:hover,
+.calculator__key--operator:focus {
+  background-color: #e08900;
+}
+
+.calculator__key--clear {
+  background-color: #d9534f;
+}
+
+.calculator__key--clear:hover,
+.calculator__key--clear:focus {
+  background-color: #c9302c;
+}
+
+/* --------------------------- Responsive Adjustments --------------------------- */
+@media (min-width: 480px) {
   .calculator {
-    padding: var(--spacing);
+    padding: 2rem;
   }
 
-  .calculator__title {
+  .calculator__display {
+    font-size: 1.75rem;
+    padding: 1rem 1.25rem;
+  }
+
+  .calculator__key {
     font-size: 1.25rem;
-  }
-
-  .calculator__button {
-    font-size: 0.95rem;
+    padding: 1rem;
   }
 }
