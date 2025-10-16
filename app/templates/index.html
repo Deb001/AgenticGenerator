@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Flask Calculator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <main class="calculator-container">
+        <h1>Simple Calculator</h1>
+
+        <!-- Result / error display -->
+        <section id="message" class="message hidden" role="alert" aria-live="polite"></section>
+
+        <!-- Calculator form -->
+        <form id="calc-form" autocomplete="off">
+            <div class="field-group">
+                <label for="operand1">Operand 1</label>
+                <input type="number" step="any" id="operand1" name="operand1" required>
+            </div>
+
+            <div class="field-group">
+                <label for="operator">Operator</label>
+                <select id="operator" name="operator" required>
+                    <option value="+">+</option>
+                    <option value="-">−</option>
+                    <option value="*">×</option>
+                    <option value="/">÷</option>
+                </select>
+            </div>
+
+            <div class="field-group">
+                <label for="operand2">Operand 2</label>
+                <input type="number" step="any" id="operand2" name="operand2" required>
+            </div>
+
+            <button type="submit" class="btn-primary">Calculate</button>
+        </form>
+
+        <!-- Result area -->
+        <section id="result" class="result hidden" aria-live="polite"></section>
+    </main>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
