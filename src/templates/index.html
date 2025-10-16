@@ -1,62 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Primitive Calculator</title>
-    <!-- Responsive layout -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Main stylesheet -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Calculator</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <main class="calculator">
-        <h1>Primitive Calculator</h1>
+  <main class="calculator">
+    <h1>Calculator</h1>
+    <form id="calc-form" autocomplete="off" novalidate>
+      <div class="field">
+        <label for="operand1">First number</label>
+        <input type="number" id="operand1" name="operand1" required aria-required="true" step="any">
+      </div>
 
-        <!-- Calculation form -->
-        <form id="calc-form" novalidate>
-            <div class="field">
-                <label for="number-a">Number A</label>
-                <input type="number"
-                       step="any"
-                       id="number-a"
-                       name="a"
-                       placeholder="Enter first number"
-                       required
-                       aria-required="true">
-            </div>
+      <div class="field">
+        <label for="operator">Operation</label>
+        <select id="operator" name="operator" required aria-required="true">
+          <option value="+">+</option>
+          <option value="-">−</option>
+          <option value="*">×</option>
+          <option value="/">÷</option>
+        </select>
+      </div>
 
-            <div class="field">
-                <label for="number-b">Number B</label>
-                <input type="number"
-                       step="any"
-                       id="number-b"
-                       name="b"
-                       placeholder="Enter second number"
-                       required
-                       aria-required="true">
-            </div>
+      <div class="field">
+        <label for="operand2">Second number</label>
+        <input type="number" id="operand2" name="operand2" required aria-required="true" step="any">
+      </div>
 
-            <div class="field">
-                <label for="operation">Operation</label>
-                <select id="operation"
-                        name="op"
-                        required
-                        aria-required="true">
-                    <option value="+">Addition (+)</option>
-                    <option value="-">Subtraction (‑)</option>
-                    <option value="*">Multiplication (×)</option>
-                    <option value="/">Division (÷)</option>
-                </select>
-            </div>
+      <button type="submit" id="calculate-btn">Calculate</button>
+    </form>
 
-            <button type="submit">Calculate</button>
-        </form>
+    <section id="result-section" aria-live="polite" class="result hidden">
+      <p>Result: <span id="result-value"></span></p>
+    </section>
+  </main>
 
-        <!-- Result / error display -->
-        <section id="result" aria-live="polite" role="status"></section>
-    </main>
-
-    <!-- Client‑side logic -->
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>
