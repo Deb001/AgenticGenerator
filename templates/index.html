@@ -3,201 +3,202 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Calculator</title>
+    <title>Web Calculator</title>
     <style>
-        /* Basic layout – production ready styling can be extended */
+        /* Reset & basic layout */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: Arial, Helvetica, sans-serif;
-            margin: 0;
-            padding: 2rem;
-            background-color: #f9f9f9;
-            color: #333;
+            background: #f4f4f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
         }
         .calculator {
-            max-width: 400px;
-            margin: 0 auto;
             background: #fff;
-            padding: 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,.1);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,.1);
+            width: 320px;
+            max-width: 100%;
+            padding: 20px;
         }
-        .field {
-            margin-bottom: 1rem;
-        }
-        label {
-            display: block;
-            margin-bottom: .3rem;
-            font-weight: bold;
-        }
-        input[type="number"],
-        select {
+        .display {
             width: 100%;
-            padding: .5rem;
-            font-size: 1rem;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+            height: 50px;
+            font-size: 1.5rem;
+            text-align: right;
+            padding: 0 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            background: #fafafa;
+        }
+        .display:focus { outline: none; }
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
         }
         button {
-            width: 100%;
-            padding: .7rem;
-            font-size: 1rem;
-            background-color: #0069d9;
-            color: #fff;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #0053ba;
-        }
-        #result {
-            margin-top: 1rem;
             font-size: 1.2rem;
-            font-weight: bold;
-            color: #155724;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background .2s;
         }
-        #error {
-            margin-top: 1rem;
-            color: #721c24;
-            background: #f8d7da;
-            padding: .5rem;
-            border-radius: 4px;
-        }
+        button[data-type="number"] { background: #e0e0e0; }
+        button[data-type="operator"] { background: #ffb74d; color: #fff; }
+        button[data-type="clear"] { background: #e57373; color: #fff; grid-column: span 2; }
+        button[data-type="equals"] { background: #81c784; color: #fff; grid-column: span 2; }
+        button:hover { opacity: .9; }
     </style>
 </head>
 <body>
-    <section class="calculator" aria-labelledby="calc-title">
-        <h1 id="calc-title">Simple Calculator</h1>
+    <div class="calculator">
+        <input type="text" id="display" class="display" readonly placeholder="0">
+        <div class="buttons">
+            <button data-type="clear" id="clearBtn">C</button>
+            <button data-type="operator" data-value="/">÷</button>
 
-        <form id="calcForm" novalidate>
-            <div class="field">
-                <label for="num1">First number</label>
-                <input type="number" id="num1" name="num1" required aria-required="true" step="any">
-            </div>
+            <button data-type="number" data-value="7">7</button>
+            <button data-type="number" data-value="8">8</button>
+            <button data-type="number" data-value="9">9</button>
+            <button data-type="operator" data-value="*">×</button>
 
-            <div class="field">
-                <label for="operator">Operator</label>
-                <select id="operator" name="operator" required aria-required="true">
-                    <option value="+">+</option>
-                    <option value="-">−</option>
-                    <option value="*">×</option>
-                    <option value="/">÷</option>
-                </select>
-            </div>
+            <button data-type="number" data-value="4">4</button>
+            <button data-type="number" data-value="5">5</button>
+            <button data-type="number" data-value="6">6</button>
+            <button data-type="operator" data-value="-">−</button>
 
-            <div class="field">
-                <label for="num2">Second number</label>
-                <input type="number" id="num2" name="num2" required aria-required="true" step="any">
-            </div>
+            <button data-type="number" data-value="1">1</button>
+            <button data-type="number" data-value="2">2</button>
+            <button data-type="number" data-value="3">3</button>
+            <button data-type="operator" data-value="+">+</button>
 
-            <button type="submit" id="calcBtn">Calculate</button>
-        </form>
-
-        <div id="result" role="status" aria-live="polite"></div>
-        <div id="error" role="alert" aria-live="assertive"></div>
-    </section>
+            <button data-type="number" data-value="0" style="grid-column: span 2;">0</button>
+            <button data-type="operator" data-value=".">.</button>
+            <button data-type="equals" id="equalsBtn">=</button>
+        </div>
+    </div>
 
     <script>
+        'use strict';
+
         /**
-         * Collects user input, validates it, sends a POST request to '/api/calculate',
-         * and displays the result or error.
-         *
-         * No parameters, no return value.
+         * Current arithmetic expression entered by the user.
+         * @type {string}
          */
-        async function performCalculation() {
-            // Grab DOM elements
-            const num1El = document.getElementById('num1');
-            const num2El = document.getElementById('num2');
-            const operatorEl = document.getElementById('operator');
-            const resultEl = document.getElementById('result');
-            const errorEl = document.getElementById('error');
+        let currentExpression = '';
 
-            // Reset previous messages
-            resultEl.textContent = '';
-            errorEl.textContent = '';
+        const displayEl = document.getElementById('display');
 
-            // Trim and read values
-            const rawNum1 = num1El.value.trim();
-            const rawNum2 = num2El.value.trim();
-            const operator = operatorEl.value;
+        /**
+         * Updates the calculator display.
+         * @param {string} value - Text to show in the display.
+         */
+        function updateDisplay(value) {
+            displayEl.value = value || '0';
+        }
 
-            // Client‑side validation
-            const errors = [];
+        /**
+         * Handles button click events for numbers, operators, clear and equals.
+         * @param {Event} event - Click event from a calculator button.
+         */
+        function handleButtonClick(event) {
+            const btn = event.target.closest('button');
+            if (!btn) return; // Click not on a button
 
-            if (rawNum1 === '') {
-                errors.push('First number is required.');
-            }
-            if (rawNum2 === '') {
-                errors.push('Second number is required.');
-            }
+            const type = btn.dataset.type;
+            const value = btn.dataset.value;
 
-            const num1 = parseFloat(rawNum1);
-            const num2 = parseFloat(rawNum2);
+            switch (type) {
+                case 'number':
+                case 'operator':
+                    // Append the pressed character to the expression
+                    currentExpression += value;
+                    updateDisplay(currentExpression);
+                    break;
 
-            if (!Number.isFinite(num1)) {
-                errors.push('First number must be a valid numeric value.');
-            }
-            if (!Number.isFinite(num2)) {
-                errors.push('Second number must be a valid numeric value.');
-            }
+                case 'clear':
+                    // Reset everything
+                    currentExpression = '';
+                    updateDisplay('');
+                    break;
 
-            const validOperators = ['+', '-', '*', '/'];
-            if (!validOperators.includes(operator)) {
-                errors.push('Selected operator is not supported.');
-            }
+                case 'equals':
+                    // Trigger calculation
+                    calculateResult();
+                    break;
 
-            // If any validation errors, display them and abort
-            if (errors.length > 0) {
-                errorEl.innerHTML = errors.map(e => `<div>${e}</div>`).join('');
-                return;
-            }
-
-            // Build request payload
-            const payload = {
-                operand1: num1,
-                operand2: num2,
-                operator: operator
-            };
-
-            try {
-                const response = await fetch('/api/calculate', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    // Server responded with an error status
-                    const serverError = data.error || 'An unexpected error occurred.';
-                    errorEl.textContent = serverError;
-                    return;
-                }
-
-                // Expecting { "result": <number> } on success
-                if (typeof data.result === 'number') {
-                    resultEl.textContent = `Result: ${data.result}`;
-                } else {
-                    // Unexpected payload shape
-                    errorEl.textContent = 'Invalid response from server.';
-                }
-            } catch (networkError) {
-                // Network‑level failure (e.g., connection lost)
-                console.error('Network error while calling /api/calculate:', networkError);
-                errorEl.textContent = 'Unable to reach the server. Please try again later.';
+                default:
+                    console.warn(`Unhandled button type: ${type}`);
             }
         }
 
-        // Attach event listener once the DOM is ready
-        document.addEventListener('DOMContentLoaded', () => {
-            const form = document.getElementById('calcForm');
-            form.addEventListener('submit', (event) => {
-                event.preventDefault(); // Prevent traditional form submission
-                performCalculation();
-            });
+        /**
+         * Sends the current expression to the backend for evaluation and updates the UI.
+         * Uses POST /api/evaluate expecting JSON { expression: "..."} and returns
+         * JSON { result: "..."} or { error: "..." }.
+         */
+        async function calculateResult() {
+            // Guard against empty submissions
+            if (!currentExpression.trim()) {
+                updateDisplay('Error');
+                console.error('Attempted to evaluate an empty expression.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/evaluate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ expression: currentExpression })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server responded with ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.error) {
+                    updateDisplay('Error');
+                    console.error('Evaluation error:', data.error);
+                } else {
+                    updateDisplay(data.result);
+                    // After a successful evaluation, start a new expression with the result
+                    currentExpression = String(data.result);
+                }
+            } catch (err) {
+                updateDisplay('Error');
+                console.error('Failed to evaluate expression:', err);
+            }
+        }
+
+        // Attach a single event listener to the button container (event delegation)
+        document.querySelector('.buttons').addEventListener('click', handleButtonClick);
+
+        // Optional: allow keyboard input (enhances accessibility)
+        document.addEventListener('keydown', (e) => {
+            const key = e.key;
+            if (/[0-9]/.test(key)) {
+                currentExpression += key;
+                updateDisplay(currentExpression);
+            } else if (['+', '-', '*', '/', '.'].includes(key)) {
+                currentExpression += key;
+                updateDisplay(currentExpression);
+            } else if (key === 'Enter') {
+                e.preventDefault();
+                calculateResult();
+            } else if (key === 'Escape') {
+                currentExpression = '';
+                updateDisplay('');
+            }
         });
     </script>
 </body>
