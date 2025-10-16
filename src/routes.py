@@ -1,144 +1,147 @@
-"""Routes module for the calculator Flask application.
+"""Routes for arithmetic calculation API.
 
-Defines the blueprint, request handlers, and utility functions for performing
-basic arithmetic operations via a JSON API and serving the main UI page.
+Provides a Flask blueprint with a single endpoint that evaluates simple
+arithmetic expressions safely using the `ast` module.
 """
 
-import logging
+import ast
 import operator
-from typing import Any, Dict, Tuple
+import logging
+from typing import Any
 
-from flask import Blueprint, jsonify, render_template, request
+from flask import Blueprint, request, jsonify, Response
 
-# Configure module-level logger
+# Configure module logger
 logger = logging.getLogger(__name__)
-if not logger.handlers:
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter(
-        "[%(asctime)s] %(levelname)s in %(module)s: %(message)s"
-    )
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-    logger.setLevel(logging.INFO)
 
-# Mapping of supported operators to their corresponding functions
-OP_MAP = {
-    "+": operator.add,
-    "-": operator.sub,
-    "*": operator.mul,
-    "/": operator.truediv,
+# Mapping of allowed AST operator nodes to corresponding functions
+ALLOWED_OPERATORS = {
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.truediv,
+}
+
+# Allowed unary operators
+ALLOWED_UNARY_OPERATORS = {
+    ast.UAdd: operator.pos,
+    ast.USub: operator.neg,
 }
 
 
-def calculate(a: float, b: float, op: str) -> float:
-    """Calculate the result of applying an operator to two numbers.
+def _evaluate_node(node: ast.AST) -> float:
+    """Recursively evaluate an AST node representing a numeric expression.
 
     Args:
-        a: The left operand.
-        b: The right operand.
-        op: A string representing the operator ('+', '-', '*', '/').
+        node: The AST node to evaluate.
 
     Returns:
-        The numeric result of the operation.
+        The numeric result of evaluating the node.
 
     Raises:
-        KeyError: If the operator is not supported.
-        ZeroDivisionError: If division by zero is attempted.
+        ValueError: If the node contains disallowed constructs.
+        ZeroDivisionError: Propagated from division operations.
     """
-    logger.debug("Calculating: %s %s %s", a, op, b)
-    operation = OP_MAP[op]  # May raise KeyError if op is invalid
-    result = operation(a, b)  # May raise ZeroDivisionError for division
-    logger.debug("Calculation result: %s", result)
+    if isinstance(node, ast.Expression):
+        return _evaluate_node(node.body)
+
+    if isinstance(node, ast.BinOp):
+        op_type = type(node.op)
+        if op_type not in ALLOWED_OPERATORS:
+            raise ValueError(f"Unsupported binary operator: {op_type.__name__}")
+        left = _evaluate_node(node.left)
+        right = _evaluate_node(node.right)
+        logger.debug("Evaluating BinOp: %s %s %s", left, op_type.__name__, right)
+        return ALLOWED_OPERATORS[op_type](left, right)
+
+    if isinstance(node, ast.UnaryOp):
+        op_type = type(node.op)
+        if op_type not in ALLOWED_UNARY_OPERATORS:
+            raise ValueError(f"Unsupported unary operator: {op_type.__name__}")
+        operand = _evaluate_node(node.operand)
+        logger.debug("Evaluating UnaryOp: %s %s", op_type.__name__, operand)
+        return ALLOWED_UNARY_OPERATORS[op_type](operand)
+
+    if isinstance(node, ast.Constant):  # Python 3.8+
+        if isinstance(node.value, (int, float)):
+            logger.debug("Constant value: %s", node.value)
+            return float(node.value)
+        raise ValueError("Only numeric constants are allowed")
+
+    # For compatibility with older Python versions
+    if isinstance(node, ast.Num):
+        logger.debug("Num value: %s", node.n)
+        return float(node.n)
+
+    raise ValueError(f"Unsupported expression element: {type(node).__name__}")
+
+
+def safe_eval(expr: str) -> float:
+    """Parse and safely evaluate a simple arithmetic expression.
+
+    Supported operators: +, -, *, /. Parentheses are allowed via grouping
+    in the AST. No function calls, attribute access, or other constructs are
+    permitted.
+
+    Args:
+        expr: The arithmetic expression as a string.
+
+    Returns:
+        The evaluated result as a float.
+
+    Raises:
+        ValueError: If the expression contains invalid syntax or disallowed nodes.
+        ZeroDivisionError: If a division by zero occurs.
+    """
+    if not isinstance(expr, str):
+        raise ValueError("Expression must be a string")
+
+    logger.debug("Parsing expression: %s", expr)
+    try:
+        parsed = ast.parse(expr, mode="eval")
+    except SyntaxError as exc:
+        logger.error("Syntax error while parsing expression: %s", exc)
+        raise ValueError("Malformed expression") from exc
+
+    result = _evaluate_node(parsed)
+    logger.info("Expression evaluated successfully: %s = %s", expr, result)
     return result
 
 
-def validate_payload(data: Dict[str, Any]) -> Tuple[bool, str]:
-    """Validate incoming JSON payload for the calculation endpoint.
-
-    Checks that required keys exist and that their types are appropriate.
-
-    Args:
-        data: The parsed JSON dictionary from the request.
-
-    Returns:
-        A tuple (is_valid, error_message). If validation passes, is_valid is
-        True and error_message is an empty string; otherwise, is_valid is
-        False and error_message describes the problem.
-    """
-    required_keys = {"a", "b", "op"}
-    missing = required_keys - data.keys()
-    if missing:
-        error = f"Missing required fields: {', '.join(sorted(missing))}"
-        logger.warning(error)
-        return False, error
-
-    a = data.get("a")
-    b = data.get("b")
-    op = data.get("op")
-
-    if not isinstance(a, (int, float)):
-        error = "'a' must be a number."
-        logger.warning(error)
-        return False, error
-    if not isinstance(b, (int, float)):
-        error = "'b' must be a number."
-        logger.warning(error)
-        return False, error
-    if not isinstance(op, str):
-        error = "'op' must be a string."
-        logger.warning(error)
-        return False, error
-    if op not in OP_MAP:
-        error = f"Unsupported operator '{op}'. Supported operators are: {', '.join(OP_MAP)}."
-        logger.warning(error)
-        return False, error
-
-    return True, ""
-
-
-# Blueprint definition
-calculator_bp = Blueprint("calculator", __name__)
-
-
-@calculator_bp.route("/", methods=["GET"])
-def index():
-    """Render the main calculator UI page."""
-    logger.info("Serving index page.")
-    return render_template("index.html")
+# Flask blueprint registration
+calculator_bp = Blueprint("calculator_bp", __name__)
 
 
 @calculator_bp.route("/api/calculate", methods=["POST"])
-def api_calculate():
-    """Handle calculation requests.
+def calculate() -> Response:
+    """Handle POST requests to evaluate an arithmetic expression.
 
-    Expects a JSON payload with keys 'a', 'b', and 'op'. Returns a JSON
-    response containing the calculation result or an error message.
+    Expected JSON payload:
+        {
+            "expression": "<arithmetic expression>"
+        }
+
+    Returns:
+        JSON response with either the calculation result or an error message.
     """
     try:
-        payload = request.get_json(force=True)
-        logger.debug("Received payload: %s", payload)
-    except Exception as exc:
-        logger.error("Failed to parse JSON payload: %s", exc)
-        return jsonify(error="Invalid JSON payload."), 400
+        payload: Any = request.get_json(force=True)
+        if not isinstance(payload, dict):
+            logger.warning("Invalid JSON payload type: %s", type(payload))
+            return jsonify({"error": "Invalid JSON payload"}), 400
 
-    is_valid, error_msg = validate_payload(payload)
-    if not is_valid:
-        return jsonify(error=error_msg), 400
+        expr = payload.get("expression")
+        if not isinstance(expr, str):
+            logger.warning("Missing or non-string 'expression' field")
+            return jsonify({"error": "Field 'expression' must be a string"}), 400
 
-    a = float(payload["a"])
-    b = float(payload["b"])
-    op = payload["op"]
+        result = safe_eval(expr)
+        return jsonify({"result": result}), 200
 
-    try:
-        result = calculate(a, b, op)
-        logger.info("Calculation successful: %s %s %s = %s", a, op, b, result)
-        return jsonify(result=result), 200
-    except ZeroDivisionError:
-        logger.warning("Division by zero attempted: %s / %s", a, b)
-        return jsonify(error="Division by zero is not allowed."), 422
-    except KeyError as exc:
-        logger.error("Unsupported operator encountered: %s", exc)
-        return jsonify(error=str(exc)), 400
-    except Exception as exc:
-        logger.exception("Unexpected error during calculation: %s", exc)
-        return jsonify(error="Internal server error."), 500
+    except (ValueError, ZeroDivisionError) as exc:
+        logger.error("Evaluation error: %s", exc)
+        return jsonify({"error": str(exc)}), 400
+
+    except Exception as exc:  # pylint: disable=broad-except
+        logger.exception("Unexpected error during calculation")
+        return jsonify({"error": "Internal server error"}), 500
