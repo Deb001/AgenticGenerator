@@ -3,41 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simple Calculator</title>
+  <title>Arithmetic Calculator</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
   <main class="calculator">
-    <h1>Calculator</h1>
-    <form id="calc-form" autocomplete="off" novalidate>
-      <div class="field">
-        <label for="operand1">First number</label>
-        <input type="number" id="operand1" name="operand1" required aria-required="true" step="any">
-      </div>
-
-      <div class="field">
-        <label for="operator">Operation</label>
-        <select id="operator" name="operator" required aria-required="true">
-          <option value="+">+</option>
-          <option value="-">−</option>
-          <option value="*">×</option>
-          <option value="/">÷</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label for="operand2">Second number</label>
-        <input type="number" id="operand2" name="operand2" required aria-required="true" step="any">
-      </div>
-
+    <h1>Arithmetic Calculator</h1>
+    <form id="calc-form" aria-label="Calculator form" onsubmit="return false;">
+      <label for="expression">Expression:</label>
+      <input
+        type="text"
+        id="expression"
+        name="expression"
+        placeholder="e.g., 2+3*4"
+        required
+        autocomplete="off"
+        aria-required="true"
+      />
       <button type="submit" id="calculate-btn">Calculate</button>
     </form>
-
-    <section id="result-section" aria-live="polite" class="result hidden">
-      <p>Result: <span id="result-value"></span></p>
-    </section>
+    <div id="result" role="status" aria-live="polite"></div>
   </main>
-
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>
