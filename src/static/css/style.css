@@ -1,0 +1,148 @@
+/* src/static/css/style.css */
+
+/* -------------------------------------------------
+   Root variables – easy theming & consistency
+   ------------------------------------------------- */
+:root {
+    --font-family: 'Helvetica Neue', Arial, sans-serif;
+    --font-size-base: 16px;
+    --color-primary: #0069d9;
+    --color-primary-dark: #0053a6;
+    --color-bg: #f8f9fa;
+    --color-text: #212529;
+    --color-error: #dc3545;
+    --spacing: 1rem;
+    --max-width: 480px;
+}
+
+/* -------------------------------------------------
+   Global reset & box-sizing
+   ------------------------------------------------- */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+/* -------------------------------------------------
+   Base page styling
+   ------------------------------------------------- */
+html {
+    font-size: var(--font-size-base);
+}
+
+body {
+    margin: 0;
+    padding: var(--spacing);
+    font-family: var(--font-family);
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    line-height: 1.5;
+}
+
+/* -------------------------------------------------
+   Layout – centered container
+   ------------------------------------------------- */
+.container {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: var(--spacing);
+    background: #fff;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* -------------------------------------------------
+   Typography
+   ------------------------------------------------- */
+h1 {
+    margin-top: 0;
+    margin-bottom: var(--spacing);
+    font-size: 1.75rem;
+    text-align: center;
+}
+
+/* -------------------------------------------------
+   Form elements – consistent spacing & responsive width
+   ------------------------------------------------- */
+form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing);
+}
+
+/* Shared input styles */
+input[type="number"],
+select,
+button {
+    width: 100%;
+    max-width: 100%;
+    padding: 0.5rem 0.75rem;
+    font-size: 1rem;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+/* Focus state */
+input[type="number"]:focus,
+select:focus,
+button:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 0.2rem rgba(0, 105, 217, 0.25);
+}
+
+/* Submit button */
+button {
+    background-color: var(--color-primary);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+/* Hover / active states */
+button:hover,
+button:active {
+    background-color: var(--color-primary-dark);
+}
+
+/* -------------------------------------------------
+   Result & error messages
+   ------------------------------------------------- */
+.result {
+    margin-top: var(--spacing);
+    padding: 0.75rem;
+    background-color: #e9ffe9;
+    border: 1px solid #c3e6cb;
+    border-radius: 0.25rem;
+    color: #155724;
+    font-weight: 500;
+    text-align: center;
+}
+
+/* Error styling – used when API returns an error */
+.error {
+    background-color: #ffe9e9;
+    border-color: #f5c6cb;
+    color: var(--color-error);
+}
+
+/* -------------------------------------------------
+   Responsive tweaks
+   ------------------------------------------------- */
+@media (min-width: 600px) {
+    .container {
+        padding: calc(var(--spacing) * 1.5);
+    }
+
+    h1 {
+        font-size: 2rem;
+    }
+
+    input[type="number"],
+    select,
+    button {
+        max-width: 400px;
+        align-self: center;
+    }
+}
