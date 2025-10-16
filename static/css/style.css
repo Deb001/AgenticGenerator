@@ -1,0 +1,168 @@
+/* ==========================================================
+   Calculator UI – Core Styles
+   ----------------------------------------------------------
+   Purpose: Provide a clean, responsive layout for the web
+   calculator. Includes body defaults, container centering,
+   display area, button grid, and mobile‑first adjustments.
+   ========================================================== */
+
+/* ----------------------------------------------------------
+   CSS Custom Properties (Variables)
+   ---------------------------------------------------------- */
+:root {
+  /* Typography */
+  --font-family-base: 'Helvetica Neue', Arial, sans-serif;
+  --font-size-base: 1rem;               /* 16px */
+  --font-size-display: 2rem;
+  --font-weight-bold: 600;
+
+  /* Colors */
+  --color-bg: #f9f9f9;
+  --color-primary: #4a90e2;
+  --color-primary-dark: #357ab8;
+  --color-primary-light: #e6f2ff;
+  --color-text: #333333;
+  --color-button-bg: #ffffff;
+  --color-button-border: #dddddd;
+  --color-button-hover: #f0f0f0;
+  --color-button-active: #e0e0e0;
+  --color-button-special-bg: var(--color-primary);
+  --color-button-special-text: #ffffff;
+
+  /* Layout */
+  --max-width: 400px;
+  --spacing: 0.5rem;
+  --border-radius: 0.4rem;
+}
+
+/* ----------------------------------------------------------
+   Global Reset & Base Styles
+   ---------------------------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 100%; /* 16px baseline */
+}
+
+body {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  line-height: 1.5;
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+/* ----------------------------------------------------------
+   Calculator Container
+   ---------------------------------------------------------- */
+.calculator {
+  width: 100%;
+  max-width: var(--max-width);
+  background-color: #ffffff;
+  border-radius: var(--border-radius);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+/* ----------------------------------------------------------
+   Display Area
+   ---------------------------------------------------------- */
+.calculator__display {
+  background-color: var(--color-primary-light);
+  padding: calc(var(--spacing) * 1.5) var(--spacing);
+  text-align: right;
+  font-size: var(--font-size-display);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+  overflow-x: auto;
+}
+
+/* ----------------------------------------------------------
+   Button Grid
+   ---------------------------------------------------------- */
+.calculator__keys {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing);
+  padding: var(--spacing);
+  background-color: #fafafa;
+}
+
+/* ----------------------------------------------------------
+   Individual Buttons
+   ---------------------------------------------------------- */
+.calculator__key {
+  background-color: var(--color-button-bg);
+  border: 1px solid var(--color-button-border);
+  border-radius: var(--border-radius);
+  font-size: 1.2rem;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  padding: var(--spacing);
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.05s ease;
+  user-select: none;
+}
+
+/* Hover & Active States */
+.calculator__key:hover {
+  background-color: var(--color-button-hover);
+}
+
+.calculator__key:active {
+  background-color: var(--color-button-active);
+  transform: translateY(1px);
+}
+
+/* Special Buttons (operators, equals, clear) */
+.calculator__key--operator,
+.calculator__key--equals,
+.calculator__key--clear {
+  background-color: var(--color-button-special-bg);
+  color: var(--color-button-special-text);
+  border-color: var(--color-primary-dark);
+}
+
+/* Operator Hover */
+.calculator__key--operator:hover,
+.calculator__key--equals:hover,
+.calculator__key--clear:hover {
+  background-color: var(--color-primary-dark);
+}
+
+/* ----------------------------------------------------------
+   Responsive Adjustments
+   ---------------------------------------------------------- */
+@media (max-width: 480px) {
+  .calculator {
+    margin: var(--spacing);
+  }
+
+  .calculator__display {
+    font-size: 1.5rem;
+    padding: var(--spacing);
+  }
+
+  .calculator__key {
+    font-size: 1rem;
+    padding: calc(var(--spacing) * 0.8);
+  }
+}
+
+/* ----------------------------------------------------------
+   Accessibility Helpers
+   ---------------------------------------------------------- */
+.calculator__key:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
