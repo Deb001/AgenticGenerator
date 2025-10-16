@@ -1,83 +1,67 @@
 import logging
 import os
-
-from flask import Flask, jsonify
-from dotenv import load_dotenv
-
+from flask import Flask
 from src.routes import calculator_bp
 
 
-def _configure_logging() -> None:
-    """Configure the root logger for the application.
+def _load_secret_key() -> str:
+    """Load the Flask secret key from the environment.
 
-    Sets a basic configuration with INFO level and a concise format.
+    Returns:
+        str: The secret key.
+
+    Raises:
+        RuntimeError: If the ``SECRET_KEY`` environment variable is not set.
     """
+    secret_key = os.getenv("SECRET_KEY")
+    if not secret_key:
+        raise RuntimeError(
+            "Missing required environment variable: SECRET_KEY"
+        )
+    return secret_key
+
+
+def _configure_logging() -> None:
+    """Configure the root logger for the application."""
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s %(message)s",
     )
+    # Suppress overly verbose logs from Flask's internal logger in production
+    logging.getLogger("werkzeug").setLevel(logging.WARNING)
 
 
 def create_app() -> Flask:
-    """Create and configure the Flask application.
+    """Create and configure the Flask application instance.
 
-    This function performs the following steps:
-    1. Load environment variables from a `.env` file.
-    2. Initialise the Flask app instance.
-    3. Apply configuration values (e.g., ``SECRET_KEY``).
-    4. Register the calculator blueprint.
-    5. Set up generic JSON error handlers for 404 and 500 responses.
-    6. Configure application‑wide logging.
+    The function performs the following steps:
+    1. Instantiates a Flask app with the current module name.
+    2. Loads configuration values (e.g., ``SECRET_KEY``) from environment
+       variables, applying sensible defaults where appropriate.
+    3. Registers the calculator blueprint under the ``/api`` URL prefix.
+    4. Returns the fully configured Flask app.
 
     Returns:
-        Flask: The configured Flask application instance.
-    """
-    # Load environment variables early so configuration can use them.
-    load_dotenv()
+        Flask: The configured Flask application.
 
-    # Configure logging before any other operation.
+    Raises:
+        RuntimeError: If required environment variables are missing.
+    """
     _configure_logging()
     logger = logging.getLogger(__name__)
-    logger.info("Creating Flask application instance.")
 
+    logger.debug("Instantiating Flask application.")
     app = Flask(__name__)
 
-    # Application configuration.
-    secret_key = os.getenv("SECRET_KEY")
-    if not secret_key:
-        logger.warning("SECRET_KEY not set in environment; using default insecure key.")
-        secret_key = "default-insecure-secret"
-    app.config["SECRET_KEY"] = secret_key
+    # Load essential configuration
+    logger.debug("Loading configuration from environment.")
+    app.config["SECRET_KEY"] = _load_secret_key()
+    app.config["ENV"] = os.getenv("FLASK_ENV", "production")
+    app.config["DEBUG"] = app.config["ENV"] == "development"
 
-    # Register blueprints.
-    app.register_blueprint(calculator_bp)
-    logger.info("Registered calculator blueprint.")
+    # Register blueprints
+    logger.info("Registering calculator blueprint under '/api'.")
+    app.register_blueprint(calculator_bp, url_prefix="/api")
 
-    # Error handlers.
-    @app.errorhandler(404)
-    def handle_not_found(error):
-        """Return JSON response for 404 Not Found errors."""
-        logger.debug("404 Not Found: %s", error)
-        response = jsonify(
-            {
-                "error": "Not Found",
-                "message": "The requested resource could not be found.",
-            }
-        )
-        response.status_code = 404
-        return response
-
-    @app.errorhandler(500)
-    def handle_internal_error(error):
-        """Return JSON response for 500 Internal Server errors."""
-        logger.exception("500 Internal Server Error: %s", error)
-        response = jsonify(
-            {
-                "error": "Internal Server Error",
-                "message": "An unexpected error occurred. Please try again later.",
-            }
-        )
-        response.status_code = 500
-        return response
-
+    logger.info("Flask application created successfully.")
     return app
