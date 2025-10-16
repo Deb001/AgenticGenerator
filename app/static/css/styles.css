@@ -1,0 +1,156 @@
+/* --------------------------------------------------------------
+   Calculator UI Styles
+   --------------------------------------------------------------
+   This stylesheet provides a clean, responsive, and accessible
+   design for the calculator application. It uses CSS custom
+   properties for easy theming (light/dark) and follows best
+   practices such as focus outlines, hover/active states, and
+   mobile‑first layout.
+   -------------------------------------------------------------- */
+
+/* --------------------------- Theme Variables --------------------------- */
+:root {
+    /* Core palette */
+    --bg:               #f5f5f5;          /* Page background */
+    --text:             #333333;          /* Primary text */
+    --display-bg:       #ffffff;          /* Calculator display background */
+    --button-bg:        #e0e0e0;          /* Default button background */
+    --button-hover:     #d5d5d5;          /* Default button hover */
+    --operator-bg:      #ff9500;          /* Operator buttons (÷, ×, –, +) */
+    --operator-hover:   #e08900;          /* Operator hover */
+    --equals-bg:        #34c759;          /* Equals button */
+    --equals-hover:     #28a745;          /* Equals hover */
+    --clear-bg:         #ff3b30;          /* Clear (C) button */
+    --clear-hover:      #e02b20;          /* Clear hover */
+
+    /* Layout & effects */
+    --border-radius:    8px;
+    --shadow:           0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark‑mode overrides – respects the OS preference */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg:               #1e1e1e;
+        --text:             #f5f5f5;
+        --display-bg:       #2c2c2c;
+        --button-bg:        #3a3a3a;
+        --button-hover:     #4a4a4a;
+        /* Operator, equals and clear keep their vivid colors for contrast */
+    }
+}
+
+/* --------------------------- Global Layout --------------------------- */
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont,
+                 "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* --------------------------- Calculator Container --------------------------- */
+.calculator {
+    background: var(--display-bg);
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    width: 320px;               /* Fixed width for desktop */
+    max-width: 100%;            /* Shrink on small screens */
+}
+
+/* --------------------------- Display --------------------------- */
+.display {
+    width: 100%;
+    height: 3rem;
+    background: var(--display-bg);
+    border: 1px solid #ccc;
+    border-radius: var(--border-radius);
+    font-size: 1.5rem;
+    text-align: right;
+    padding: 0.5rem;
+    box-sizing: border-box;
+    margin-bottom: 1rem;
+    overflow-x: auto;           /* Allow long numbers to scroll */
+}
+
+/* --------------------------- Buttons Grid --------------------------- */
+.buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+}
+
+/* --------------------------- Base Button Styles --------------------------- */
+button {
+    font-size: 1.2rem;
+    padding: 0.75rem;
+    border: none;
+    border-radius: var(--border-radius);
+    background: var(--button-bg);
+    color: var(--text);
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.1s ease;
+}
+
+/* Focus indicator – essential for keyboard navigation */
+button:focus {
+    outline: 2px solid var(--operator-bg);
+    outline-offset: 2px;
+}
+
+/* Hover & active feedback */
+button:hover {
+    background: var(--button-hover);
+}
+button:active {
+    transform: scale(0.98);
+}
+
+/* --------------------------- Semantic Button Types --------------------------- */
+button.operator {
+    background: var(--operator-bg);
+    color: #fff;
+}
+button.operator:hover {
+    background: var(--operator-hover);
+}
+
+/* Equals button spans two columns for prominence */
+button.equals {
+    background: var(--equals-bg);
+    color: #fff;
+    grid-column: span 2;
+}
+button.equals:hover {
+    background: var(--equals-hover);
+}
+
+/* Clear (C) button */
+button.clear {
+    background: var(--clear-bg);
+    color: #fff;
+}
+button.clear:hover {
+    background: var(--clear-hover);
+}
+
+/* --------------------------- Responsive Adjustments --------------------------- */
+@media (max-width: 400px) {
+    .calculator {
+        padding: 0.5rem;
+    }
+    .display {
+        height: 2.5rem;
+        font-size: 1.2rem;
+    }
+    button {
+        font-size: 1rem;
+        padding: 0.5rem;
+    }
+}
