@@ -2,20 +2,9 @@ version: '3.8'
 
 services:
   web:
-    # Build the image from the Dockerfile in the repository root
     build: .
-    # Expose Flask's default port 5000 to the host
     ports:
       - "5000:5000"
-    # Load environment variables (e.g., FLASK_APP, FLASK_ENV, SECRET_KEY)
     env_file:
       - .env.example
-    # Restart policy for resilience in production-like environments
     restart: unless-stopped
-    # Optional healthcheck to ensure the container is ready
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/healthz"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 5s
