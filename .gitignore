@@ -1,52 +1,43 @@
-# Node dependencies
-node_modules/
+# Byte-compiled Python files
+__pycache__/
+*.py[cod]
 
-# Build / distribution folders
-/dist/
-build/
-out/
+# Virtual environment
+.venv/
+venv/
+env/
+ENV/
 
-# Environment files (do NOT commit secrets)
+# Environment variables file
 .env
-.env.*          # local or environment-specific overrides (e.g. .env.local, .env.test)
+.env.*
 
-# macOS Finder metadata
-.DS_Store
+# Docker build artifacts
+docker-compose.override.yml
+docker-compose.*.yml
+Dockerfile*
+docker-compose.yml
 
-# Windows thumbnail cache
-Thumbs.db
-
-# Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-*.log
-
-# Test coverage reports
-coverage/
-
-# Temporary files and caches
-tmp/
-.temp/
-.cache/
-parcel-cache/
-.vite/
-.esbuild/
-
-# Editor/IDE settings
+# IDE and editor directories/files
 .vscode/
 .idea/
-*.sublime-workspace
 *.sublime-project
+*.sublime-workspace
 
 # OS generated files
-.DS_Store?
-.AppleDouble
-.LSOverride
-
-# Misc common ignores
 .DS_Store
-*.swp
-*~ 
-# End of file
+Thumbs.db
+
+# Test and coverage reports
+htmlcov/
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+nosetests.xml
+coverage.xml
+
+# Build directories
+build/
+dist/
+*.egg-info/
