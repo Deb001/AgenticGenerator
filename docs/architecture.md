@@ -1,265 +1,207 @@
-# System Architecture Documentation
+# System Architecture Overview
 
-**Document ID:** AI-1  
-**Last Updated:** 2025‑10‑16  
-
----
-
-## Table of Contents
-
-1. [Overview](#overview)  
-2. [High‑Level Component Diagram](#high-level-component-diagram)  
-3. [Component Breakdown](#component-breakdown)  
-   - [Frontend (UI)](#frontend-ui)  
-   - [Backend (API & Evaluation Engine)](#backend-api--evaluation-engine)  
-   - [Docker & Containerisation](#docker--containerisation)  
-   - [CI/CD Pipeline](#cicd-pipeline)  
-4. [Client‑Server Interaction Flow](#client-server-interaction-flow)  
-5. [Safe Evaluation Algorithm](#safe-evaluation-algorithm)  
-6. [Deployment Pipeline Details](#deployment-pipeline-details)  
-7. [Design Decisions & Trade‑offs](#design-decisions--trade-offs)  
-8. [Scalability, Security & Observability](#scalability-security--observability)  
-9. [Future Enhancements](#future-enhancements)  
-10. [References](#references)  
+This document provides a detailed description of the architecture for the **Flask‑based Calculator** application. It covers the **Model‑View‑Controller (MVC)** separation, the **request flow** from the user interface to the API, the **tokenization algorithm** used for parsing arithmetic expressions, and the **deployment topology** for production environments.
 
 ---
 
-## Overview
+## 1. MVC Separation
 
-The project implements a **web‑based arithmetic calculator** with a clean separation between a lightweight Flask API and a static HTML/JS frontend. Users submit arithmetic expressions (e.g., `3 * (4 + 5)`) via the UI; the backend validates, safely evaluates, and returns the result as JSON.
+| Layer | Responsibility | Primary Files | Key Concepts |
+|-------|----------------|---------------|--------------|
+| **Model** | Encapsulates business logic and data manipulation. | `app/calculator.py` | Pure Python functions (`add`, `subtract`, `multiply`, `divide`) that raise domain‑specific exceptions for invalid operations (e.g., division by zero). |
+| **View** | Renders the user interface and presents data to the user. | `templates/index.html`, `static/css/style.css`, `static/js/app.js` | Jinja2 template renders the calculator UI; client‑side JavaScript sends AJAX requests and updates the DOM with results. |
+| **Controller** | Orchestrates request handling, input validation, and response formatting. | `app/routes.py` | Flask view functions (`/`, `/api/calculate`) that validate JSON payloads, invoke model functions, and return JSON responses with appropriate HTTP status codes. |
 
-Key goals:
+The **Flask application factory** in `app/__init__.py` wires the components together:
 
-| Goal                     | Description |
-|--------------------------|-------------|
-| **Safety**               | Prevent arbitrary code execution while evaluating user‑provided expressions. |
-| **Portability**          | Containerised with Docker; runs identically across dev, CI, and production environments. |
-| **Observability**        | Structured logging and health‑check endpoints for easy monitoring. |
-| **Extensibility**        | Modular design enables future operators, authentication, or alternative frontends. |
+def create_app() -> Flask:
+    app = Flask(__name__, instance_relative_config=False)
+    app.config.from_object('app.config.Config')
+    app.register_blueprint(routes.bp)
+    return app
 
----
-
-## High‑Level Component Diagram
-
-graph TD
-    subgraph Frontend
-        UI[HTML / CSS / JS] -->|AJAX POST /api/calculate| API
-    end
-
-    subgraph Backend
-        API[Flask Routes (src/routes.py)] -->|calls| Eval[SafeEval Engine]
-        Eval -->|returns| API
-        API -->|JSON response| UI
-    end
-
-    subgraph Infra
-        Docker[Dockerfile] -->|builds| Image[Docker Image]
-        Image -->|run via| Compose[docker‑compose.yml]
-        Compose -->|exposes| Port[0.0.0.0:5000]
-        CI[GitHub Actions] -->|build & test| Image
-    end
+This keeps the framework configuration separate from business logic, enabling unit testing of the model and controller in isolation.
 
 ---
 
-## Component Breakdown
+## 2. Request Flow (UI → API → Model → Response)
 
-### Frontend (UI)
+sequenceDiagram
+    participant UI as Browser (HTML/JS)
+    participant API as Flask /api/calculate
+    participant Ctrl as routes.calculate()
+    participant Model as calculator.calculate()
+    UI->>API: POST /api/calculate { "expression": "3+5*2" }
+    API->>Ctrl: Validate payload & auth token
+    Ctrl->>Model: calculate("3+5*2")
+    Model->>Model: tokenize → parse → evaluate
+    Model-->>Ctrl: result (or error)
+    Ctrl-->>API: JSON { "result": 13 } / 400 on error
+    API-->>UI: JSON response
 
-| File | Purpose | Key Technologies |
-|------|---------|-------------------|
-| `src/templates/index.html` | Main page with input field, buttons, and result area. | HTML5, ARIA for accessibility |
-| `src/static/css/style.css` | Responsive, mobile‑first styling. | CSS custom properties, BEM naming |
-| `src/static/js/app.js` | Handles user events, performs AJAX POST to `/api/calculate`, updates DOM. | ES6+, `fetch`, async/await |
+1. **User Interaction** – The user enters an arithmetic expression in the UI and clicks *Calculate*.
+2. **AJAX Request** – `static/js/app.js` sends a `POST` request to `/api/calculate` with a JSON body.
+3. **Controller Validation** – The Flask route validates:
+   - Content‑type (`application/json`).
+   - Presence of the `expression` field.
+   - Optional JWT token in the `Authorization` header (future‑proof for auth).
+4. **Model Invocation** – The controller forwards the expression to `calculator.calculate()`.
+5. **Tokenization & Evaluation** – The model tokenizes the string, builds an abstract syntax tree (AST), and evaluates it.
+6. **Response Generation** – The controller returns a JSON payload with the numeric result or a structured error object (`error_code`, `message`).
 
-### Backend (API & Evaluation Engine)
+All errors are logged (see **Logging** section) and translated into HTTP 4xx/5xx responses with a consistent schema:
 
-| File | Purpose | Highlights |
-|------|---------|------------|
-| `src/app.py` | Flask application factory, registers blueprints, loads configuration, defines entry point. | Uses `create_app()` pattern for testability. |
-| `src/routes.py` | `/api/calculate` endpoint: input validation, safe evaluation, error handling, JSON response. | Returns HTTP 400 for malformed input, 422 for unsafe expressions. |
-| **SafeEval Engine** (implemented inside `src/routes.py`) | Parses arithmetic expressions using Python’s `ast` module, permits only `BinOp`, `UnaryOp`, `Num`, `Expression`, and a whitelist of operators (`+ - * / // % **`). | Guarantees no code execution, protects against injection. |
-| `requirements.txt` | Declares Flask and its dependencies. | Pinning to stable versions. |
-
-### Docker & Containerisation
-
-| File | Purpose |
-|------|---------|
-| `Dockerfile` | Multi‑stage build: stage 1 installs dependencies, stage 2 copies source and runs Gunicorn. |
-| `docker-compose.yml` | Orchestrates the web service, maps host port 5000 → container port 5000, injects `.env` variables. |
-
-### CI/CD Pipeline
-
-The repository includes a **GitHub Actions** workflow (not listed in the file tree but referenced) that performs:
-
-1. **Linting** – `flake8` with strict rules.  
-2. **Unit Tests** – `pytest` runs `tests/test_app.py`.  
-3. **Docker Build** – Builds the image, tags with `sha` and `latest`.  
-4. **Security Scan** – `trivy` scans the built image for vulnerabilities.  
-5. **Push** – On `main` branch, pushes the image to the configured container registry.
+{
+  "error": {
+    "code": "INVALID_EXPRESSION",
+    "message": "Unexpected token at position 4."
+  }
+}
 
 ---
 
-## Client‑Server Interaction Flow
+## 3. Tokenization Algorithm
 
-1. **Page Load** – Browser requests `GET /` → Flask serves `index.html`.  
-2. **User Input** – User types an arithmetic expression and clicks **Calculate**.  
-3. **AJAX Request** – `app.js` sends a `POST` request to `/api/calculate` with JSON payload:  
+The calculator supports the following grammar:
 
-      { "expression": "3 * (4 + 5)" }
-   
-4. **Request Validation** – `routes.py` checks:
-   - Content‑type is `application/json`.
-   - `expression` is a non‑empty string, length ≤ 200 characters.
-5. **Safe Evaluation** – The expression is parsed into an AST, validated against the whitelist, and evaluated recursively.  
-6. **Response** – On success:  
+expression   ::= term ((‘+’ | ‘-’) term)*
+term         ::= factor ((‘*’ | ‘/’) factor)*
+factor       ::= NUMBER | '(' expression ')'
+NUMBER       ::= DIGIT+ ('.' DIGIT+)?
 
-      { "result": 27 }
-   
-   On error: appropriate HTTP status (400/422) with `{ "error": "description" }`.  
-7. **UI Update** – `app.js` displays the result or error message.
+### 3.1 Token Types
 
----
+| Token | Regex | Description |
+|-------|-------|-------------|
+| `NUMBER` | `\d+(\.\d+)?` | Integer or floating‑point literal |
+| `PLUS`   | `\+` | Addition operator |
+| `MINUS`  | `-` | Subtraction operator |
+| `MULT`   | `\*` | Multiplication operator |
+| `DIV`    | `/` | Division operator |
+| `LPAREN` | `\(` | Left parenthesis |
+| `RPAREN` | `\)` | Right parenthesis |
+| `WHITESPACE` | `\s+` | Ignored during tokenization |
 
-## Safe Evaluation Algorithm
+### 3.2 Implementation Highlights
 
-The algorithm is deliberately **deterministic** and **side‑effect free**.
+* **Deterministic Finite Automaton (DFA)** – The tokenizer iterates over the input string once, matching the longest possible token at each position.  
+* **Error Reporting** – When an unknown character is encountered, the tokenizer raises `TokenizationError` with the offending character and its index, enabling precise UI feedback.  
+* **Immutable Token Objects** – Tokens are represented by a `namedtuple` (`Token(type, value, position)`) to guarantee thread‑safety and avoid accidental mutation.
 
-def _evaluate(node: ast.AST) -> Union[int, float]:
-    """Recursively evaluate a whitelisted AST node."""
-    if isinstance(node, ast.Num):                     # Python ≤3.7
-        return node.n
-    if isinstance(node, ast.Constant):               # Python ≥3.8
-        if isinstance(node.value, (int, float)):
-            return node.value
-        raise ValueError("Only numeric constants are allowed")
-    if isinstance(node, ast.BinOp):
-        left = _evaluate(node.left)
-        right = _evaluate(node.right)
-        op_type = type(node.op)
-        if op_type is ast.Add:
-            return left + right
-        if op_type is ast.Sub:
-            return left - right
-        if op_type is ast.Mult:
-            return left * right
-        if op_type is ast.Div:
-            return left / right
-        if op_type is ast.FloorDiv:
-            return left // right
-        if op_type is ast.Mod:
-            return left % right
-        if op_type is ast.Pow:
-            return left ** right
-        raise ValueError(f"Unsupported binary operator {op_type.__name__}")
-    if isinstance(node, ast.UnaryOp):
-        operand = _evaluate(node.operand)
-        if isinstance(node.op, ast.UAdd):
-            return +operand
-        if isinstance(node.op, ast.USub):
-            return -operand
-        raise ValueError(f"Unsupported unary operator {type(node.op).__name__}")
-    raise ValueError(f"Disallowed AST node {type(node).__name__}")
+Token = namedtuple('Token', ['type', 'value', 'position'])
 
-**Key safety measures**
+### 3.3 Example
 
-| Measure | Rationale |
-|---------|-----------|
-| **AST Whitelisting** | Only arithmetic nodes are allowed; function calls, attribute access, and comprehensions are rejected. |
-| **Length & Type Checks** | Prevents extremely large payloads and non‑string inputs. |
-| **Exception Mapping** | All internal `ValueError`s are translated to HTTP 422 with a generic message to avoid leaking implementation details. |
-| **No `eval`/`exec`** | Eliminates the risk of arbitrary code execution. |
+Input: `"12.5 * (3 - 7) / 2"`
+
+Token stream:
+
+[NUMBER(12.5,0), MULT(*,5), LPAREN((,7), NUMBER(3,8), MINUS(-,10),
+ NUMBER(7,12), RPAREN()), DIV(/,14), NUMBER(2,16)]
+
+The parser consumes this stream using a **recursive‑descent** approach that respects operator precedence and associativity, constructing an AST that the evaluator walks to produce the final result.
 
 ---
 
-## Deployment Pipeline Details
+## 4. Deployment Topology
 
-1. **Local Development**  
-      docker compose up --build
-      - Hot‑reload is disabled for production parity; use `FLASK_ENV=development` to enable debug mode locally.
+The application is containerized using Docker and orchestrated with Docker‑Compose. The topology is deliberately simple for a single‑service micro‑application but includes best‑practice patterns for scalability and observability.
 
-2. **CI Build (GitHub Actions)**  
+┌─────────────────────┐
+│   Client Browser    │
+│ (HTML/JS over HTTPS)│
+└───────▲───────▲─────┘
+        │       │
+        │       │
+   HTTP │   WebSocket (future)
+        │       │
+┌───────▼───────▼─────┐
+│   Nginx Reverse    │
+│   Proxy (TLS Term)│
+└───────▲───────▲─────┘
+        │       │
+        │       │
+┌───────▼───────▼─────┐
+│   Flask Container  │
+│  (Gunicorn workers)│
+└───────▲───────▲─────┘
+        │       │
+        │       │
+   Logs│   Metrics│
+        │       │
+┌───────▼───────▼─────┐
+│   Centralized Log   │
+│   Aggregator (ELK) │
+└─────────────────────┘
 
-      name: CI
-   on: [push, pull_request]
-   jobs:
-     build-test:
-       runs-on: ubuntu-latest
-       steps:
-         - uses: actions/checkout@v3
-         - name: Set up Python
-           uses: actions/setup-python@v5
-           with:
-             python-version: "3.11"
-         - name: Install dependencies
-           run: pip install -r requirements.txt
-         - name: Lint
-           run: flake8 src tests
-         - name: Test
-           run: pytest --cov=src
-         - name: Build Docker image
-           run: |
-             docker build -t calculator:${{ github.sha }} .
-         - name: Scan image
-           uses: aquasecurity/trivy-action@master
-           with:
-             image-ref: calculator:${{ github.sha }}
-   
-3. **Production Release**  
-   - Image is pushed to a private registry (`registry.example.com/calculator`).  
-   - Deployment uses `docker-compose.yml` with `restart: unless-stopped` and health‑check:
+### 4.1 Components
 
-      healthcheck:
-     test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
-     interval: 30s
-     timeout: 5s
-     retries: 3
-   
-4. **Monitoring**  
-   - Logs are emitted in JSON format (`logging.basicConfig(..., format='%(asctime)s %(levelname)s %(message)s')`).  
-   - Exported to the host’s stdout, allowing Docker logging drivers (e.g., `json-file`, `fluentd`) to collect them.
+| Component | Role | Configuration Highlights |
+|-----------|------|--------------------------|
+| **Nginx** (optional) | TLS termination, HTTP/2, static asset caching | `docker-compose.yml` can mount a custom `nginx.conf`. |
+| **Flask (Gunicorn)** | Application server with multiple worker processes (`--workers 3`). | `Dockerfile` builds a slim Python image; `ENTRYPOINT` runs `gunicorn -b 0.0.0.0:5000 app:app`. |
+| **Docker Compose** | Orchestrates the Flask container, binds port `5000`, injects `.env` variables. | `restart: unless-stopped`, `depends_on` ensures proper startup order. |
+| **Logging** | Structured JSON logs emitted via Python `logging` module. | Logs are sent to `stdout` and captured by Docker; can be forwarded to ELK/Prometheus. |
+| **Healthchecks** | Liveness and readiness probes using `/health` endpoint (future extension). | Defined in `docker-compose.yml` with `healthcheck` block. |
 
----
+### 4.2 Scaling Strategy
 
-## Design Decisions & Trade‑offs
-
-| Decision | Reasoning | Alternatives Considered |
-|----------|-----------|--------------------------|
-| **Flask + Gunicorn** | Minimal footprint, easy to containerise, mature ecosystem. | FastAPI (more async support) – rejected due to project scope. |
-| **AST‑based evaluation** | Guarantees safety without external sandbox dependencies. | `numexpr` – faster but still allows function calls; not safe enough. |
-| **Single‑page static UI** | Simplicity; no need for a SPA framework. | React/Vue – would increase bundle size and build complexity. |
-| **Docker multi‑stage** | Keeps final image small (~30 MB). | Single‑stage – larger image, slower pull times. |
-| **GitHub Actions** | Integrated with repository, free tier sufficient. | Jenkins/CircleCI – added operational overhead. |
+* **Horizontal Scaling** – Increase the number of Flask containers behind an external load balancer (e.g., AWS ALB, Nginx upstream). The stateless nature of the calculator ensures perfect scalability.
+* **Worker Autoscaling** – Adjust Gunicorn worker count based on CPU/memory limits defined in the container runtime.
+* **Zero‑Downtime Deployments** – Use Docker rolling updates (`docker service update --rollback`) or Kubernetes Deployments for blue‑green releases.
 
 ---
 
-## Scalability, Security & Observability
+## 5. Logging & Observability
 
-* **Scalability** – Stateless Flask app; horizontal scaling achieved by running multiple containers behind a reverse proxy (e.g., Nginx) or Kubernetes Service.  
-* **Rate Limiting** – Not yet implemented; can be added via Flask‑Limiter or API gateway.  
-* **Input Sanitisation** – All user‑provided data is JSON‑decoded and validated before processing. No direct HTML rendering of user input, preventing XSS.  
-* **Secrets Management** – Sensitive values (e.g., `SECRET_KEY`) are injected via environment variables; `.env.example` provides placeholders only.  
-* **Logging** – Structured JSON logs include request ID (generated per request) for traceability.  
-* **Health Endpoint** – `GET /health` returns `200 OK` with `{ "status": "healthy" }`.  
+The application uses the standard library `logging` module, configured in `app/__init__.py`:
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s %(name)s %(message)s',
+    handlers=[logging.StreamHandler()]
+)
+
+* **DEBUG** – Tokenization and parsing steps (enabled only in development via `FLASK_ENV=development`).  
+* **INFO** – Successful request processing, including request ID and user IP.  
+* **WARNING** – Recoverable issues such as malformed but parsable expressions.  
+* **ERROR** – Exceptions raised during calculation (e.g., division by zero).  
+* **CRITICAL** – Unexpected failures that cause the worker to terminate.
+
+All logs are emitted as **JSON** when `LOG_FORMAT=json` environment variable is set, facilitating ingestion by log aggregation pipelines.
 
 ---
 
-## Future Enhancements
+## 6. Security Considerations
 
-1. **Authentication** – JWT‑based auth to restrict API usage.  
-2. **Extended Operators** – Support for scientific functions (`sin`, `log`) via a safe math‑module whitelist.  
-3. **Rate Limiting & Throttling** – Prevent abuse with per‑IP limits.  
-4. **Kubernetes Deployment** – Helm chart for production clusters, with autoscaling based on CPU/memory.  
-5. **Observability Stack** – Export logs to Loki, metrics to Prometheus, and traces via OpenTelemetry.  
+| Concern | Mitigation |
+|---------|------------|
+| **Input Validation** | Strict tokenization prevents code injection; only numeric literals and arithmetic operators are accepted. |
+| **Cross‑Site Scripting (XSS)** | UI sanitizes user‑generated content; server never reflects raw input in HTML responses. |
+| **Transport Security** | Recommended deployment behind TLS‑terminating reverse proxy (HTTPS). |
+| **Authentication** | Blueprint ready for JWT validation (`Authorization: Bearer <token>`). |
+| **Secret Management** | No secrets are hard‑coded; configuration values (e.g., `SECRET_KEY`) are loaded from environment variables or `config/default.yaml`. |
 
 ---
 
-## References
+## 7. Extensibility Roadmap
 
-- **Flask Documentation** – https://flask.palletsprojects.com/  
-- **Python `ast` Module** – https://docs.python.org/3/library/ast.html  
-- **Docker Best Practices** – https://docs.docker.com/develop/develop-images/dockerfile_best-practices/  
-- **GitHub Actions Workflow Syntax** – https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions  
+| Feature | Impact on Architecture |
+|---------|------------------------|
+| **Scientific Functions** (sin, cos, log) | Extend the tokenizer with new token types and update the parser/evaluator accordingly. |
+| **Expression History** | Add a persistence layer (e.g., PostgreSQL) and introduce a Repository pattern in the Model. |
+| **User Authentication** | Implement JWT verification in the controller; protect routes with a Flask `@login_required` decorator. |
+| **WebSocket API** | Introduce a separate Blueprint for real‑time calculation streams; keep existing HTTP API unchanged. |
 
----  
+---
 
-*End of Architecture Document*
+## 8. References
+
+* **Flask Application Factory Pattern** – https://flask.palletsprojects.com/en/latest/patterns/appfactories/
+* **Gunicorn Worker Types** – https://docs.gunicorn.org/en/latest/design.html#worker-types
+* **Docker Best Practices** – https://docs.docker.com/develop/develop-images/dockerfile_best-practices/
+* **Mermaid Diagram Syntax** – https://mermaid.js.org/
+
+--- 
+
+*Document version:* **1.0** – generated on **2025‑10‑16**. Updates should be reflected in the project’s `CHANGELOG.md`.
