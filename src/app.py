@@ -1,67 +1,93 @@
-import logging
 import os
-from flask import Flask
-from src.routes import calculator_bp
+from typing import Any, Dict
+
+from flask import Flask, jsonify, render_template, request
+
+from config import Config
 
 
-def _load_secret_key() -> str:
-    """Load the Flask secret key from the environment.
+def calculate(request_json: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Validate the incoming JSON payload, perform the arithmetic operation,
+    and return a dictionary containing either the result or an error message.
+
+    Expected keys in ``request_json``:
+        - operand1: int or float
+        - operand2: int or float
+        - operator: one of '+', '-', '*', '/'
 
     Returns:
-        str: The secret key.
-
-    Raises:
-        RuntimeError: If the ``SECRET_KEY`` environment variable is not set.
+        dict: {"result": <value>} on success or {"error": <message>} on failure.
     """
-    secret_key = os.getenv("SECRET_KEY")
-    if not secret_key:
-        raise RuntimeError(
-            "Missing required environment variable: SECRET_KEY"
-        )
-    return secret_key
+    required_keys = {"operand1", "operand2", "operator"}
+    missing = required_keys - request_json.keys()
+    if missing:
+        return {"error": f"Missing field(s): {', '.join(sorted(missing))}"}
 
+    operand1 = request_json["operand1"]
+    operand2 = request_json["operand2"]
+    operator = request_json["operator"]
 
-def _configure_logging() -> None:
-    """Configure the root logger for the application."""
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s %(levelname)s %(name)s %(message)s",
-    )
-    # Suppress overly verbose logs from Flask's internal logger in production
-    logging.getLogger("werkzeug").setLevel(logging.WARNING)
+    # Validate operand types
+    if not isinstance(operand1, (int, float)):
+        return {"error": "operand1 must be a numeric type"}
+    if not isinstance(operand2, (int, float)):
+        return {"error": "operand2 must be a numeric type"}
+
+    # Validate operator
+    if operator not in {"+", "-", "*", "/"}:
+        return {"error": f"Unsupported operator '{operator}'. Supported operators are +, -, *, /"}
+
+    try:
+        if operator == "+":
+            result = operand1 + operand2
+        elif operator == "-":
+            result = operand1 - operand2
+        elif operator == "*":
+            result = operand1 * operand2
+        elif operator == "/":
+            result = operand1 / operand2  # May raise ZeroDivisionError
+        else:
+            # This branch is theoretically unreachable due to prior validation
+            return {"error": "Invalid operator"}
+    except ZeroDivisionError:
+        return {"error": "Division by zero is not allowed"}
+
+    return {"result": result}
 
 
 def create_app() -> Flask:
-    """Create and configure the Flask application instance.
-
-    The function performs the following steps:
-    1. Instantiates a Flask app with the current module name.
-    2. Loads configuration values (e.g., ``SECRET_KEY``) from environment
-       variables, applying sensible defaults where appropriate.
-    3. Registers the calculator blueprint under the ``/api`` URL prefix.
-    4. Returns the fully configured Flask app.
-
-    Returns:
-        Flask: The configured Flask application.
-
-    Raises:
-        RuntimeError: If required environment variables are missing.
     """
-    _configure_logging()
-    logger = logging.getLogger(__name__)
+    Application factory that creates and configures the Flask app.
+    """
+    app = Flask(
+        __name__,
+        static_folder=os.path.join(os.path.dirname(__file__), "static"),
+        template_folder=os.path.join(os.path.dirname(__file__), "templates"),
+    )
+    app.config.from_object(Config)
 
-    logger.debug("Instantiating Flask application.")
-    app = Flask(__name__)
+    @app.route("/", methods=["GET"])
+    def index():
+        return render_template("index.html")
 
-    # Load essential configuration
-    logger.debug("Loading configuration from environment.")
-    app.config["SECRET_KEY"] = _load_secret_key()
-    app.config["ENV"] = os.getenv("FLASK_ENV", "production")
-    app.config["DEBUG"] = app.config["ENV"] == "development"
+    @app.route("/api/calculate", methods=["POST"])
+    def api_calculate():
+        if not request.is_json:
+            return jsonify({"error": "Request must be in JSON format"}), 400
 
-    # Register blueprints
-    logger.info("Registering calculator blueprint under '/api'.")
-    app.register_blueprint(calculator_bp, url_prefix="/api")
+        payload = request.get_json()
+        response = calculate(payload)
 
-    logger.info("Flask application created successfully.")
+        if "error" in response:
+            return jsonify(response), 400
+        return jsonify(response), 200
+
     return app
+
+
+# When run directly, start the development server.
+if __name__ == "__main__":
+    application = create_app()
+    # Default to host/port from environment or Flask defaults.
+    application.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)), debug=application.config.get("DEBUG", False))
