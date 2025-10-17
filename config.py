@@ -1,89 +1,37 @@
-"""Configuration module for the Flask application.
-
-This module loads environment variables from a `.env` file (if present) and
-provides a `Config` class with sensible defaults for common Flask settings.
-"""
-
-import logging
 import os
-from typing import Final
+from typing import Dict
 
 from dotenv import load_dotenv
 
-# Load environment variables from a .env file located in the project root.
-# If the file does not exist, `load_dotenv` silently does nothing.
-load_dotenv()
-
-# Configure module‑level logger.
-logger = logging.getLogger(__name__)
-if not logger.handlers:
-    # Prevent adding multiple handlers if the application configures logging elsewhere.
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter(
-        fmt="%(asctime)s %(levelname)s %(name)s: %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-    logger.setLevel(logging.INFO)
-
-
-class Config:
-    """Central configuration holder for Flask.
-
-    Attributes:
-        FLASK_ENV (str): The Flask environment (e.g., ``development`` or ``production``).
-        SECRET_KEY (str): Secret key used by Flask for session signing and CSRF protection.
-        DEBUG (bool): Flag indicating whether Flask should run in debug mode.
+def load_config() -> Dict[str, str]:
     """
+    Load environment variables from a .env file (if present) and construct a
+    configuration dictionary.
 
-    # Class attributes are defined as type‑annotated constants.
-    FLASK_ENV: Final[str] = os.getenv("FLASK_ENV", "development")
-    SECRET_KEY: Final[str] = os.getenv(
-        "SECRET_KEY", os.urandom(24).hex()
-    )  # Generate a random key if none provided.
-    DEBUG: Final[bool] = (
-        os.getenv("DEBUG", "True" if FLASK_ENV == "development" else "False")
-        .lower()
-        .strip()
-        in {"true", "1", "yes"}
-    )
+    Returns:
+        dict: Mapping of configuration keys to their string values.
+    """
+    # Populate os.environ from a .env file located in the project root.
+    # `load_dotenv` silently ignores missing files, which is acceptable.
+    load_dotenv()
 
-    def __init__(self) -> None:
-        """Prevent instantiation; this class is intended to be used via its attributes."""
-        raise TypeError("Config is a static class and cannot be instantiated.")
+    # Default configuration values.
+    defaults = {
+        "FLASK_ENV": "production",
+        # Generate a deterministic fallback secret if none is provided.
+        # Using 32 random bytes encoded as hex gives a 64‑character string.
+        "SECRET_KEY": os.getenv("SECRET_KEY") or os.urandom(32).hex(),
+    }
 
-    @classmethod
-    def as_dict(cls) -> dict:
-        """Return the configuration as a dictionary suitable for Flask's ``app.config``.
+    # Override defaults with any values explicitly set in the environment.
+    config = {
+        key: os.getenv(key, default)
+        for key, default in defaults.items()
+    }
 
-        Returns:
-            dict: Mapping of configuration keys to their values.
-        """
-        config_dict = {
-            "FLASK_ENV": cls.FLASK_ENV,
-            "SECRET_KEY": cls.SECRET_KEY,
-            "DEBUG": cls.DEBUG,
-        }
-        logger.debug("Generated configuration dictionary: %s", config_dict)
-        return config_dict
+    return config
 
-    @classmethod
-    def reload(cls) -> None:
-        """Reload environment variables and update class attributes.
+# Export a module‑level configuration dictionary for convenient import elsewhere.
+CONFIG: Dict[str, str] = load_config()
 
-        This method re‑reads the `.env` file and updates the configuration
-        values. It is useful in testing scenarios where environment variables
-        may change between test runs.
-        """
-        load_dotenv(override=True)
-        # Update class attributes dynamically.
-        cls.FLASK_ENV = os.getenv("FLASK_ENV", "development")
-        cls.SECRET_KEY = os.getenv("SECRET_KEY", os.urandom(24).hex())
-        cls.DEBUG = (
-            os.getenv("DEBUG", "True" if cls.FLASK_ENV == "development" else "False")
-            .lower()
-            .strip()
-            in {"true", "1", "yes"}
-        )
-        logger.info("Configuration reloaded: FLASK_ENV=%s, DEBUG=%s", cls.FLASK_ENV, cls.DEBUG)
+__all__ = ["CONFIG", "load_config"]
