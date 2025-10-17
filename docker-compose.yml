@@ -1,10 +1,38 @@
-version: '3.8'
+# docker-compose.yml
+# -------------------------------------------------
+# Orchestrates the Flask web application.
+# -------------------------------------------------
+version: "3.9"  # Use the latest stable version compatible with Docker Engine
 
 services:
   web:
-    build: .
+    # Build the image from the Dockerfile in the repository root
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    # Expose Flask's default port 5000 to the host
     ports:
-      - "8000:8000"
+      - "5000:5000"
+
+    # Load environment variables from a .env file (ignored by VCS)
     env_file:
-      - .env.example
+      - .env
+
+    # Ensure the container restarts on failure (useful in production)
     restart: unless-stopped
+
+    # Optional: limit resources for stability in shared environments
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: "0.5"
+    #       memory: "512M"
+
+    # Healthcheck to verify the service is up
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
