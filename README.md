@@ -1,181 +1,136 @@
 # Flask Calculator API
 
-A lightweight Flask application that provides a RESTful API for evaluating arithmetic expressions. The project includes a simple web UI, Docker support, and a comprehensive test suite.
-
----
+A lightweight web application that provides a safe arithmetic expression evaluator via a Flask REST API and a responsive web UI. The project demonstrates clean architecture, Docker‑based deployment, and comprehensive testing.
 
 ## Table of Contents
 
 - [Features](#features)
 - [Prerequisites](#prerequisites)
-- [Setup (Local Development)](#setup-local-development)
-- [Docker Setup](#docker-setup)
+- [Installation](#installation)
 - [Running the Application](#running-the-application)
-- [API Documentation](#api-documentation)
+  - [Locally (development server)](#locally-development-server)
+  - [Docker Compose (production‑like)](#docker-compose-production-like)
+- [API Usage](#api-usage)
+- [Web UI](#web-ui)
 - [Testing](#testing)
 - [Contribution Guidelines](#contribution-guidelines)
 - [License](#license)
-- [Contact](#contact)
-
----
 
 ## Features
 
-- **REST API**: `/api/calculate` endpoint that evaluates arithmetic expressions safely.
-- **Web UI**: Interactive calculator built with HTML/CSS/JavaScript.
-- **Dockerized**: Easy containerized deployment.
-- **Environment Configuration**: `.env` support for secret keys and Flask environment.
-- **Automated Tests**: Unit and integration tests with `pytest`.
-- **Extensible Architecture**: Clear separation of concerns (config, routes, templates, static assets).
-
----
+- **Safe expression evaluation** – parses and evaluates arithmetic expressions without using `eval`.
+- **RESTful API** – `POST /api/evaluate` returns JSON with the result or error details.
+- **Responsive UI** – a single‑page calculator built with HTML, CSS, and vanilla JavaScript.
+- **Docker ready** – multi‑stage Dockerfile and `docker‑compose.yml` for easy deployment.
+- **Configuration via environment variables** – managed by `python-dotenv`.
+- **Full test suite** – pytest tests covering normal and edge cases.
 
 ## Prerequisites
 
-| Tool | Minimum Version |
-|------|-----------------|
-| Python | 3.9 |
-| pip | 21.0 |
-| Docker | 20.10 |
-| Docker Compose | 2.0 |
-| Git | 2.20 |
+- Python **3.9+**
+- [pip](https://pip.pypa.io/en/stable/installation/)
+- (Optional) Docker & Docker Compose for containerised execution
 
----
+## Installation
 
-## Setup (Local Development)
+1. Clone the repository  
 
-1. **Clone the repository**
-
-      git clone https://github.com/yourusername/flask-calculator-api.git
-   cd flask-calculator-api
+      git clone https://github.com/yourusername/flask-calculator.git
+   cd flask-calculator
    
-2. **Create a virtual environment**
+2. Create a virtual environment and activate it  
 
-      python -m venv venv
-   source venv/bin/activate   # On Windows: venv\Scripts\activate
+      python -m venv .venv
+   source .venv/bin/activate   # On Windows: .venv\Scripts\activate
    
-3. **Install dependencies**
+3. Install Python dependencies  
 
       pip install -r requirements.txt
    
-4. **Configure environment variables**
+4. Set up environment variables  
 
       cp .env.example .env
-   # Edit .env if you need to change defaults
+   # Edit .env if you need custom values (e.g., FLASK_ENV, SECRET_KEY)
    
-5. **Run database migrations (if applicable)**  
-   *No database is required for this project.*
-
-6. **Start the development server**
-
-      flask --app src/app.py run --debug
-   
-   The API will be available at `http://127.0.0.1:5000` and the UI at `http://127.0.0.1:5000/`.
-
----
-
-## Docker Setup
-
-### Build the image
-
-docker compose build
-
-### Run the containers
-
-docker compose up -d
-
-The application will be reachable at `http://localhost:5000`.
-
-### Stop and remove containers
-
-docker compose down
-
----
-
 ## Running the Application
 
-### Using Flask CLI (local)
+### Locally (development server)
 
-export FLASK_APP=src/app.py
-export FLASK_ENV=development   # or production
-flask run
+flask --app app run --debug
 
-### Using Docker (production)
+The API will be available at `http://127.0.0.1:5000/api/evaluate` and the UI at `http://127.0.0.1:5000/`.
 
-docker compose up -d
+### Docker Compose (production‑like)
 
-### Accessing the UI
+docker compose up --build
 
-Open a browser and navigate to `http://localhost:5000`. The calculator UI loads automatically.
+The service will be reachable at `http://localhost:8000/` (Gunicorn behind Nginx if configured).
 
-### API Endpoint
+## API Usage
 
-- **POST** `/api/calculate`
-  - **Request JSON**
+**Endpoint**
 
-        {
-      "expression": "2 * (3 + 4) / 5"
-    }
-    
-  - **Success Response (200)**
+POST /api/evaluate
+Content-Type: application/json
 
-        {
-      "result": 2.8
-    }
-    
-  - **Error Response (400)**
+**Request Body**
 
-        {
-      "error": "Invalid expression"
-    }
-    
-Full API specification is available in [`docs/api.md`](docs/api.md).
+{
+  "expression": "2 * (3 + 4) / 5"
+}
 
----
+**Successful Response**
+
+{
+  "result": 2.8,
+  "error": null
+}
+
+**Error Response**
+
+{
+  "result": null,
+  "error": "Invalid characters in expression."
+}
+
+You can test the endpoint with `curl`:
+
+curl -X POST http://127.0.0.1:5000/api/evaluate \
+     -H "Content-Type: application/json" \
+     -d '{"expression": "10 / (2 + 3)"}'
+
+## Web UI
+
+Open `http://127.0.0.1:5000/` in a browser. The page provides:
+
+- An input field for arithmetic expressions.
+- A “Calculate” button that sends the expression to the API via AJAX.
+- Real‑time display of the result or error message.
+
+The UI is fully responsive and works on mobile devices.
 
 ## Testing
 
-Run the test suite with `pytest`:
+Run the test suite with pytest:
 
 pytest -v
 
-The tests cover:
+All tests are located in the `tests/` directory and cover:
 
-- Route existence and status codes
-- Expression evaluation correctness
-- Error handling for malformed input
-- UI static file serving
-
----
+- Correct evaluation of valid expressions.
+- Proper handling of division by zero, malformed input, and disallowed characters.
+- Edge cases such as large numbers and floating‑point precision.
 
 ## Contribution Guidelines
 
-1. **Fork the repository** and create a new branch for your feature or bug fix.
+1. **Fork the repository** and create a new branch for your feature or bug fix.  
+2. **Write tests** for any new functionality or bug fix.  
+3. **Follow PEP 8** (Python) and the existing code style.  
+4. **Update documentation** (README, docstrings) as needed.  
+5. Submit a **pull request** with a clear description of your changes.
 
-      git checkout -b feature/awesome-feature
-   
-2. **Write tests** for any new functionality.
-
-3. **Follow code style**:  
-   - Use **PEP 8** for Python files.  
-   - Run `flake8` and `black` before committing.
-
-4. **Update documentation** if you add or modify public interfaces.
-
-5. **Submit a Pull Request** with a clear description of changes and reference any related issue (e.g., `Closes #AI-1`).
-
----
+Please ensure that all tests pass before opening a PR.
 
 ## License
 
-This project is licensed under the **MIT License** – see the [`LICENSE`](LICENSE) file for details.
-
----
-
-## Contact
-
-- **Author**: Your Name  
-- **Email**: youremail@example.com  
-- **GitHub**: [yourusername](https://github.com/yourusername)
-
-Feel free to open an issue or submit a pull request for any improvements or bug reports.
+This project is licensed under the MIT License – see the `LICENSE` file for details.
