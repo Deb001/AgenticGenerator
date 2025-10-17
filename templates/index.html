@@ -1,34 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Web Calculator</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Calculator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-  <main class="calculator">
-    <h1>Calculator</h1>
-    <form id="calc-form" autocomplete="off" novalidate>
-      <label for="expression">Expression</label>
-      <input
-        type="text"
-        id="expression"
-        name="expression"
-        placeholder="e.g., 2+2*3"
-        required
-        aria-required="true"
-      />
-      <div class="buttons">
-        <button type="submit" id="calculate-btn">Calculate</button>
-        <button type="reset" id="clear-btn">Clear</button>
-      </div>
-    </form>
-
-    <div id="result" class="result" aria-live="polite"></div>
-    <div id="error" class="error" aria-live="assertive"></div>
-  </main>
-
-  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <div class="container">
+        <h1>Calculator</h1>
+        <form id="calc-form" autocomplete="off">
+            <input type="text" id="expression" name="expression" placeholder="Enter expression, e.g., 2+3*4" required>
+            <button type="submit">Calculate</button>
+        </form>
+        <div id="result"></div>
+    </div>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>
