@@ -8,6 +8,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-ENV FLASK_APP=src/app.py
+ENV FLASK_APP=app.py
 
-CMD ["gunicorn", "src.app:create_app()", "-b", "0.0.0.0:8000"]
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:8000", "app:app"]
