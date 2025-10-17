@@ -1,46 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Basic meta tags -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simple Calculator</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <!-- Stylesheet -->
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+    <!-- Prevent caching of the page (useful during development) -->
+    <meta http-equiv="Cache-Control" content="no-store" />
 </head>
 <body>
     <main class="calculator">
-        <h1>Calculator</h1>
-        <form id="calc-form" onsubmit="event.preventDefault(); submitCalculation();">
-            <div class="input-group">
-                <label for="operand1">First number</label>
-                <input type="number" id="operand1" name="operand1" required step="any">
+        <h1>Simple Calculator</h1>
+
+        <!-- Calculator form -->
+        <form id="calc-form" novalidate>
+            <div class="form-group">
+                <label for="operand-a">First number</label>
+                <input type="number"
+                       id="operand-a"
+                       name="operand_a"
+                       class="form-control"
+                       placeholder="e.g., 12"
+                       required
+                       step="any"
+                       aria-required="true">
             </div>
 
-            <div class="input-group">
+            <div class="form-group">
                 <label for="operator">Operator</label>
-                <select id="operator" name="operator" required>
-                    <option value="+">+</option>
-                    <option value="-">−</option>
-                    <option value="*">×</option>
-                    <option value="/">÷</option>
+                <select id="operator"
+                        name="operator"
+                        class="form-control"
+                        required
+                        aria-required="true">
+                    <option value="add">+</option>
+                    <option value="subtract">−</option>
+                    <option value="multiply">×</option>
+                    <option value="divide">÷</option>
                 </select>
             </div>
 
-            <div class="input-group">
-                <label for="operand2">Second number</label>
-                <input type="number" id="operand2" name="operand2" required step="any">
+            <div class="form-group">
+                <label for="operand-b">Second number</label>
+                <input type="number"
+                       id="operand-b"
+                       name="operand_b"
+                       class="form-control"
+                       placeholder="e.g., 5"
+                       required
+                       step="any"
+                       aria-required="true">
             </div>
 
-            <button type="submit" id="calc-submit">Calculate</button>
+            <button type="submit" class="btn-primary">Calculate</button>
         </form>
 
-        <section id="result-section" class="hidden">
-            <h2>Result</h2>
-            <p id="result-value"></p>
+        <!-- Result placeholder -->
+        <section id="result" aria-live="polite" class="result">
+            <!-- Result will be injected here by app.js -->
         </section>
-
-        <div id="error" class="error-message"></div>
     </main>
 
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <!-- JavaScript bundle -->
+    <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
 </body>
 </html>
