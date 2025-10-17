@@ -1,29 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Arithmetic Calculator</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Calculator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-  <main class="calculator">
-    <h1>Arithmetic Calculator</h1>
-    <form id="calc-form" aria-label="Calculator form" onsubmit="return false;">
-      <label for="expression">Expression:</label>
-      <input
-        type="text"
-        id="expression"
-        name="expression"
-        placeholder="e.g., 2+3*4"
-        required
-        autocomplete="off"
-        aria-required="true"
-      />
-      <button type="submit" id="calculate-btn">Calculate</button>
-    </form>
-    <div id="result" role="status" aria-live="polite"></div>
-  </main>
-  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <main class="calculator">
+        <h1>Calculator</h1>
+        <form id="calc-form" onsubmit="event.preventDefault(); submitCalculation();">
+            <div class="input-group">
+                <label for="operand1">First number</label>
+                <input type="number" id="operand1" name="operand1" required step="any">
+            </div>
+
+            <div class="input-group">
+                <label for="operator">Operator</label>
+                <select id="operator" name="operator" required>
+                    <option value="+">+</option>
+                    <option value="-">−</option>
+                    <option value="*">×</option>
+                    <option value="/">÷</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label for="operand2">Second number</label>
+                <input type="number" id="operand2" name="operand2" required step="any">
+            </div>
+
+            <button type="submit" id="calc-submit">Calculate</button>
+        </form>
+
+        <section id="result-section" class="hidden">
+            <h2>Result</h2>
+            <p id="result-value"></p>
+        </section>
+
+        <div id="error" class="error-message"></div>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>
