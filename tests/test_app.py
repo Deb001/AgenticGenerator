@@ -1,57 +1,48 @@
 import pytest
-from flask import Flask
-from app import create_app
+from src.app import create_app
 
 
 @pytest.fixture
-def client() -> Flask.test_client:
-    """Create a Flask test client configured for testing.
-
-    Returns:
-        Flask.test_client: A client for sending HTTP requests to the app.
-    """
+def client():
     app = create_app()
-    app.config.update(TESTING=True)
+    app.config["TESTING"] = True
     with app.test_client() as client:
         yield client
 
 
-def test_index_route(client) -> None:
-    """Verify the index route returns HTML with a 200 status code."""
+def test_homepage_returns_200(client):
     response = client.get("/")
     assert response.status_code == 200
-    # Basic sanity check that the response looks like HTML
-    content = response.data.lower()
-    assert b"<!doctype html>" in content or b"<html" in content
+    # Verify that the response is HTML
+    content_type = response.headers.get("Content-Type", "")
+    assert content_type.startswith("text/html")
+    # Basic sanity check that HTML content is present
+    assert b"<html" in response.data.lower()
 
 
-def test_calculate_success(client) -> None:
-    """Send a valid arithmetic expression and expect the correct result."""
-    payload = {"expression": "2+3*4"}  # Expected result: 14
-    response = client.post("/calculate", json=payload)
+def test_calculate_success(client):
+    payload = {"operand1": 5, "operand2": 3, "operator": "+"}
+    response = client.post("/api/calculate", json=payload)
     assert response.status_code == 200
-    json_data = response.get_json()
-    assert isinstance(json_data, dict)
-    assert "result" in json_data
-    assert json_data["result"] == 14
+    data = response.get_json()
+    assert isinstance(data, dict)
+    assert "result" in data
+    assert data["result"] == 8
 
 
-def test_calculate_divide_by_zero(client) -> None:
-    """Division by zero should result in a 400 response with an error message."""
-    payload = {"expression": "1/0"}
-    response = client.post("/calculate", json=payload)
+def test_calculate_invalid_operator(client):
+    payload = {"operand1": 5, "operand2": 3, "operator": "invalid"}
+    response = client.post("/api/calculate", json=payload)
     assert response.status_code == 400
-    json_data = response.get_json()
-    assert isinstance(json_data, dict)
-    assert "error" in json_data
-    assert "division by zero" in json_data["error"].lower()
+    data = response.get_json()
+    assert isinstance(data, dict)
+    assert "error" in data
 
 
-def test_calculate_invalid_syntax(client) -> None:
-    """Malformed expressions should trigger a 400 response."""
-    payload = {"expression": "2++2"}
-    response = client.post("/calculate", json=payload)
+def test_calculate_divide_by_zero(client):
+    payload = {"operand1": 5, "operand2": 0, "operator": "/"}
+    response = client.post("/api/calculate", json=payload)
     assert response.status_code == 400
-    json_data = response.get_json()
-    assert isinstance(json_data, dict)
-    assert "error" in json_data
+    data = response.get_json()
+    assert isinstance(data, dict)
+    assert "error" in data
