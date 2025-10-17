@@ -1,151 +1,149 @@
-/* ==============================================================
-   Calculator UI Styles
-   --------------------------------------------------------------
-   Mobile‑first, BEM naming, CSS custom properties for easy theming
-   ============================================================== */
-
-/* --------------------------- Root Variables --------------------------- */
+/* -------------------------------------------------
+   Global Styles & CSS Variables
+   ------------------------------------------------- */
 :root {
-  --font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --font-size-base: 1rem;
-  --color-primary: #4a90e2;
-  --color-primary-dark: #357ab8;
-  --color-bg: #f5f7fa;
-  --color-surface: #ffffff;
-  --color-border: #dcdfe6;
-  --color-text: #333333;
-  --color-muted: #777777;
-  --radius: 0.5rem;
-  --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  --transition: 0.2s ease-in-out;
+    --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --bg-color: #f5f7fa;
+    --primary-color: #4a90e2;
+    --primary-hover: #357ab8;
+    --button-bg: #ffffff;
+    --button-border: #d1d5db;
+    --button-shadow: rgba(0, 0, 0, 0.1);
+    --display-bg: #ffffff;
+    --display-color: #111827;
+    --border-radius: 8px;
+    --transition-speed: 0.2s;
 }
 
-/* --------------------------- Global Reset --------------------------- */
+/* -------------------------------------------------
+   Reset & Base Typography
+   ------------------------------------------------- */
 *,
 *::before,
 *::after {
-  box-sizing: border-box;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
 html {
-  font-size: 100%; /* 16px base */
+    font-size: 16px;
+    line-height: 1.5;
 }
 
 body {
-  margin: 0;
-  padding: 0;
-  font-family: var(--font-family);
-  font-size: var(--font-size-base);
-  background-color: var(--color-bg);
-  color: var(--color-text);
-  line-height: 1.5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
+    font-family: var(--font-family);
+    background-color: var(--bg-color);
+    color: #111827;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
 }
 
-/* --------------------------- Calculator Container --------------------------- */
+/* -------------------------------------------------
+   Calculator Layout
+   ------------------------------------------------- */
 .calculator {
-  width: 100%;
-  max-width: 380px;
-  background-color: var(--color-surface);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+    width: 100%;
+    max-width: 380px;
+    background-color: #fff;
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 12px var(--button-shadow);
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: auto 1fr;
 }
 
-/* --------------------------- Display (Input) --------------------------- */
-.calculator__display {
-  width: 100%;
-  font-size: 1.5rem;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  background-color: var(--color-surface);
-  color: var(--color-text);
-  text-align: right;
-  outline: none;
-  transition: border-color var(--transition);
-}
-
-.calculator__display:focus {
-  border-color: var(--color-primary);
-}
-
-/* --------------------------- Result Area --------------------------- */
-.calculator__result {
-  font-size: 1.25rem;
-  color: var(--color-muted);
-  text-align: right;
-  min-height: 1.5rem;
-}
-
-/* --------------------------- Keypad Grid --------------------------- */
-.calculator__keys {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.75rem;
-}
-
-/* --------------------------- Individual Keys --------------------------- */
-.calculator__key {
-  font-size: 1.125rem;
-  padding: 0.75rem;
-  border: none;
-  border-radius: var(--radius);
-  background-color: var(--color-primary);
-  color: #ffffff;
-  cursor: pointer;
-  transition: background-color var(--transition), transform var(--transition);
-  user-select: none;
-}
-
-.calculator__key:hover,
-.calculator__key:focus {
-  background-color: var(--color-primary-dark);
-  outline: none;
-}
-
-.calculator__key:active {
-  transform: scale(0.97);
-}
-
-/* --------------------------- Special Key Modifiers --------------------------- */
-.calculator__key--operator {
-  background-color: #ff9500;
-}
-
-.calculator__key--operator:hover,
-.calculator__key--operator:focus {
-  background-color: #e08900;
-}
-
-.calculator__key--clear {
-  background-color: #d9534f;
-}
-
-.calculator__key--clear:hover,
-.calculator__key--clear:focus {
-  background-color: #c9302c;
-}
-
-/* --------------------------- Responsive Adjustments --------------------------- */
-@media (min-width: 480px) {
-  .calculator {
-    padding: 2rem;
-  }
-
-  .calculator__display {
-    font-size: 1.75rem;
-    padding: 1rem 1.25rem;
-  }
-
-  .calculator__key {
-    font-size: 1.25rem;
+/* Display (input) */
+.calculator .display {
+    width: 100%;
     padding: 1rem;
-  }
+    font-size: 1.5rem;
+    text-align: right;
+    background-color: var(--display-bg);
+    color: var(--display-color);
+    border: none;
+    outline: none;
+}
+
+/* Buttons Grid */
+.calculator .buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background-color: #f9fafb;
+}
+
+/* Individual Button */
+.calculator button {
+    font-size: 1.125rem;
+    font-weight: 500;
+    padding: 0.75rem;
+    border: 1px solid var(--button-border);
+    border-radius: var(--border-radius);
+    background-color: var(--button-bg);
+    color: #111827;
+    cursor: pointer;
+    transition: background-color var(--transition-speed) ease,
+                transform var(--transition-speed) ease,
+                box-shadow var(--transition-speed) ease;
+}
+
+/* Primary Action Buttons (e.g., "=") */
+.calculator button.operator,
+.calculator button.equal {
+    background-color: var(--primary-color);
+    color: #fff;
+    border-color: var(--primary-color);
+}
+
+/* Hover & Focus States */
+.calculator button:hover,
+.calculator button:focus {
+    background-color: var(--primary-hover);
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px var(--button-shadow);
+}
+
+/* Reset hover for non‑operator buttons */
+.calculator button:not(.operator):not(.equal):hover,
+.calculator button:not(.operator):not(.equal):focus {
+    background-color: #e5e7eb;
+    color: #111827;
+    transform: translateY(-2px);
+}
+
+/* Disabled State (if used) */
+.calculator button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* -------------------------------------------------
+   Responsive Breakpoints
+   ------------------------------------------------- */
+@media (max-width: 480px) {
+    .calculator {
+        max-width: 100%;
+        margin: 0 1rem;
+    }
+
+    .calculator .display {
+        font-size: 1.25rem;
+        padding: 0.75rem;
+    }
+
+    .calculator button {
+        font-size: 1rem;
+        padding: 0.6rem;
+    }
+
+    .calculator .buttons {
+        gap: 0.4rem;
+        padding: 0.5rem;
+    }
 }
