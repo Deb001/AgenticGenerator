@@ -1,8 +1,10 @@
-"""Test package initializer for the Flask calculator application.
+"""
+tests package initializer.
 
-This module exists to ensure that the ``tests`` directory is recognized as a
-Python package, allowing test modules such as ``tests.test_app`` to be
-imported by the test runner.
+This module exists solely to mark the ``tests`` directory as a Python package,
+allowing tools like ``pytest`` to discover and import test modules correctly.
+No runtime logic is required here.
 """
 
-# No additional symbols are required.
+# Exported names (none) – keeping the namespace clean.
+__all__: list[str] = []
