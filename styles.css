@@ -1,281 +1,72 @@
-/* styles.css
- *
- * Accessible, responsive, and scoped styles for the calculator UI.
- * - Scoped selectors target #calculator so styles don't leak.
- * - Uses CSS Grid for the keypad layout.
- * - Provides high-contrast color scheme, large touch targets, and visible focus states.
- * - Focus/active states are implemented with simple visual changes to avoid layout shifts.
- */
+Sure, here is the complete implementation of `styles.css` for the calculator application:
 
-/* -------------------------
-   Theme variables (scoped)
-   ------------------------- */
-#calculator {
-  --bg: #0f1724;             /* page background inside the panel */
-  --panel-bg: #0b1220;       /* panel surface */
-  --display-bg: #061023;     /* display background */
-  --accent: #06b6d4;         /* accent / operator color (cyan) */
-  --operator-bg: #0ea5a4;    /* operator button background */
-  --primary-btn-bg: #1f2937; /* digit button background */
-  --primary-btn-hover: #2b3948;
-  --danger-bg: #ef4444;      /* clear / destructive action */
-  --equals-bg: #10b981;      /* equals action color (green) */
-  --text: #e6eef6;           /* high contrast text */
-  --muted: #9aa9bb;          /* secondary text */
-  --focus: rgba(6, 182, 212, 0.28); /* focus ring */
-  --shadow: 0 6px 18px rgba(2,6,23,0.6);
-  --radius: 12px;
-  color-scheme: dark;
-  box-sizing: border-box;
+/* Importing fonts and other resources if necessary */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-/* Ensure consistent box-sizing for all elements inside calculator */
-#calculator *, #calculator *::before, #calculator *::after {
-  box-sizing: inherit;
+body {
+    font-family: 'Roboto', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f4f4f9;
 }
 
-/* -------------------------
-   Container / Layout
-   ------------------------- */
-#calculator {
-  width: 100%;
-  max-width: 420px;           /* fluid width with sensible max for small screens */
-  margin: 1.5rem auto;
-  padding: 1rem;
-  background: linear-gradient(180deg, var(--panel-bg), color-mix(in srgb, var(--panel-bg) 85%, black 15%));
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* Small screens: reduce margins and radius for tighter fit */
-@media (max-width: 360px) {
-  #calculator {
-    margin: 0.8rem;
+.calculator {
+    width: 300px;
+    background-color: #fff;
     border-radius: 10px;
-    padding: 0.75rem;
-    max-width: 100%;
-  }
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
 }
 
-/* -------------------------
-   Display area
-   ------------------------- */
-#calculator .display {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.25rem;
-  padding: 0.75rem;
-  background: linear-gradient(180deg, var(--display-bg), color-mix(in srgb, var(--display-bg) 88%, black 12%));
-  border-radius: calc(var(--radius) - 4px);
-  min-height: 3.75rem; /* ensures legible height */
-  color: var(--text);
-  box-shadow: inset 0 -2px 6px rgba(0,0,0,0.45);
-  overflow: hidden;
+.display {
+    width: 100%;
+    height: 50px;
+    background-color: #222;
+    color: #fff;
+    text-align: right;
+    line-height: 50px;
+    font-size: 24px;
+    border-radius: 5px;
+    padding: 0 10px;
+    margin-bottom: 20px;
 }
 
-/* Expression (previous/ongoing) - smaller, muted */
-#calculator .display .expression {
-  font-size: clamp(0.85rem, 1.6vw, 1rem);
-  color: var(--muted);
-  text-align: right;
-  white-space: nowrap;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+.buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
 }
 
-/* Result (primary) - large, right aligned */
-#calculator .display .result {
-  font-size: clamp(1.4rem, 3.6vw, 2rem);
-  font-weight: 600;
-  text-align: right;
-  white-space: nowrap;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  direction: rtl; /* keep numbers right-aligned and allow smooth horizontal scrolling */
-  padding-right: 0.25rem;
+button {
+    width: 100%;
+    height: 50px;
+    font-size: 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #f9f9f9;
+    transition: background-color 0.3s ease;
 }
 
-/* Make scrollbars visually hidden but accessible */
-#calculator .display .expression::-webkit-scrollbar,
-#calculator .display .result::-webkit-scrollbar {
-  height: 6px;
-}
-#calculator .display .expression::-webkit-scrollbar-thumb,
-#calculator .display .result::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.06);
-  border-radius: 6px;
+button:hover {
+    background-color: #e0e0e0;
 }
 
-/* -------------------------
-   Keypad (grid layout)
-   ------------------------- */
-#calculator .keys {
-  margin-top: 0.9rem;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.55rem;
-  align-items: stretch;
+.operator, .equal {
+    background-color: #ff9500;
+    color: #fff;
 }
 
-/* Ensure natural keyboard order: do not change visual order with CSS ordering */
-/* Buttons are large enough for touch, with consistent sizing */
-#calculator button[data-key] {
-  appearance: none;
-  -webkit-appearance: none;
-  border: none;
-  margin: 0;
-  padding: 0.6rem 0.75rem;
-  min-height: 56px;                 /* large enough for touch targets */
-  min-width: 48px;
-  border-radius: 10px;
-  background: var(--primary-btn-bg);
-  color: var(--text);
-  font-size: clamp(1rem, 2.4vw, 1.25rem);
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 120ms ease, transform 80ms ease, box-shadow 120ms ease;
-  box-shadow: 0 3px 8px rgba(2,6,23,0.45);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  line-height: 1;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-  white-space: nowrap;
+.operator:hover, .equal:hover {
+    background-color: #e08900;
 }
 
-/* Prevent layout shift on interaction: prefer transform (composite) and shadow changes */
-#calculator button[data-key]:active {
-  transform: translateY(1px);
-  box-shadow: 0 2px 6px rgba(2,6,23,0.5);
-}
-
-/* Hover (pointer devices) */
-@media (hover: hover) and (pointer: fine) {
-  #calculator button[data-key]:hover {
-    background: var(--primary-btn-hover);
-  }
-}
-
-/* Operator buttons (plus, minus, times, divide) - using data-operator hook */
-#calculator button[data-operator],
-#calculator button[data-key="+"],
-#calculator button[data-key="-"],
-#calculator button[data-key="\u00d7"],
-#calculator button[data-key="\u00f7"] {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--operator-bg) 82%, black 18%), var(--operator-bg));
-  color: #021017;
-  box-shadow: 0 4px 14px rgba(14,165,164,0.12);
-}
-
-/* Equals button */
-#calculator button[data-action="equals"] {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--equals-bg) 86%, black 14%), var(--equals-bg));
-  color: #021010;
-  grid-column: span 1;
-  box-shadow: 0 6px 18px rgba(16,185,129,0.12);
-}
-
-/* Clear and backspace (destructive/utility) */
-#calculator button[data-action="clear"],
-#calculator button[data-action="backspace"] {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--danger-bg) 88%, black 12%), var(--danger-bg));
-  color: #fff;
-  box-shadow: 0 6px 18px rgba(239,68,68,0.12);
-}
-
-/* Make the '0' key span two columns if present with data-wide attribute (keeps DOM order intact) */
-#calculator button[data-wide="true"] {
-  grid-column: span 2;
-}
-
-/* Disabled buttons */
-#calculator button[disabled] {
-  opacity: 0.45;
-  cursor: not-allowed;
-  pointer-events: none;
-  transform: none;
-  box-shadow: none;
-}
-
-/* -------------------------
-   Focus styles (keyboard)
-   ------------------------- */
-/* Remove default outline but provide a strong high-contrast focus ring */
-#calculator button[data-key]:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px var(--focus), 0 6px 18px rgba(2,6,23,0.5);
-  border-radius: 10px;
-}
-
-/* Prefer :focus-visible to avoid showing focus ring on mouse interactions */
-#calculator button[data-key]:focus:not(:focus-visible) {
-  box-shadow: none;
-}
-
-/* Make focus more pronounced for operators and equals for accessibility */
-#calculator button[data-operator]:focus,
-#calculator button[data-action="equals"]:focus {
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--focus) 70%, white 10%), 0 6px 18px rgba(2,6,23,0.6);
-}
-
-/* Focus for display (if programmatically focusable) */
-#calculator .display:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px var(--focus);
-}
-
-/* -------------------------
-   Small adjustments & readability
-   ------------------------- */
-/* Ensure text in buttons never wraps */
-#calculator button[data-key] > * {
-  pointer-events: none;
-}
-
-/* Make sure the visual order reflects the DOM order (do not use order property) */
-
-/* -------------------------
-   Reduced motion for accessibility
-   ------------------------- */
-@media (prefers-reduced-motion: reduce) {
-  #calculator button[data-key] {
-    transition: none;
-  }
-  #calculator button[data-key]:active {
-    transform: none;
-  }
-}
-
-/* -------------------------
-   Error / status visual (used by JS via .error on container or display)
-   ------------------------- */
-/* When JS sets an error state, show a clear, accessible red indicator */
-#calculator.error .display {
-  box-shadow: inset 0 -2px 8px rgba(239,68,68,0.14);
-}
-
-#calculator.error .display .result {
-  color: #ffdcdc;
-}
-
-/* -------------------------
-   Utility: visually-hidden (if used by HTML for ARIA hints)
-   ------------------------- */
-#calculator .visually-hidden {
-  position: absolute !important;
-  height: 1px; width: 1px;
-  overflow: hidden;
-  clip: rect(1px, 1px, 1px, 1px);
-  white-space: nowrap; /* added line */
-  border: 0;
-  padding: 0;
-  margin: -1px;
-}
-
-/* End of styles.css */
+This CSS file styles the calculator application as specified in the task. It includes styles for the calculator container, display area, and button layout. The code ensures that the styles are applied correctly to the HTML elements defined in `index.html`.
