@@ -1,147 +1,62 @@
-/* -------------------------------------------------
-   Calculator Styling (style.css)
-   ------------------------------------------------- */
-
-/* Root variables for easy theming */
-:root {
-    --font-family: 'Segoe UI', Tahoma, Helvetica, Arial, sans-serif;
-    --bg-color: #f5f5f5;
-    --panel-bg: #ffffff;
-    --button-bg: #e0e0e0;
-    --button-bg-hover: #d5d5d5;
-    --operator-bg: #ff9500;
-    --operator-bg-hover: #e08900;
-    --equals-bg: #34c759;
-    --equals-bg-hover: #2fae4f;
-    --clear-bg: #ff3b30;
-    --clear-bg-hover: #e0322b;
-    --text-color: #333333;
-    --display-bg: #222222;
-    --display-color: #00ff00;
-    --border-radius: 8px;
-    --gap: 10px;
-}
-
-/* Global reset & base styles */
-*,
-*::before,
-*::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
-
-html, body {
-    height: 100%;
-    font-family: var(--font-family);
-    background: var(--bg-color);
-    color: var(--text-color);
-}
-
-/* Center the calculator vertically */
+/* style.css */
 body {
     display: flex;
-    align-items: center;
     justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f4f4f9;
 }
 
-/* -------------------------------------------------
-   Calculator container
-   ------------------------------------------------- */
-#calculator {
+.calculator {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.display {
+    width: 100%;
+    height: 50px;
+    background-color: #222;
+    color: #fff;
+    text-align: right;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+.buttons {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: var(--gap);
-    max-width: 400px;
-    width: 100%;
-    background: var(--panel-bg);
-    padding: var(--gap);
-    border-radius: var(--border-radius);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    gap: 10px;
 }
 
-/* -------------------------------------------------
-   Display area
-   ------------------------------------------------- */
-#display {
-    grid-column: 1 / -1;               /* Span all columns */
-    background: var(--display-bg);
-    color: var(--display-color);
-    font-size: 2rem;
-    text-align: right;
-    padding: 0.5rem 1rem;
-    border-radius: var(--border-radius);
-    overflow-x: auto;
-}
-
-/* -------------------------------------------------
-   Buttons – common base
-   ------------------------------------------------- */
-.calc-button {
-    font-size: 1.5rem;
-    padding: 1rem;
-    background: var(--button-bg);
-    color: var(--text-color);
+button {
+    padding: 20px;
+    font-size: 18px;
     border: none;
-    border-radius: var(--border-radius);
+    border-radius: 5px;
     cursor: pointer;
-    transition: background 0.2s, transform 0.1s;
-    user-select: none;
+    transition: background-color 0.3s, color 0.3s;
 }
 
-/* Hover / active states */
-.calc-button:hover,
-.calc-button:focus {
-    background: var(--button-bg-hover);
-    outline: none;
-}
-.calc-button:active {
-    transform: scale(0.97);
+button:hover {
+    background-color: #e0e0e0;
 }
 
-/* -------------------------------------------------
-   Specific button types
-   ------------------------------------------------- */
+button:active {
+    background-color: #bdbdbd;
+}
+
 .operator {
-    background: var(--operator-bg);
+    background-color: #ff9500;
     color: #fff;
 }
+
 .operator:hover {
-    background: var(--operator-bg-hover);
+    background-color: #e08900;
 }
 
-.equals {
-    background: var(--equals-bg);
-    color: #fff;
-    grid-column: span 2;               /* Takes two columns */
-}
-.equals:hover {
-    background: var(--equals-bg-hover);
-}
-
-.clear {
-    background: var(--clear-bg);
-    color: #fff;
-}
-.clear:hover {
-    background: var(--clear-bg-hover);
-}
-
-/* -------------------------------------------------
-   Responsive adjustments
-   ------------------------------------------------- */
-@media (max-width: 600px) {
-    #calculator {
-        grid-template-columns: repeat(3, 1fr);
-        max-width: 320px;
-    }
-
-    .calc-button {
-        font-size: 1.2rem;
-        padding: 0.8rem;
-    }
-
-    .equals {
-        grid-column: span 3;           /* Full width on small screens */
-    }
+.operator:active {
+    background-color: #c77d00;
 }
