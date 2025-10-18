@@ -1,72 +1,126 @@
-Sure, here is the complete implementation of `styles.css` for the calculator application:
+/* -------------------------------------------------
+   Calculator Styles (styles.css)
+   ------------------------------------------------- */
 
-/* Importing fonts and other resources if necessary */
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
-
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+/* Reset & base */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-body {
-    font-family: 'Roboto', sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    background-color: #f4f4f9;
+/* Root variables for easy theming */
+:root {
+  --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --bg-color: #f5f7fa;
+  --calc-bg: #ffffff;
+  --display-bg: #e9ecef;
+  --button-bg: #f0f0f0;
+  --button-bg-hover: #e0e0e0;
+  --button-bg-active: #d0d0d0;
+  --button-primary-bg: #4caf50;
+  --button-primary-bg-hover: #45a049;
+  --button-primary-bg-active: #3e8e41;
+  --text-color: #333333;
+  --display-color: #000000;
+  --border-radius: 8px;
 }
 
+/* Main container */
 .calculator {
-    width: 300px;
-    background-color: #fff;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    padding: 20px;
+  max-width: 400px;
+  width: 100%;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  background: var(--calc-bg);
+  border-radius: var(--border-radius);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  font-family: var(--font-family);
+  display: grid;
+  gap: 1rem;
 }
 
-.display {
-    width: 100%;
-    height: 50px;
-    background-color: #222;
-    color: #fff;
-    text-align: right;
-    line-height: 50px;
-    font-size: 24px;
-    border-radius: 5px;
-    padding: 0 10px;
-    margin-bottom: 20px;
+/* Display screen */
+.calculator .display {
+  width: 100%;
+  height: 3rem;
+  background: var(--display-bg);
+  color: var(--display-color);
+  font-size: 1.5rem;
+  line-height: 3rem;
+  text-align: right;
+  padding: 0 0.75rem;
+  border-radius: var(--border-radius);
+  overflow-x: auto;
 }
 
-.buttons {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
+/* Button grid */
+.calculator .buttons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
 }
 
-button {
-    width: 100%;
-    height: 50px;
-    font-size: 20px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    background-color: #f9f9f9;
-    transition: background-color 0.3s ease;
+/* Generic button styling */
+.button {
+  background: var(--button-bg);
+  color: var(--text-color);
+  border: none;
+  border-radius: var(--border-radius);
+  font-size: 1.25rem;
+  padding: 0.75rem;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+  user-select: none;
 }
 
-button:hover {
-    background-color: #e0e0e0;
+/* Primary (e.g., "=") button */
+.button.primary {
+  background: var(--button-primary-bg);
+  color: #ffffff;
 }
 
-.operator, .equal {
-    background-color: #ff9500;
-    color: #fff;
+/* Hover & focus states */
+.button:hover,
+.button:focus-visible {
+  background: var(--button-bg-hover);
 }
 
-.operator:hover, .equal:hover {
-    background-color: #e08900;
+/* Active (pressed) state */
+.button:active {
+  background: var(--button-bg-active);
+  transform: translateY(1px);
 }
 
-This CSS file styles the calculator application as specified in the task. It includes styles for the calculator container, display area, and button layout. The code ensures that the styles are applied correctly to the HTML elements defined in `index.html`.
+/* Primary button states */
+.button.primary:hover {
+  background: var(--button-primary-bg-hover);
+}
+.button.primary:active {
+  background: var(--button-primary-bg-active);
+}
+
+/* Ensure inputs (if any) inherit calculator styling */
+.calculator input,
+.calculator textarea {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .calculator {
+    padding: 1rem;
+  }
+  .calculator .display {
+    height: 2.5rem;
+    font-size: 1.25rem;
+    line-height: 2.5rem;
+  }
+  .button {
+    font-size: 1rem;
+    padding: 0.6rem;
+  }
+}
