@@ -2,31 +2,37 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculator</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>Simple Calculator</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div id="calculator">
-        <input type="text" id="display" disabled>
-        <button data-action="clear">C</button>
-        <button data-action="operator">/</button>
-        <button data-action="operator">*</button>
-        <button data-action="operator">-</button>
-        <button data-action="operator">+</button>
-        <button data-action="digit">7</button>
-        <button data-action="digit">8</button>
-        <button data-action="digit">9</button>
-        <button data-action="digit">4</button>
-        <button data-action="digit">5</button>
-        <button data-action="digit">6</button>
-        <button data-action="digit">1</button>
-        <button data-action="digit">2</button>
-        <button data-action="digit">3</button>
-        <button data-action="equals">=</button>
-        <button data-action="digit">0</button>
-        <button data-action="dot">.</button>
+    <div class="calculator">
+        <input type="text" id="display" readonly placeholder="0">
+        <div class="buttons">
+            <button class="btn" data-value="7">7</button>
+            <button class="btn" data-value="8">8</button>
+            <button class="btn" data-value="9">9</button>
+            <button class="btn operator" data-value="/">÷</button>
+
+            <button class="btn" data-value="4">4</button>
+            <button class="btn" data-value="5">5</button>
+            <button class="btn" data-value="6">6</button>
+            <button class="btn operator" data-value="*">×</button>
+
+            <button class="btn" data-value="1">1</button>
+            <button class="btn" data-value="2">2</button>
+            <button class="btn" data-value="3">3</button>
+            <button class="btn operator" data-value="-">−</button>
+
+            <button class="btn" data-value="0">0</button>
+            <button class="btn" data-value=".">.</button>
+            <button class="btn" id="clear">C</button>
+            <button class="btn operator" data-value="+">+</button>
+
+            <button class="btn equal" id="equals">=</button>
+        </div>
     </div>
-    <script src="js/script.js"></script>
+
+    <script src="script.js"></script>
 </body>
 </html>
