@@ -1,309 +1,42 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <!--
-    index.html
-    Issue Key: AI-1
-
-    Purpose:
-    - Define the calculator UI (display and keypad)
-    - Provide minimal, production-ready inline CSS for layout and accessibility
-    - Expose DOM elements and data attributes for app.js to attach behavior
-
-    Notes:
-    - Behavior, state, and error handling are implemented in app.js
-    - This file intentionally uses semantic HTML and data attributes for event delegation
-  -->
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="A minimal, accessible calculator with semantic HTML and data-attribute driven keypad.">
-  <meta name="color-scheme" content="light dark">
-  <title>Calculator</title>
-
-  <style>
-    /* Minimal, production-ready CSS for layout, accessibility, and usability */
-
-    :root {
-      --bg: #0b0f14;
-      --panel: #111825;
-      --panel-border: #1b2534;
-      --text: #eef3fb;
-      --muted-text: #a6b3c2;
-      --key: #1b2534;
-      --key-hover: #263243;
-      --key-active: #2b3a4f;
-      --op: #2b5cff;
-      --op-hover: #204ae0;
-      --op-active: #1b40c0;
-      --accent: #19c37d;
-      --accent-hover: #16a96c;
-      --accent-active: #12935e;
-      --warn: #f04438;
-      --warn-hover: #d33a30;
-      --warn-active: #b93229;
-      --focus: #88b4ff;
-      --radius: 12px;
-      --gap: 10px;
-      --shadow: 0 10px 30px rgba(0,0,0,0.3);
-    }
-
-    @media (prefers-color-scheme: light) {
-      :root {
-        --bg: #eef3fb;
-        --panel: #ffffff;
-        --panel-border: #e5eaf2;
-        --text: #0b0f14;
-        --muted-text: #49566a;
-        --key: #f2f6fd;
-        --key-hover: #e8eef9;
-        --key-active: #dfe8f7;
-        --op: #2b5cff;
-        --op-hover: #1f49d6;
-        --op-active: #183db8;
-        --accent: #19c37d;
-        --accent-hover: #16a96c;
-        --accent-active: #12935e;
-        --warn: #f04438;
-        --warn-hover: #d33a30;
-        --warn-active: #b93229;
-        --focus: #1942e6;
-        --shadow: 0 8px 24px rgba(0,0,0,0.12);
-      }
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    html, body {
-      height: 100%;
-    }
-
-    body {
-      margin: 0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Noto Sans, Ubuntu, Cantarell, Helvetica Neue, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-      background: radial-gradient(1200px 800px at 10% 10%, rgba(43,92,255,0.10), transparent 50%),
-                  radial-gradient(900px 600px at 90% 30%, rgba(25,195,125,0.12), transparent 50%),
-                  var(--bg);
-      color: var(--text);
-      display: grid;
-      place-items: center;
-      padding: 24px;
-    }
-
-    main {
-      width: 100%;
-      max-width: 380px;
-    }
-
-    /* Calculator Container */
-    #calculator {
-      background: linear-gradient(180deg, var(--panel), color-mix(in oklab, var(--panel) 90%, black));
-      border: 1px solid var(--panel-border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 16px;
-      display: grid;
-      grid-template-rows: auto 1fr;
-      gap: 16px;
-    }
-
-    /* Display */
-    #display {
-      display: block;
-      width: 100%;
-      font-variant-numeric: tabular-nums;
-      font-feature-settings: "tnum" 1, "ss01" 1;
-      letter-spacing: 0.5px;
-      background: linear-gradient(180deg, #0b1524, #0c111b);
-      color: var(--text);
-      border: 1px solid var(--panel-border);
-      border-radius: calc(var(--radius) - 4px);
-      padding: 18px;
-      text-align: right;
-      font-size: clamp(28px, 6vw, 40px);
-      min-height: 64px;
-      line-height: 1.2;
-      overflow: hidden;
-      white-space: nowrap;
-      user-select: none;
-    }
-
-    /* Keypad Grid */
-    #keypad {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      grid-template-areas:
-        "clear divide multiply subtract"
-        "seven eight nine add"
-        "four five six equals"
-        "one two three equals"
-        "zero zero decimal equals";
-      gap: var(--gap);
-      align-content: stretch;
-      user-select: none;
-    }
-
-    /* Generic Button */
-    #keypad > button {
-      appearance: none;
-      -webkit-appearance: none;
-      border: 0;
-      border-radius: 10px;
-      padding: 14px;
-      font-size: 18px;
-      line-height: 1;
-      background: var(--key);
-      color: var(--text);
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 52px;
-      transition: transform 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
-      will-change: transform;
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.04),
-        0 1px 1px rgba(0,0,0,0.25);
-    }
-
-    #keypad > button:hover {
-      background: var(--key-hover);
-    }
-
-    #keypad > button:active {
-      background: var(--key-active);
-      transform: translateY(1px);
-    }
-
-    #keypad > button:focus-visible {
-      outline: 2px solid var(--focus);
-      outline-offset: 2px;
-    }
-
-    /* Themed Buttons by Role */
-    #keypad > button[data-action="operator"] {
-      background: color-mix(in oklab, var(--op) 24%, var(--key));
-      color: #ffffff;
-    }
-    #keypad > button[data-action="operator"]:hover { background: var(--op-hover); }
-    #keypad > button[data-action="operator"]:active { background: var(--op-active); }
-
-    #keypad > button[data-action="equals"] {
-      background: var(--accent);
-      color: #0b0f14;
-      font-weight: 700;
-    }
-    #keypad > button[data-action="equals"]:hover { background: var(--accent-hover); }
-    #keypad > button[data-action="equals"]:active { background: var(--accent-active); }
-
-    #keypad > button[data-action="clear"] {
-      background: color-mix(in oklab, var(--warn) 18%, var(--key));
-      color: #ffffff;
-      font-weight: 600;
-    }
-    #keypad > button[data-action="clear"]:hover { background: var(--warn-hover); }
-    #keypad > button[data-action="clear"]:active { background: var(--warn-active); }
-
-    /* Grid Area Mapping using data-area attributes (no CSS classes required) */
-    #keypad > button[data-area="clear"]    { grid-area: clear; }
-    #keypad > button[data-area="divide"]   { grid-area: divide; }
-    #keypad > button[data-area="multiply"] { grid-area: multiply; }
-    #keypad > button[data-area="subtract"] { grid-area: subtract; }
-    #keypad > button[data-area="add"]      { grid-area: add; }
-    #keypad > button[data-area="equals"]   { grid-area: equals; }
-    #keypad > button[data-area="decimal"]  { grid-area: decimal; }
-    #keypad > button[data-area="zero"]     { grid-area: zero; }
-    #keypad > button[data-area="one"]      { grid-area: one; }
-    #keypad > button[data-area="two"]      { grid-area: two; }
-    #keypad > button[data-area="three"]    { grid-area: three; }
-    #keypad > button[data-area="four"]     { grid-area: four; }
-    #keypad > button[data-area="five"]     { grid-area: five; }
-    #keypad > button[data-area="six"]      { grid-area: six; }
-    #keypad > button[data-area="seven"]    { grid-area: seven; }
-    #keypad > button[data-area="eight"]    { grid-area: eight; }
-    #keypad > button[data-area="nine"]     { grid-area: nine; }
-
-    /* Reduced motion: prefer no transition for users who opt out */
-    @media (prefers-reduced-motion: reduce) {
-      #keypad > button {
-        transition: none;
-      }
-    }
-
-    /* Subtle heading (visually-hidden but accessible could be used instead if needed) */
-    h1 {
-      margin: 0 0 8px;
-      font-size: 16px;
-      font-weight: 600;
-      color: var(--muted-text);
-      letter-spacing: 0.4px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Calculator</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main>
-    <h1>Calculator</h1>
+    <div id="calculator">
+        <input type="text" id="display" readonly aria-label="Calculator display">
 
-    <!--
-      Calculator container:
-      - Exposes #display and #keypad for app.js event binding
-      - All behavior and state management are handled by app.js
-    -->
-    <section id="calculator" aria-label="Basic calculator">
-      <!--
-        Display:
-        - Using <output> for semantic read-only result
-        - aria-live ensures screen readers announce updates from app.js
-      -->
-      <output id="display" role="status" aria-live="polite" aria-atomic="true">0</output>
+        <div class="buttons">
+            <!-- Row 1 -->
+            <button type="button" data-value="7">7</button>
+            <button type="button" data-value="8">8</button>
+            <button type="button" data-value="9">9</button>
+            <button type="button" data-value="/" class="operator">÷</button>
 
-      <!--
-        Keypad:
-        - Buttons expose data-action and data-value for event delegation
-        - data-area maps each button to a CSS Grid area (no classes required)
-        - All buttons are type="button" to avoid form submission behavior
-      -->
-      <div id="keypad" role="group" aria-label="Calculator keypad">
-        <!-- Row 1 -->
-        <button type="button" data-action="clear"    data-value="C" data-area="clear"    aria-label="Clear">C</button>
-        <button type="button" data-action="operator" data-value="/" data-area="divide"   aria-label="Divide">÷</button>
-        <button type="button" data-action="operator" data-value="*" data-area="multiply" aria-label="Multiply">×</button>
-        <button type="button" data-action="operator" data-value="-" data-area="subtract" aria-label="Subtract">−</button>
+            <!-- Row 2 -->
+            <button type="button" data-value="4">4</button>
+            <button type="button" data-value="5">5</button>
+            <button type="button" data-value="6">6</button>
+            <button type="button" data-value="*" class="operator">×</button>
 
-        <!-- Row 2 -->
-        <button type="button" data-action="digit"    data-value="7" data-area="seven" aria-label="Seven">7</button>
-        <button type="button" data-action="digit"    data-value="8" data-area="eight" aria-label="Eight">8</button>
-        <button type="button" data-action="digit"    data-value="9" data-area="nine"  aria-label="Nine">9</button>
-        <button type="button" data-action="operator" data-value="+" data-area="add"   aria-label="Add">+</button>
+            <!-- Row 3 -->
+            <button type="button" data-value="1">1</button>
+            <button type="button" data-value="2">2</button>
+            <button type="button" data-value="3">3</button>
+            <button type="button" data-value="-" class="operator">−</button>
 
-        <!-- Row 3 -->
-        <button type="button" data-action="digit" data-value="4" data-area="four" aria-label="Four">4</button>
-        <button type="button" data-action="digit" data-value="5" data-area="five" aria-label="Five">5</button>
-        <button type="button" data-action="digit" data-value="6" data-area="six" aria-label="Six">6</button>
-        <button type="button" data-action="equals" data-value="=" data-area="equals" aria-label="Equals">=</button>
+            <!-- Row 4 -->
+            <button type="button" data-value="0">0</button>
+            <button type="button" data-value="C" class="clear">C</button>
+            <button type="button" data-value="=" class="equals">=</button>
+            <button type="button" data-value="+" class="operator">+</button>
+        </div>
+    </div>
 
-        <!-- Row 4 -->
-        <button type="button" data-action="digit" data-value="1" data-area="one"   aria-label="One">1</button>
-        <button type="button" data-action="digit" data-value="2" data-area="two"   aria-label="Two">2</button>
-        <button type="button" data-action="digit" data-value="3" data-area="three" aria-label="Three">3</button>
-
-        <!-- Row 5 -->
-        <button type="button" data-action="digit"   data-value="0" data-area="zero"    aria-label="Zero">0</button>
-        <button type="button" data-action="decimal" data-value="." data-area="decimal" aria-label="Decimal point">.</button>
-      </div>
-
-      <noscript>
-        JavaScript is required for calculator functionality. Please enable JavaScript to use this application.
-      </noscript>
-    </section>
-  </main>
-
-  <!--
-    Load behavior from app.js:
-    - Defer ensures the script runs after HTML parsing is complete
-    - app.js will register event listeners on #keypad and update #display
-  -->
-  <script src="app.js" defer></script>
+    <script src="app.js"></script>
 </body>
 </html>
