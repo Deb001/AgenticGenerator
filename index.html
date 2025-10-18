@@ -1,36 +1,32 @@
-Here's the implementation of `index.html` based on the provided specifications and project structure:
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arithmetic Calculator</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Calculator</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <div class="calculator">
+    <div id="calculator">
         <input type="text" id="display" disabled>
-        <button onclick="clearDisplay()">C</button>
-        <button onclick="appendToDisplay('7')">7</button>
-        <button onclick="appendToDisplay('8')">8</button>
-        <button onclick="appendToDisplay('9')">9</button>
-        <button onclick="appendToDisplay('/')">/</button>
-        <button onclick="appendToDisplay('4')">4</button>
-        <button onclick="appendToDisplay('5')">5</button>
-        <button onclick="appendToDisplay('6')">6</button>
-        <button onclick="appendToDisplay('*')">*</button>
-        <button onclick="appendToDisplay('1')">1</button>
-        <button onclick="appendToDisplay('2')">2</button>
-        <button onclick="appendToDisplay('3')">3</button>
-        <button onclick="appendToDisplay('-')">-</button>
-        <button onclick="appendToDisplay('0')">0</button>
-        <button onclick="appendToDisplay('.')">.</button>
-        <button onclick="calculateResult()">=</button>
-        <button onclick="appendToDisplay('+')">+</button>
+        <button data-action="clear">C</button>
+        <button data-action="operator">/</button>
+        <button data-action="operator">*</button>
+        <button data-action="operator">-</button>
+        <button data-action="operator">+</button>
+        <button data-action="digit">7</button>
+        <button data-action="digit">8</button>
+        <button data-action="digit">9</button>
+        <button data-action="digit">4</button>
+        <button data-action="digit">5</button>
+        <button data-action="digit">6</button>
+        <button data-action="digit">1</button>
+        <button data-action="digit">2</button>
+        <button data-action="digit">3</button>
+        <button data-action="equals">=</button>
+        <button data-action="digit">0</button>
+        <button data-action="dot">.</button>
     </div>
-    <script src="script.js"></script>
+    <script src="js/script.js"></script>
 </body>
 </html>
-
-This HTML file sets up a simple calculator interface with display and buttons for arithmetic operations. The CSS is linked in the head section, and JavaScript functions handle the logic of the calculator.
