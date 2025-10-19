@@ -1,48 +1,67 @@
-from flask import Flask, request, jsonify, render_template
-from calculator.evaluator import evaluate_expression
+from flask import Flask, request, jsonify
+from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 import os
-import config
 
+app = Flask(__name__)
+Base = declarative_base()
 
-def create_app() -> Flask:
-    """Create and configure the Flask application."""
-    app = Flask(__name__, static_folder="static", template_folder="templates")
-    # Load configuration from config.py (expects a Config class)
-    app.config.from_object(config.Config)
+# Database setup
+DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///portfolio.db')
+engine = create_engine(DATABASE_URL)
+Session = sessionmaker(bind=engine)
+session = Session()
 
-    @app.route("/", methods=["GET"])
-    def index():
-        """Render the main calculator UI."""
-        return render_template("index.html")
+# Define the Portfolio model
+class Portfolio(Base):
+    __tablename__ = 'portfolios'
+    id = Column(Integer, primary_key=True)
+    client_id = Column(String, nullable=False)
+    stock_symbol = Column(String, nullable=False)
+    investment_amount = Column(Float, nullable=False)
+    purchase_date = Column(DateTime, nullable=False)
 
-    @app.route("/api/evaluate", methods=["POST"])
-    def evaluate():
-        """Evaluate an arithmetic expression sent in JSON payload."""
-        if not request.is_json:
-            return jsonify({"error": "Request payload must be in JSON format"}), 400
+Base.metadata.create_all(engine)
 
-        data = request.get_json(silent=True) or {}
-        expression = data.get("expression")
+# Function to get portfolio data
+@app.route('/portfolio/<client_id>', methods=['GET'])
+def get_portfolio(client_id):
+    try:
+        portfolios = session.query(Portfolio).filter_by(client_id=client_id).all()
+        if not portfolios:
+            return jsonify({'error': 'No portfolio found for this client'}), 404
+        
+        portfolio_data = []
+        for portfolio in portfolios:
+            portfolio_data.append({
+                'stock_symbol': portfolio.stock_symbol,
+                'investment_amount': portfolio.investment_amount,
+                'purchase_date': portfolio.purchase_date
+            })
+        
+        return jsonify(portfolio_data), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-        if not isinstance(expression, str) or not expression.strip():
-            return jsonify({"error": "Missing or empty 'expression' field"}), 400
+# Function to update portfolio data
+@app.route('/portfolio/<client_id>', methods=['PUT'])
+def update_portfolio(client_id):
+    try:
+        data = request.get_json()
+        for item in data:
+            stock_symbol = item['stock_symbol']
+            investment_amount = item['investment_amount']
+            purchase_date = item['purchase_date']
+            
+            portfolio = Portfolio(client_id=client_id, stock_symbol=stock_symbol, 
+                                  investment_amount=investment_amount, purchase_date=purchase_date)
+            session.add(portfolio)
+        session.commit()
+        return '', 204
+    except Exception as e:
+        session.rollback()
+        return jsonify({'error': str(e)}), 500
 
-        try:
-            result = evaluate_expression(expression)
-        except ValueError as exc:
-            return jsonify({"error": str(exc)}), 422
-        except Exception as exc:  # unexpected errors
-            return jsonify({"error": "Internal server error"}), 500
-
-        return jsonify({"result": result}), 200
-
-    return app
-
-
-# Expose the Flask app instance for WSGI servers like gunicorn
-app = create_app()
-
-if __name__ == "__main__":
-    # When run directly, use Flask's built‑in server (useful for development)
-    debug = os.getenv("FLASK_DEBUG", "0") == "1"
-    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)), debug=debug)
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)
