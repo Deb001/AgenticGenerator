@@ -1,16 +1,6 @@
-Below is the complete implementation of the `styles.css` file for the calculator project, adhering to the given specifications and technical requirements:
-
-/* Importing fonts or other resources if necessary */
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
-
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
+/* styles.css */
 body {
-    font-family: 'Roboto', sans-serif;
+    font-family: 'Arial', sans-serif;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -19,57 +9,57 @@ body {
 }
 
 .calculator {
-    width: 300px;
-    border: 2px solid #ccc;
-    border-radius: 10px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
     background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 .display {
     width: 100%;
-    height: 80px;
-    border-bottom: 2px solid #ccc;
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    padding: 20px;
-    font-size: 1.5em;
-    background-color: #333;
+    height: 50px;
+    background-color: #222;
     color: #fff;
+    text-align: right;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 20px;
 }
 
 .buttons {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
 }
 
 button {
     padding: 20px;
-    font-size: 1.2em;
+    font-size: 18px;
     border: none;
-    background-color: #e9e9e9;
+    border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.3s ease;
 }
 
 button:hover {
-    background-color: #d4d4d4;
+    background-color: #e0e0e0;
 }
 
-.operator, .equal {
+.operator {
     background-color: #ff9500;
     color: #fff;
 }
 
-.operator:hover, .equal:hover {
-    background-color: #e08100;
+.operator:hover {
+    background-color: #cc7a00;
 }
 
-@media (max-width: 600px) {
-    .calculator {
-        width: 90%;
-    }
+.equal {
+    grid-column: span 2;
+    background-color: #34c759;
+    color: #fff;
 }
 
-This CSS file styles the calculator layout and button appearance, ensuring responsiveness using media queries. It includes styles for the display area to clearly show numbers and design buttons with specific colors or backgrounds as per design requirements.
+.equal:hover {
+    background-color: #2aa14b;
+}
