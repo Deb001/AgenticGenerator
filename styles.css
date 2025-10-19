@@ -1,6 +1,6 @@
-Here is the complete implementation of `styles.css` for the calculator application:
+Below is the complete implementation of the `styles.css` file for the calculator project, adhering to the given specifications and technical requirements:
 
-/* Importing fonts and other resources if needed */
+/* Importing fonts or other resources if necessary */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
 
 * {
@@ -18,19 +18,25 @@ body {
     background-color: #f4f4f9;
 }
 
-.calculator-container {
+.calculator {
     width: 300px;
+    border: 2px solid #ccc;
     border-radius: 10px;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    background-color: #fff;
 }
 
 .display {
-    background-color: #fff;
+    width: 100%;
+    height: 80px;
+    border-bottom: 2px solid #ccc;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
     padding: 20px;
-    text-align: right;
     font-size: 1.5em;
-    border-bottom: 1px solid #ccc;
+    background-color: #333;
+    color: #fff;
 }
 
 .buttons {
@@ -53,34 +59,17 @@ button:hover {
 
 .operator, .equal {
     background-color: #ff9500;
-    color: white;
+    color: #fff;
 }
 
 .operator:hover, .equal:hover {
-    background-color: #e18200;
+    background-color: #e08100;
 }
 
-.clear {
-    grid-column: span 2;
-    background-color: #ff3b30;
-    color: white;
-}
-
-.clear:hover {
-    background-color: #d62c20;
-}
-
-/* Responsive design */
-@media (max-width: 480px) {
-    .calculator-container {
+@media (max-width: 600px) {
+    .calculator {
         width: 90%;
     }
 }
 
-@media (min-width: 768px) {
-    .calculator-container {
-        width: 500px;
-    }
-}
-
-This CSS file ensures that the calculator is responsive and visually appealing, with appropriate styling for buttons and display.
+This CSS file styles the calculator layout and button appearance, ensuring responsiveness using media queries. It includes styles for the display area to clearly show numbers and design buttons with specific colors or backgrounds as per design requirements.
