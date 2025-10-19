@@ -1,19 +1,15 @@
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-import os
+import calculator_view as cv
+import calculator_model as cm
+import calculator_controller as cc
 
-db = SQLAlchemy()
-
-def create_app():
-    app = Flask(__name__)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///portfolio.db'  # Example configuration for SQLite database
-    db.init_app(app)
+def main():
+    # Initialize the application by calling main() function from calculator_view.
+    view = cv.CalculatorView()
+    model = cm.CalculatorModel()
+    controller = cc.CalculatorController(view, model)
     
-    from . import models, routes
-    return app
+    # Start the user interface
+    view.start()
 
-def run_app():
-    app = create_app()
-    app.run(debug=True)
-
-This code initializes the Flask application and sets up a connection to an SQLite database for portfolio management. It also connects to `models.py` and `routes.py` for handling database operations and API routes, respectively.
+if __name__ == "__main__":
+    main()
