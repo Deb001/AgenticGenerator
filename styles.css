@@ -1,126 +1,86 @@
-/* -------------------------------------------------
-   Calculator Styles (styles.css)
-   ------------------------------------------------- */
+Here is the complete implementation of `styles.css` for the calculator application:
 
-/* Reset & base */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+/* Importing fonts and other resources if needed */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-/* Root variables for easy theming */
-:root {
-  --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  --bg-color: #f5f7fa;
-  --calc-bg: #ffffff;
-  --display-bg: #e9ecef;
-  --button-bg: #f0f0f0;
-  --button-bg-hover: #e0e0e0;
-  --button-bg-active: #d0d0d0;
-  --button-primary-bg: #4caf50;
-  --button-primary-bg-hover: #45a049;
-  --button-primary-bg-active: #3e8e41;
-  --text-color: #333333;
-  --display-color: #000000;
-  --border-radius: 8px;
+body {
+    font-family: 'Roboto', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f4f4f9;
 }
 
-/* Main container */
-.calculator {
-  max-width: 400px;
-  width: 100%;
-  margin: 2rem auto;
-  padding: 1.5rem;
-  background: var(--calc-bg);
-  border-radius: var(--border-radius);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  font-family: var(--font-family);
-  display: grid;
-  gap: 1rem;
+.calculator-container {
+    width: 300px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
 }
 
-/* Display screen */
-.calculator .display {
-  width: 100%;
-  height: 3rem;
-  background: var(--display-bg);
-  color: var(--display-color);
-  font-size: 1.5rem;
-  line-height: 3rem;
-  text-align: right;
-  padding: 0 0.75rem;
-  border-radius: var(--border-radius);
-  overflow-x: auto;
+.display {
+    background-color: #fff;
+    padding: 20px;
+    text-align: right;
+    font-size: 1.5em;
+    border-bottom: 1px solid #ccc;
 }
 
-/* Button grid */
-.calculator .buttons {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.75rem;
+.buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
 }
 
-/* Generic button styling */
-.button {
-  background: var(--button-bg);
-  color: var(--text-color);
-  border: none;
-  border-radius: var(--border-radius);
-  font-size: 1.25rem;
-  padding: 0.75rem;
-  cursor: pointer;
-  transition: background 0.2s ease, transform 0.1s ease;
-  user-select: none;
+button {
+    padding: 20px;
+    font-size: 1.2em;
+    border: none;
+    background-color: #e9e9e9;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
 }
 
-/* Primary (e.g., "=") button */
-.button.primary {
-  background: var(--button-primary-bg);
-  color: #ffffff;
+button:hover {
+    background-color: #d4d4d4;
 }
 
-/* Hover & focus states */
-.button:hover,
-.button:focus-visible {
-  background: var(--button-bg-hover);
+.operator, .equal {
+    background-color: #ff9500;
+    color: white;
 }
 
-/* Active (pressed) state */
-.button:active {
-  background: var(--button-bg-active);
-  transform: translateY(1px);
+.operator:hover, .equal:hover {
+    background-color: #e18200;
 }
 
-/* Primary button states */
-.button.primary:hover {
-  background: var(--button-primary-bg-hover);
-}
-.button.primary:active {
-  background: var(--button-primary-bg-active);
+.clear {
+    grid-column: span 2;
+    background-color: #ff3b30;
+    color: white;
 }
 
-/* Ensure inputs (if any) inherit calculator styling */
-.calculator input,
-.calculator textarea {
-  font-family: inherit;
-  font-size: inherit;
+.clear:hover {
+    background-color: #d62c20;
 }
 
-/* Responsive adjustments */
+/* Responsive design */
 @media (max-width: 480px) {
-  .calculator {
-    padding: 1rem;
-  }
-  .calculator .display {
-    height: 2.5rem;
-    font-size: 1.25rem;
-    line-height: 2.5rem;
-  }
-  .button {
-    font-size: 1rem;
-    padding: 0.6rem;
-  }
+    .calculator-container {
+        width: 90%;
+    }
 }
+
+@media (min-width: 768px) {
+    .calculator-container {
+        width: 500px;
+    }
+}
+
+This CSS file ensures that the calculator is responsive and visually appealing, with appropriate styling for buttons and display.
