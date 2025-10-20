@@ -1,5 +1,3 @@
-Here is the complete HTML file for the calculator application, including links to CSS and JavaScript files for styling and functionality:
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -28,9 +26,9 @@ Here is the complete HTML file for the calculator application, including links t
             <button onclick="chooseOperation('-')">-</button>
             <button onclick="deleteLast()">DEL</button>
             <button onclick="appendNumber('0')">0</button>
-            <button onclick="chooseOperation('.')">.</button>
+            <button onclick="appendDecimal('.')">.</button>
+            <button onclick="calculateResult()">=</button>
             <button onclick="chooseOperation('+')">+</button>
-            <button onclick="calculateResult()" style="grid-column: span 2;">=</button>
         </div>
     </div>
     <script src="script.js"></script>
