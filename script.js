@@ -1,90 +1,44 @@
-Here's the complete implementation of the `script.js` file for the calculator project, adhering to the specifications provided:
-
-// Calculator class to handle all operations
+// script.js
 class Calculator {
   constructor() {
-    this.displayValue = '';
-    this.operator = null;
-    this.previousValue = null;
+    this.display = document.getElementById('display');
   }
 
-  // Method to handle number inputs and operations
-  handleInput(value) {
-    if (isNaN(value)) {
-      this.handleOperator(value);
+  handleButtonClick(event) {
+    const buttonValue = event.target.value;
+    if (buttonValue === 'C') {
+      this.clearDisplay();
     } else {
-      this.displayValue += value;
+      this.updateDisplay(buttonValue);
     }
-    this.updateDisplay();
   }
 
-  // Method to handle operators
-  handleOperator(nextOperator) {
-    const inputValue = parseFloat(this.displayValue);
-
-    if (this.operator && this.previousValue !== null) {
-      this.performOperation();
-    } else {
-      this.previousValue = inputValue;
-    }
-
-    this.operator = nextOperator;
-    this.displayValue = '';
+  updateDisplay(value) {
+    this.display.value += value;
   }
 
-  // Method to perform the actual operation
+  clearDisplay() {
+    this.display.value = '';
+  }
+
   performOperation() {
-    if (this.operator === '+') {
-      this.previousValue += parseFloat(this.displayValue);
-    } else if (this.operator === '-') {
-      this.previousValue -= parseFloat(this.displayValue);
-    } else if (this.operator === '*') {
-      this.previousValue *= parseFloat(this.displayValue);
-    } else if (this.operator === '/') {
-      if (parseFloat(this.displayValue) === 0) {
-        alert('Error: Division by zero');
-        this.clear();
-        return;
-      }
-      this.previousValue /= parseFloat(this.displayValue);
+    try {
+      const expression = this.display.value;
+      if (expression === '') return;
+      const result = eval(expression);
+      this.display.value = result;
+    } catch (error) {
+      this.display.value = 'Error';
     }
-    this.displayValue = `${this.previousValue}`;
-    this.operator = null;
-    this.previousValue = null;
-  }
-
-  // Method to update the display
-  updateDisplay() {
-    const display = document.querySelector('.calculator-screen');
-    display.value = this.displayValue;
-  }
-
-  // Method to clear the display
-  clear() {
-    this.displayValue = '';
-    this.operator = null;
-    this.previousValue = null;
-    this.updateDisplay();
   }
 }
 
-// Initialize calculator instance
-const calculator = new Calculator();
+document.addEventListener('DOMContentLoaded', () => {
+  const calculator = new Calculator();
+  const buttons = document.querySelectorAll('.button');
+  buttons.forEach(button => {
+    button.addEventListener('click', event => calculator.handleButtonClick(event));
+  });
 
-// Add event listeners for buttons
-document.querySelector('.calculator-buttons').addEventListener('click', function(event) {
-  const target = event.target;
-  if (!target.matches('button')) {
-    return;
-  }
-
-  if (target.classList.contains('operator')) {
-    calculator.handleOperator(target.value);
-  } else if (target.classList.contains('number')) {
-    calculator.handleInput(target.value);
-  } else if (target.classList.contains('clear')) {
-    calculator.clear();
-  }
+  document.getElementById('equal').addEventListener('click', () => calculator.performOperation());
 });
-
-This code sets up a basic calculator with the ability to handle numbers, operations (+, -, *, /), and clearing the display. It includes error handling for division by zero as specified. The HTML and CSS files should be set up to connect with this script correctly for full functionality.
