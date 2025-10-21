@@ -1,0 +1,120 @@
+/* Reset & base */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* Page layout */
+html, body {
+    height: 100%;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: #f0f2f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Calculator container */
+.calculator {
+    width: 340px;
+    max-width: 100%;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    padding: 20px;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    gap: 15px;
+}
+
+/* Display */
+#display {
+    width: 100%;
+    height: 60px;
+    font-size: 2rem;
+    text-align: right;
+    padding: 0 12px;
+    border: none;
+    border-radius: 8px;
+    background: #eaeaea;
+    color: #333;
+    pointer-events: none;
+}
+
+/* Buttons grid */
+.calculator .buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+/* Uniform button style */
+.calc-button {
+    width: 100%;
+    height: 60px;
+    font-size: 1.5rem;
+    font-weight: 500;
+    border: none;
+    border-radius: 8px;
+    background: #f7f7f7;
+    color: #333;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.1s ease;
+}
+
+/* Hover / focus effects */
+.calc-button:hover,
+.calc-button:focus {
+    background: #e0e0e0;
+    outline: none;
+    transform: translateY(1px);
+}
+
+/* Operator buttons */
+.calc-button.operator {
+    background: #ff9500;
+    color: #fff;
+}
+.calc-button.operator:hover,
+.calc-button.operator:focus {
+    background: #e08900;
+}
+
+/* Equal button (spans two columns) */
+.calc-button.equal {
+    background: #34c759;
+    color: #fff;
+    grid-column: span 2;
+}
+.calc-button.equal:hover,
+.calc-button.equal:focus {
+    background: #2fae4f;
+}
+
+/* Clear / Reset button */
+.calc-button.clear {
+    background: #ff3b30;
+    color: #fff;
+}
+.calc-button.clear:hover,
+.calc-button.clear:focus {
+    background: #e03228;
+}
+
+/* Responsive tweak */
+@media (max-width: 380px) {
+    .calculator {
+        padding: 15px;
+    }
+    #display {
+        height: 50px;
+        font-size: 1.75rem;
+    }
+    .calc-button {
+        height: 50px;
+        font-size: 1.25rem;
+    }
+}
