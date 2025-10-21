@@ -1,149 +1,125 @@
-/* script.js - Calculator core logic */
-'use strict';
+// script.js
 
-/* -------------------- Key Mapping -------------------- */
-// Maps keyboard keys to the corresponding button IDs in the HTML.
-const keyMap = {
-  '0': 'btn-0',
-  '1': 'btn-1',
-  '2': 'btn-2',
-  '3': 'btn-3',
-  '4': 'btn-4',
-  '5': 'btn-5',
-  '6': 'btn-6',
-  '7': 'btn-7',
-  '8': 'btn-8',
-  '9': 'btn-9',
-  '.': 'btn-dot',
-  '+': 'btn-add',
-  '-': 'btn-subtract',
-  '*': 'btn-multiply',
-  '/': 'btn-divide',
-  'Enter': 'btn-equals',
-  '=': 'btn-equals',
-  'Backspace': 'btn-backspace',
-  'Escape': 'btn-clear'
-};
+// Cache DOM elements and state
+let displayElement = document.getElementById('display');
+let currentExpression = ''; // stores the string shown on the display
 
-/* -------------------- Arithmetic Functions -------------------- */
-function add(a, b) {
-  return a + b;
-}
-
-function subtract(a, b) {
-  return a - b;
-}
-
-function multiply(a, b) {
-  return a * b;
-}
-
-function divide(a, b) {
-  if (b === 0) {
-    throw new Error('Division by zero');
-  }
-  return a / b;
-}
-
-/* -------------------- Expression Evaluation -------------------- */
 /**
- * Parses a simple binary arithmetic expression (e.g., "12+34")
- * and returns the computed result as a string.
- * If an error occurs, returns the error message.
- *
- * @param {string} expression
- * @returns {string}
+ * Initialize calculator: bind button clicks and keyboard events.
  */
-function evaluateExpression(expression) {
-  // Remove whitespace
-  const expr = expression.replace(/\s+/g, '');
+function initializeCalculator() {
+  // Cache all calculator buttons
+  const buttons = document.querySelectorAll('.calc-button');
+  buttons.forEach(btn => btn.addEventListener('click', handleButtonClick));
 
-  // Regex to capture operand1, operator, operand2
-  const match = expr.match(/^([-+]?\d*\.?\d+)([+\-*/])([-+]?\d*\.?\d+)$/);
-  if (!match) {
-    return 'Invalid expression';
-  }
-
-  const [, left, operator, right] = match;
-  const a = parseFloat(left);
-  const b = parseFloat(right);
-
-  try {
-    let result;
-    switch (operator) {
-      case '+':
-        result = add(a, b);
-        break;
-      case '-':
-        result = subtract(a, b);
-        break;
-      case '*':
-        result = multiply(a, b);
-        break;
-      case '/':
-        result = divide(a, b);
-        break;
-      default:
-        return 'Unsupported operator';
-    }
-    // Trim unnecessary decimal zeros
-    return Number.isInteger(result) ? result.toString() : result.toFixed(10).replace(/\.?0+$/, '');
-  } catch (err) {
-    return err.message;
-  }
+  // Keyboard support
+  document.addEventListener('keydown', handleKeyboardInput);
 }
 
-/* -------------------- UI Handlers -------------------- */
-function handleButtonClick(event) {
-  const btn = event.currentTarget;
-  const display = document.getElementById('display');
-  const value = btn.dataset.value || btn.innerText.trim();
-
-  switch (btn.id) {
-    case 'btn-clear':
-      display.value = '';
-      break;
-    case 'btn-backspace':
-      display.value = display.value.slice(0, -1);
-      break;
-    case 'btn-equals':
-      display.value = evaluateExpression(display.value);
-      break;
-    default:
-      // Append the button's value to the display
-      display.value += value;
+/**
+ * Process a value as if it came from a button press.
+ * @param {string} value - The button's data-value (e.g., '1', '+', '=', 'C')
+ */
+function processInput(value) {
+  if (value === '=') {
+    const result = evaluateExpression(currentExpression);
+    displayElement.value = result;
+    currentExpression = result === 'Error' ? '' : result;
+  } else if (value === 'C') {
+    clearDisplay();
+  } else {
+    // Append only allowed characters to avoid malformed expressions
+    if (/^[0-9+\-*/().]$/.test(value)) {
+      currentExpression += value;
+      displayElement.value = currentExpression;
+    }
   }
 }
 
 /**
- * Translates a keyboard event into a button click.
- *
+ * Click handler for calculator buttons.
+ * @param {Event} event
+ */
+function handleButtonClick(event) {
+  const value = event.currentTarget.dataset.value;
+  if (value) {
+    processInput(value);
+  }
+}
+
+/**
+ * Keyboard handler mapping keys to calculator actions.
  * @param {KeyboardEvent} event
  */
 function handleKeyboardInput(event) {
   const key = event.key;
-  const btnId = keyMap[key];
-  if (!btnId) return; // Unmapped key
 
-  const btn = document.getElementById(btnId);
-  if (!btn) return;
+  // Map keys to calculator values
+  const keyMap = {
+    'Enter': '=',
+    '=': '=',
+    'Escape': 'C',
+    'c': 'C',
+    'C': 'C',
+    '+': '+',
+    '-': '-',
+    '*': '*',
+    '/': '/',
+    '.': '.',
+    '(': '(',
+    ')': ')'
+  };
 
-  // Prevent default actions for keys we handle (e.g., Backspace)
-  event.preventDefault();
+  // Digits 0-9 map directly
+  if (/^[0-9]$/.test(key)) {
+    processInput(key);
+    return;
+  }
 
-  // Simulate a click on the corresponding button
-  btn.click();
+  if (keyMap[key] !== undefined) {
+    processInput(keyMap[key]);
+  }
 }
 
-/* -------------------- Initialization -------------------- */
-function initCalculator() {
-  // Attach click listeners to all calculator buttons
-  const buttons = document.querySelectorAll('button[data-value], button[id]');
-  buttons.forEach(btn => btn.addEventListener('click', handleButtonClick));
+/**
+ * Safely evaluate a simple arithmetic expression.
+ * Returns the result as a string, or 'Error' on failure.
+ * @param {string} expression
+ * @returns {string}
+ */
+function evaluateExpression(expression) {
+  // Allow only numbers, operators, parentheses, decimal points, and whitespace
+  if (!/^[0-9+\-*/().\s]+$/.test(expression)) {
+    return 'Error';
+  }
 
-  // Global keyboard handling
-  document.addEventListener('keydown', handleKeyboardInput);
+  try {
+    // Use Function constructor for evaluation in a strict context
+    const fn = new Function('"use strict";return (' + expression + ')');
+    const result = fn();
+
+    // Detect division by zero or other invalid results
+    if (result === Infinity || result === -Infinity || Number.isNaN(result)) {
+      return 'Error';
+    }
+
+    return String(result);
+  } catch (e) {
+    return 'Error';
+  }
 }
 
-// Run when the DOM is fully loaded
-document.addEventListener('DOMContentLoaded', initCalculator);
+/**
+ * Reset the calculator display and internal buffer.
+ */
+function clearDisplay() {
+  currentExpression = '';
+  displayElement.value = '';
+}
+
+// Initialize when the DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeCalculator);
+} else {
+  initializeCalculator();
+}
