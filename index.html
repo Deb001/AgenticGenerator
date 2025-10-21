@@ -1,44 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Calculator</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Calculator</title>
+  <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <div class="calculator">
-        <input type="text" id="display" readonly autocomplete="off" />
-        <div class="buttons">
-            <!-- Row 1 -->
-            <button data-value="7">7</button>
-            <button data-value="8">8</button>
-            <button data-value="9">9</button>
-            <button data-value="/">÷</button>
-
-            <!-- Row 2 -->
-            <button data-value="4">4</button>
-            <button data-value="5">5</button>
-            <button data-value="6">6</button>
-            <button data-value="*">×</button>
-
-            <!-- Row 3 -->
-            <button data-value="1">1</button>
-            <button data-value="2">2</button>
-            <button data-value="3">3</button>
-            <button data-value="-">−</button>
-
-            <!-- Row 4 -->
-            <button data-value="0">0</button>
-            <button data-value=".">.</button>
-            <button id="clear">C</button>
-            <button data-value="+">+</button>
-
-            <!-- Row 5 -->
-            <button data-value="=" class="equals">=</button>
-        </div>
+  <main class="calculator" aria-label="Basic Calculator">
+    <div class="display-wrapper">
+      <input
+        id="display"
+        class="display"
+        type="text"
+        value="0"
+        aria-label="Calculator display"
+        aria-live="polite"
+        readonly
+      />
     </div>
 
-    <script src="script.js"></script>
+    <div class="keys" role="group" aria-label="Calculator keys">
+      <button type="button" class="btn btn-control btn-clear" data-value="clear" aria-label="Clear">C</button>
+      <button type="button" class="btn btn-control btn-delete" data-value="delete" aria-label="Delete">DEL</button>
+      <button type="button" class="btn btn-operator" data-value="/" aria-label="Divide">÷</button>
+      <button type="button" class="btn btn-operator" data-value="*" aria-label="Multiply">×</button>
+
+      <button type="button" class="btn btn-digit" data-value="7">7</button>
+      <button type="button" class="btn btn-digit" data-value="8">8</button>
+      <button type="button" class="btn btn-digit" data-value="9">9</button>
+      <button type="button" class="btn btn-operator" data-value="-" aria-label="Subtract">−</button>
+
+      <button type="button" class="btn btn-digit" data-value="4">4</button>
+      <button type="button" class="btn btn-digit" data-value="5">5</button>
+      <button type="button" class="btn btn-digit" data-value="6">6</button>
+      <button type="button" class="btn btn-operator" data-value="+" aria-label="Add">+</button>
+
+      <button type="button" class="btn btn-digit" data-value="1">1</button>
+      <button type="button" class="btn btn-digit" data-value="2">2</button>
+      <button type="button" class="btn btn-digit" data-value="3">3</button>
+      <button type="button" class="btn btn-equals" data-value="equals" aria-label="Equals">=</button>
+
+      <button type="button" class="btn btn-zero btn-digit" data-value="0" aria-label="Zero">0</button>
+      <button type="button" class="btn btn-decimal" data-value="." aria-label="Decimal point">.</button>
+    </div>
+  </main>
+
+  <script src="js/script.js"></script>
 </body>
 </html>
