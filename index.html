@@ -4,43 +4,40 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simple Calculator</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <main class="calculator">
-        <input type="text" id="display" class="display" readonly aria-label="Calculator display">
-
-        <section class="buttons">
+    <div class="calculator">
+        <input type="text" id="display" readonly autocomplete="off" />
+        <div class="buttons">
             <!-- Row 1 -->
-            <button id="btn-clear" class="btn function">C</button>
-            <button id="btn-sign" class="btn function">±</button>
-            <button id="btn-percent" class="btn function">%</button>
-            <button id="btn-divide" class="btn operator">÷</button>
+            <button data-value="7">7</button>
+            <button data-value="8">8</button>
+            <button data-value="9">9</button>
+            <button data-value="/">÷</button>
 
             <!-- Row 2 -->
-            <button id="btn-7" class="btn digit">7</button>
-            <button id="btn-8" class="btn digit">8</button>
-            <button id="btn-9" class="btn digit">9</button>
-            <button id="btn-multiply" class="btn operator">×</button>
+            <button data-value="4">4</button>
+            <button data-value="5">5</button>
+            <button data-value="6">6</button>
+            <button data-value="*">×</button>
 
             <!-- Row 3 -->
-            <button id="btn-4" class="btn digit">4</button>
-            <button id="btn-5" class="btn digit">5</button>
-            <button id="btn-6" class="btn digit">6</button>
-            <button id="btn-subtract" class="btn operator">−</button>
+            <button data-value="1">1</button>
+            <button data-value="2">2</button>
+            <button data-value="3">3</button>
+            <button data-value="-">−</button>
 
             <!-- Row 4 -->
-            <button id="btn-1" class="btn digit">1</button>
-            <button id="btn-2" class="btn digit">2</button>
-            <button id="btn-3" class="btn digit">3</button>
-            <button id="btn-add" class="btn operator">+</button>
+            <button data-value="0">0</button>
+            <button data-value=".">.</button>
+            <button id="clear">C</button>
+            <button data-value="+">+</button>
 
             <!-- Row 5 -->
-            <button id="btn-0" class="btn digit zero">0</button>
-            <button id="btn-decimal" class="btn digit">.</button>
-            <button id="btn-equals" class="btn operator equals">=</button>
-        </section>
-    </main>
+            <button data-value="=" class="equals">=</button>
+        </div>
+    </div>
 
     <script src="script.js"></script>
 </body>
