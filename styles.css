@@ -1,0 +1,142 @@
+/* -------------------------------------------------
+   Calculator Styling (styles.css)
+   ------------------------------------------------- */
+
+/* ---- Root variables for easy theming ---- */
+:root {
+    --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --bg-color: #f4f4f9;
+    --calc-bg: #ffffff;
+    --display-bg: #eaeaea;
+    --display-color: #333333;
+    --button-bg: #e0e0e0;
+    --button-color: #000000;
+    --operator-bg: #ff9500;
+    --operator-color: #ffffff;
+    --equal-bg: #34c759;
+    --equal-color: #ffffff;
+    --border-radius: 8px;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* ---- Global reset & base ---- */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    font-family: var(--font-family);
+    font-size: 16px;
+    background: var(--bg-color);
+    height: 100%;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ---- Calculator container ---- */
+.calculator {
+    width: 100%;
+    max-width: 380px;
+    background: var(--calc-bg);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    padding: 1rem;
+}
+
+/* ---- Display ---- */
+.calculator .display {
+    width: 100%;
+    height: 3.5rem;
+    background: var(--display-bg);
+    color: var(--display-color);
+    font-size: 2rem;
+    text-align: right;
+    line-height: 3.5rem;
+    padding: 0 0.75rem;
+    border-radius: var(--border-radius);
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+/* ---- Buttons grid ---- */
+.calculator .buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+/* ---- Individual button ---- */
+.calculator .button {
+    font-size: 1.5rem;
+    padding: 0.75rem;
+    background: var(--button-bg);
+    color: var(--button-color);
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    user-select: none;
+}
+
+/* Hover / active feedback */
+.calculator .button:hover {
+    background: #d5d5d5;
+}
+
+.calculator .button:active {
+    transform: translateY(1px);
+}
+
+/* ---- Operator buttons ---- */
+.calculator .button.operator {
+    background: var(--operator-bg);
+    color: var(--operator-color);
+}
+
+.calculator .button.operator:hover {
+    background: #e68a00;
+}
+
+/* ---- Equal button (spans full width) ---- */
+.calculator .button.equal {
+    grid-column: span 4;
+    background: var(--equal-bg);
+    color: var(--equal-color);
+    font-weight: bold;
+}
+
+.calculator .button.equal:hover {
+    background: #28a745;
+}
+
+/* ---- Responsive adjustments ---- */
+@media (max-width: 480px) {
+    .calculator {
+        padding: 0.75rem;
+    }
+
+    .calculator .display {
+        height: 2.8rem;
+        font-size: 1.6rem;
+        line-height: 2.8rem;
+    }
+
+    .calculator .button {
+        font-size: 1.2rem;
+        padding: 0.6rem;
+    }
+
+    .calculator .buttons {
+        gap: 0.5rem;
+    }
+}
