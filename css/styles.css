@@ -1,0 +1,180 @@
+/* Base variables and light/dark themes */
+:root {
+  --bg: #0f172a;
+  --panel: #111827;
+  --display-bg: #0b1220;
+  --text: #e5e7eb;
+  --muted: #9ca3af;
+  --accent: #06b6d4;
+
+  --button-bg: #1f2937;
+  --button-hover: #293548;
+  --button-active: #162033;
+
+  --button-shadow: rgba(0, 0, 0, 0.35);
+  --ring: rgba(6, 182, 212, 0.5);
+
+  --radius: 14px;
+  --radius-sm: 10px;
+  --gap: 10px;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f3f4f6;
+    --panel: #ffffff;
+    --display-bg: #f9fafb;
+    --text: #111827;
+    --muted: #6b7280;
+    --accent: #0891b2;
+
+    --button-bg: #f3f4f6;
+    --button-hover: #e5e7eb;
+    --button-active: #d1d5db;
+
+    --button-shadow: rgba(0, 0, 0, 0.08);
+    --ring: rgba(8, 145, 178, 0.35);
+  }
+}
+
+/* Minimal reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(1200px 700px at top right, rgba(6, 182, 212, 0.08), transparent 60%),
+    linear-gradient(180deg, var(--bg), var(--bg));
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
+    "Segoe UI Emoji";
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Calculator Grid */
+.calculator {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(64px, 1fr));
+  grid-auto-rows: minmax(56px, 1fr);
+  gap: var(--gap);
+  width: min(92vw, 420px);
+  background: var(--panel);
+  border-radius: var(--radius);
+  padding: 14px;
+  box-shadow:
+    0 20px 40px var(--button-shadow),
+    0 2px 8px var(--button-shadow);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* Display styling */
+.display {
+  grid-column: 1 / -1;
+  background: var(--display-bg);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  min-height: 72px;
+
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-variant-numeric: tabular-nums lining-nums;
+  font-size: clamp(1.2rem, 2.2vw + 0.9rem, 2.2rem);
+  line-height: 1.15;
+
+  overflow: hidden;
+  word-break: break-word;
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.06);
+}
+
+/* Button styling */
+.button {
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--button-bg);
+  color: var(--text);
+  border: none;
+  border-radius: 12px;
+  padding: 0;
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+
+  display: inline-grid;
+  place-items: center;
+  font-size: clamp(1rem, 1.2vw + 0.8rem, 1.35rem);
+  font-weight: 600;
+  letter-spacing: 0.2px;
+
+  box-shadow:
+    0 8px 14px var(--button-shadow),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.02);
+  transition:
+    background-color 120ms ease,
+    transform 80ms ease,
+    box-shadow 120ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.button:hover {
+  background: var(--button-hover);
+}
+
+.button:active {
+  background: var(--button-active);
+  transform: translateY(1px);
+  box-shadow:
+    0 4px 10px var(--button-shadow),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.05);
+}
+
+.button:focus-visible {
+  box-shadow:
+    0 8px 14px var(--button-shadow),
+    0 0 0 3px var(--ring),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.02);
+}
+
+.button[disabled],
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(0.2);
+}
+
+/* Motion safety */
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+}
+
+/* Responsive tweaks */
+@media (max-width: 360px) {
+  .calculator {
+    grid-template-columns: repeat(4, minmax(56px, 1fr));
+    padding: 12px;
+  }
+  .display {
+    min-height: 64px;
+    padding: 12px 14px;
+  }
+  .button {
+    border-radius: 10px;
+  }
+}
