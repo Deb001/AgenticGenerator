@@ -1,128 +1,179 @@
-# Calculator Module Documentation
+# Simple Web Calculator
 
-## Overview
-`src/calculator.js` provides a **pure, side‑effect‑free** arithmetic engine that can be used by any JavaScript front‑end (e.g., the UI module in `src/ui.js`).  
-It parses a simple infix expression consisting of numbers, the four basic operators (`+`, `-`, `*`, `/`), and decimal points.  
-All validation, error handling, and numeric limits are performed inside the module, making it safe to import in any environment (browser, Node, test runners).
+A lightweight, zero‑dependency web calculator built with vanilla JavaScript, HTML, and CSS.  
+It parses arithmetic expressions using the shunting‑yard algorithm and evaluates them in Reverse Polish Notation (RPN). The UI is fully accessible and works on desktop and mobile browsers.
 
 ---
 
-## Exported API
+## Table of Contents
 
-### `evaluate(expression: string): number`
-
-Evaluates a mathematical expression and returns the computed result.
-
-| Parameter | Type   | Description |
-|-----------|--------|-------------|
-| `expression` | `string` | A **non‑empty** string containing a valid arithmetic expression. Tokens may be separated by optional whitespace. Supported characters are digits (`0‑9`), a single decimal point per number, and the operators `+`, `-`, `*`, `/`. |
-
-#### Return Value
-- Returns a JavaScript `Number` representing the evaluated result.
-- The result is rounded to **8 decimal places** to avoid floating‑point noise.
-- If the absolute value of the result exceeds `Number.MAX_SAFE_INTEGER` (or is smaller than `Number.MIN_SAFE_INTEGER`), a `CalculatorError` with the message `"Number out of range"` is thrown.
-
-#### Errors
-The function throws a **`CalculatorError`** (a subclass of `Error`) for any of the following conditions:
-
-| Error Message | When |
-|---------------|------|
-| `"Invalid expression"` | The input contains illegal characters, mismatched operators, multiple consecutive operators, or an empty string. |
-| `"Division by zero"` | An attempt is made to divide any number by `0`. |
-| `"Number out of range"` | The computed result cannot be represented safely as an integer (`> Number.MAX_SAFE_INTEGER` or `< Number.MIN_SAFE_INTEGER`). |
-| `"Too many digits"` | The expression contains a numeric token longer than **15** characters (prevents overflow and UI overflow). |
-
-#### Example Usage
-import { evaluate, CalculatorError } from './src/calculator.js';
-
-try {
-  const result = evaluate('12.5 * 3 - 4 / 2');
-  console.log(result); // 34.5
-} catch (e) {
-  if (e instanceof CalculatorError) {
-    console.error('Calculator error:', e.message);
-  } else {
-    console.error('Unexpected error:', e);
-  }
-}
+- [Features](#features)
+- [Demo](#demo)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+- [Running the Tests](#running-the-tests)
+- [Development](#development)
+- [Extending the Calculator](#extending-the-calculator)
+- [License](#license)
 
 ---
 
-## Integration Notes for `src/ui.js`
+## Features
 
-- **Input Normalisation**: UI code should replace the UI symbols `×` and `÷` with `*` and `/` before calling `evaluate`.
-- **Display**: The UI expects `evaluate` to either return a finite number or throw a `CalculatorError`. In the latter case the UI should show the error message (e.g., `"Error"`).
-- **Keyboard Support**: The UI forwards keyboard characters directly to the same validation pipeline used for button clicks, then passes the final expression string to `evaluate`.
+- **Basic arithmetic**: `+`, `-`, `*`, `/`
+- **Parentheses** for grouping
+- **Unary minus** (e.g., `-5 + 3`)
+- **Decimal numbers**
+- **Robust error handling**: division by zero, syntax errors, mismatched parentheses, invalid token sequences
+- **Responsive UI**: works on desktop and mobile
+- **Keyboard support**: type expressions directly
+- **Accessible markup**: proper ARIA labels and button semantics
+- **Zero‑build**: open `index.html` in a browser, no bundler required
+- **Unit‑tested core engine** (Jest‑compatible or plain Node)
 
 ---
 
-## Manual Test Checklist
+## Demo
 
-> Use the live calculator UI (served from `index.html`) and verify each item. Record any failures and note the error message shown.
+Open `index.html` in any modern browser:
 
-### 1. Basic Arithmetic
-| Test | Input | Expected |
-|------|-------|----------|
-| Add two integers | `2+3` | `5` |
-| Subtract integers | `9-4` | `5` |
-| Multiply integers | `6*7` | `42` |
-| Divide integers | `20/5` | `4` |
+# From the project root
+open index.html   # macOS
+# or
+start index.html  # Windows
+# or simply double‑click the file in your file explorer
 
-### 2. Decimal Handling
-| Test | Input | Expected |
-|------|-------|----------|
-| Decimal addition | `0.1+0.2` | `0.3` (rounded to 8 dp) |
-| Mixed decimal & integer | `5.5*2` | `11` |
-| Multiple decimals in one number (invalid) | `1.2.3+4` | **Error** (`Invalid expression`) |
+---
 
-### 3. Operator Edge Cases
-| Test | Input | Expected |
-|------|-------|----------|
-| Consecutive operators (invalid) | `5++2` | **Error** (`Invalid expression`) |
-| Leading operator (negative number) | `-5+3` | `-2` |
-| Trailing operator (invalid) | `7*` | **Error** (`Invalid expression`) |
+## Project Structure
 
-### 4. Division by Zero
-| Test | Input | Expected |
-|------|-------|----------|
-| Simple divide‑by‑zero | `8/0` | **Error** (`Division by zero`) |
-| Zero numerator | `0/5` | `0` |
-| Complex expression with zero divisor | `5+3/(2-2)` | **Error** (`Division by zero`) |
+root
+├─ .gitignore          # Excludes node_modules, OS files, etc.
+├─ README.md           # 📖 This documentation
+├─ index.html          # Root view – display + button grid
+├─ package.json        # Optional npm scripts (test, lint)
+├─ src
+│  ├─ css
+│  │   └─ styles.css   # Responsive layout & button styling
+│  └─ js
+│      ├─ calculator.js # Core expression parser/evaluator
+│      └─ ui.js         # UI controller – event handling & DOM updates
+└─ tests
+    └─ test_calculator.js # Unit tests for the arithmetic engine
 
-### 5. Numeric Limits
-| Test | Input | Expected |
-|------|-------|----------|
-| Very large result | `9007199254740991+1` | **Error** (`Number out of range`) |
-| Very small (negative) result | `-9007199254740991-1` | **Error** (`Number out of range`) |
-| Long numeric token ( >15 digits ) | `1234567890123456+1` | **Error** (`Too many digits`) |
+---
 
-### 6. Input Length & UI Behaviour
-| Test | Action | Expected |
-|------|--------|----------|
-| Input longer than display width (e.g., 30 characters) | Type or click continuously | UI truncates display but still passes full expression to `evaluate`. |
-| Clear (`C`) button | Press `C` at any time | Display resets to `0`. |
-| Backspace (`←`) button | Delete last character | Expression updates correctly; empty expression after backspace shows `0`. |
+## Getting Started
 
-### 7. Keyboard Support
-| Test | Key(s) | Expected |
-|------|--------|----------|
-| Digits & operators | `1 2 + 3 =` (Enter as `=`) | Result `15` |
-| Decimal point | `.` | Decimal accepted in current number |
-| Backspace | `Backspace` | Deletes last character |
-| Escape | `Esc` | Clears the calculator (`C` behaviour) |
-| Invalid key (e.g., `a`) | `a` | Ignored; no change to expression |
+### Prerequisites
 
-### 8. Rounding & Precision
-| Test | Input | Expected |
-|------|-------|----------|
-| Long floating result | `1/3` | `0.33333333` (8 dp) |
-| Result with more than 8 dp | `2/7` | `0.28571429` (rounded) |
+- A modern web browser (Chrome, Firefox, Edge, Safari)
+- (Optional) Node.js ≥ 14 if you want to run the test suite or use npm scripts
+
+### Running the Application
+
+1. Clone or download the repository.
+2. Open `index.html` directly in your browser – no server or build step is required.
+
+### Installing Development Dependencies (optional)
+
+If you plan to run the test suite or use the provided npm scripts:
+
+npm install
+
+This will install the minimal dev dependencies defined in `package.json` (e.g., Jest).
+
+---
+
+## Running the Tests
+
+### Using npm (recommended)
+
+npm test
+
+The script runs the test file `tests/test_calculator.js` with Jest (or the built‑in Node runner if Jest is not installed).
+
+### Using Node directly (no npm)
+
+node tests/test_calculator.js
+
+The test file prints a concise summary of passed/failed cases to the console.
+
+---
+
+## Development
+
+### Core Engine (`src/js/calculator.js`)
+
+- Exposes a single function:  
+
+    const { result, error } = evaluate(expression);
+  
+- Returns an object where `result` is a `number` (or `null` on error) and `error` is a human‑readable string (or `null` on success).
+
+### UI Controller (`src/js/ui.js`)
+
+- Binds click events for all calculator buttons.
+- Listens to keyboard input (`keydown`) for digits, operators, `Enter`, `Backspace`, and `Escape`.
+- Maintains an expression string, validates user input, and forwards it to `evaluate`.
+- Updates the display area with the current expression, the computed result, or error messages.
+
+### Styles (`src/css/styles.css`)
+
+- CSS variables for colors, spacing, and font sizes.
+- Flexbox layout for the button grid.
+- Media queries for a mobile‑friendly layout.
+- Focus/hover states for accessibility.
+
+### Testing (`tests/test_calculator.js`)
+
+- Covers:
+  - Simple binary operations
+  - Operator precedence
+  - Parentheses nesting
+  - Unary minus handling
+  - Decimal arithmetic
+  - Division by zero
+  - Syntax errors (e.g., `5++2`, `(.5)`, mismatched parentheses)
+
+---
+
+## Extending the Calculator
+
+### Adding New Operators
+
+1. **Update the operator table** in `calculator.js`:
+      const OPERATORS = {
+     '+': { precedence: 2, associativity: 'Left', fn: (a, b) => a + b },
+     '-': { precedence: 2, associativity: 'Left', fn: (a, b) => a - b },
+     '*': { precedence: 3, associativity: 'Left', fn: (a, b) => a * b },
+     '/': { precedence: 3, associativity: 'Left', fn: (a, b) => {
+       if (b === 0) throw new Error('Division by zero');
+       return a / b;
+     } },
+     // Example: exponentiation
+     '^': { precedence: 4, associativity: 'Right', fn: (a, b) => Math.pow(a, b) }
+   };
+   2. **Add a button** in `index.html` with the appropriate label and `data-key` attribute.
+3. **Update UI validation** in `ui.js` if the new operator has special rules (e.g., unary vs binary).
+
+### Custom Functions (e.g., `sqrt`, `log`)
+
+- Extend the tokeniser in `calculator.js` to recognise identifiers.
+- Add a `FUNCTIONS` map with implementation callbacks.
+- Adjust the RPN evaluator to handle function tokens (pop required arguments, push result).
+
+### Styling Adjustments
+
+- Modify `src/css/styles.css` – all layout values are driven by CSS variables (`--spacing`, `--primary-color`, etc.).
+- Add new classes for custom button types (e.g., `.operator`, `.function`).
 
 ---
 
 ## License
-This module is released under the MIT License. Feel free to copy, modify, and distribute as needed.
+
+This project is released under the **MIT License** – feel free to use, modify, and distribute it as you see fit.
 
 --- 
 
-*End of README*
+*Happy calculating!*
