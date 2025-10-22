@@ -1,0 +1,17 @@
+{
+  "name": "simple-calculator",
+  "version": "1.0.0",
+  "description": "A minimal web calculator with a JavaScript arithmetic engine and unit tests.",
+  "main": "src/js/calculator.js",
+  "scripts": {
+    "test": "node tests/test_calculator.js"
+  },
+  "keywords": [
+    "calculator",
+    "javascript",
+    "static",
+    "web"
+  ],
+  "author": "",
+  "license": "MIT"
+}
