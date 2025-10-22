@@ -1,60 +1,61 @@
-# Simple Calculator
+# Simple Web Calculator
 
-## Overview
-A lightweight, single‑page web calculator that supports the four basic arithmetic operations (`+`, `-`, `*`, `/`) with decimal numbers and proper operator precedence. The UI is built with **HTML**, styled with **CSS**, and the calculation engine lives in **app.js**.
+A minimal, accessible, and responsive calculator built with plain HTML, CSS, and JavaScript.  
+It supports basic arithmetic (`+`, `-`, `×`, `÷`) with decimal numbers, proper operator precedence, and keyboard interaction.
 
-## Project Structure
-/ (project root)
-│
-├─ index.html   # Calculator UI, button layout, and ARIA attributes
-├─ styles.css   # Responsive layout, typography, and visual styling
-├─ app.js       # Safe expression parser/evaluator, UI wiring, error handling
+## 📂 Project Structure
+
+/ (root)
+├─ index.html   # UI markup, ARIA‑enhanced buttons, display area
+├─ styles.css   # Responsive grid layout, high‑contrast styling
+├─ app.js       # Tokenizer, shunting‑yard parser, RPN evaluator, UI & keyboard wiring
 └─ README.md    # This documentation
 
-## Getting Started
+## 🚀 How to Run
+
 1. **Clone / download** the repository.  
-2. Open `index.html` in any modern browser (no server required).  
-3. The calculator is ready to use – click the buttons or use the keyboard (digits, `+ - * /`, `Enter` for `=` and `Esc` for `C`).
+2. Open **`index.html`** in any modern browser (Chrome, Firefox, Edge, Safari).  
+   No build step, server, or package manager is required.
 
-## Implementation Notes
-- **UI (`index.html`)**  
-  - A read‑only `<input>` element (`id="display"`) shows the current expression and results.  
-  - Buttons are grouped semantically and include `aria-label` attributes for screen‑reader accessibility.  
-  - All interactive elements have the class `calc-btn` for easy event delegation.
+## 🖥️ Usage
 
-- **Styling (`styles.css`)**  
-  - Uses CSS Grid to create a responsive calculator layout that adapts to small screens.  
-  - High‑contrast colors and a minimum touch target size (44 px) meet basic accessibility guidelines.  
+- **Click** the on‑screen buttons or use the **keyboard**:
+  - Digits `0‑9` and decimal point `.` → input numbers.
+  - Operators `+`, `-`, `*` (or `×`), `/` (or `÷`) → arithmetic operations.
+  - `Enter` → evaluate (`=` button).
+  - `Backspace` → delete the last character.
+  - `C` (or `Escape`) → clear the display.
 
-- **Logic (`app.js`)**  
-  - **Expression parsing:** The engine tokenises the input string and evaluates it using the **shunting‑yard algorithm**, guaranteeing correct precedence without resorting to `eval()`.  
-  - **Input validation:** Prevents malformed sequences (e.g., two operators in a row) and limits the display length to avoid overflow.  
-  - **Error handling:** Division by zero or any parsing error results in the display showing `Error`. Pressing `C` clears the state.  
-  - **Event wiring:** Button clicks and relevant keyboard events are delegated to a single handler that updates the display, triggers evaluation, or clears the calculator.
+- The display is **read‑only**; it updates automatically as you type or click.
 
-## Manual Test Checklist
-| # | Expression | Expected Result |
-|---|------------|-----------------|
-| 1 | `3+5*2`    | `13` |
-| 2 | `10/2-3`   | `2` |
-| 3 | `7.5*2`    | `15` |
-| 4 | `8/0`      | `Error` |
-| 5 | `5+5`      | `10` |
-| 6 | `0.1+0.2`  | `0.3` (rounded to the display precision) |
-| 7 | `12-4/2`   | `10` |
-| 8 | `9*9/3`    | `27` |
-| 9 | `6+`       | `Error` (incomplete expression) |
-|10 | `C` (clear) after any result | Display resets to empty |
+- Errors (e.g., division by zero, malformed expression) are shown as **`Error`** and the calculator can be cleared with `C`.
 
-Run through each row manually; the calculator should display the **Expected Result** after pressing `=` (or `Enter`). Any deviation indicates a regression.
+## ✅ Manual Test Checklist
 
-## Known Limitations
-- The engine does not support parentheses or advanced functions (e.g., `sqrt`).  
-- Results are rounded to a maximum of 12 decimal places to avoid floating‑point noise.
+| Test | Steps | Expected Result |
+|------|-------|-----------------|
+| **Basic addition** | `2 + 3 =` | `5` |
+| **Subtraction** | `7 - 4 =` | `3` |
+| **Multiplication** | `6 × 5 =` (or `6 * 5 =`) | `30` |
+| **Division** | `8 ÷ 2 =` (or `8 / 2 =`) | `4` |
+| **Operator precedence** | `2 + 3 × 4 =` | `14` |
+| **Decimal arithmetic** | `3.5 + 2.1 =` | `5.6` |
+| **Multiple decimals** | `1.2 . 3` (attempt) | Input prevented – only one decimal per number |
+| **Consecutive operators** | `5 ++ 2 =` (attempt) | Input prevented – no two operators in a row |
+| **Divide‑by‑zero** | `9 ÷ 0 =` | `Error` displayed |
+| **Keyboard entry** | Type `7`, `*`, `8`, `Enter` | `56` |
+| **Clear** | Press `C` or `Escape` at any time | Display resets to `0` |
+| **Backspace** | Type `12`, press `Backspace` | Display shows `1` |
 
-## License
-This project is released under the MIT License. Feel free to copy, modify, and distribute it.
+## 📌 Future Enhancements (Deferred)
 
----  
+- **History panel** – scrollable list of previous calculations.  
+- **Scientific functions** – trigonometry, exponentiation, parentheses, etc.  
+- **Theming** – dark mode and user‑selectable color schemes.  
+- **Persisted state** – store the last expression in `localStorage`.  
 
-*Happy calculating!*
+These features are intentionally omitted to keep the core implementation lightweight and focused on reliable basic arithmetic.
+
+---
+
+*Happy calculating!* 🎉
