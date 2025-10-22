@@ -1,124 +1,118 @@
 /* -------------------------------------------------
-   Calculator Presentation Styles (styles.css)
+   Root variables – colors, spacing, typography
    ------------------------------------------------- */
-
-/* Root variables – easy theming */
 :root {
-  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --bg-color: #f5f5f5;
-  --calc-bg: #ffffff;
-  --display-bg: #eaeaea;
-  --button-bg: #fafafa;
-  --button-hover-bg: #e0e0e0;
-  --button-active-bg: #d0d0d0;
-  --clear-bg: #ff8c00;
-  --equals-bg: #4caf50;
-  --text-color: #212121;
-  --accent-color: #005fcc;
+  /* High‑contrast palette */
+  --color-bg: #000;          /* page background */
+  --color-fg: #fff;          /* default text */
+  --color-primary: #222;    /* button background */
+  --color-primary-hover: #444; /* button hover */
+  --color-focus: #ff0;      /* focus outline */
+  --color-display-bg: #111; /* display background */
+
+  /* Layout & sizing */
+  --spacing: 0.5rem;
+  --border-radius: 0.25rem;
+  --font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-/* Global reset & layout */
-*,
-*::before,
-*::after {
+/* -------------------------------------------------
+   Global resets
+   ------------------------------------------------- */
+*, *::before, *::after {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
 }
 
 html, body {
   height: 100%;
+  margin: 0;
+  padding: 0;
+  background: var(--color-bg);
+  color: var(--color-fg);
   font-family: var(--font-family);
-  background: var(--bg-color);
+  line-height: 1.5;
+}
+
+/* Center the calculator vertically & horizontally */
+body {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* Calculator container */
-#calculator {
-  background: var(--calc-bg);
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,.1);
-  width: 320px;
-  max-width: 100%;
-  padding: 1rem;
-}
-
-/* Display area */
-#display {
+/* -------------------------------------------------
+   Calculator container
+   ------------------------------------------------- */
+.calculator {
   width: 100%;
-  height: 3rem;
-  background: var(--display-bg);
-  color: var(--text-color);
-  font-size: 1.5rem;
-  line-height: 3rem;
-  text-align: right;
-  padding: 0 0.75rem;
-  border-radius: 6px;
-  margin-bottom: 1rem;
-  overflow-x: auto;
+  max-width: 400px;               /* reasonable desktop width */
+  padding: var(--spacing);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing);
 }
 
-/* Buttons grid */
-#buttons {
+/* -------------------------------------------------
+   Display (read‑only input)
+   ------------------------------------------------- */
+.display {
+  width: 100%;
+  padding: var(--spacing);
+  font-size: 2rem;
+  text-align: right;
+  background: var(--color-display-bg);
+  color: var(--color-fg);
+  border: 2px solid var(--color-fg);
+  border-radius: var(--border-radius);
+}
+
+/* Remove default input styling for read‑only fields */
+.display[readonly] {
+  cursor: default;
+}
+
+/* -------------------------------------------------
+   Button grid
+   ------------------------------------------------- */
+.button-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 0.5rem;
+  gap: var(--spacing);
 }
 
-/* Base button style */
-.button {
-  background: var(--button-bg);
-  color: var(--text-color);
+/* -------------------------------------------------
+   Buttons
+   ------------------------------------------------- */
+.button-grid button {
+  min-height: 3rem;               /* adequate touch target */
+  padding: var(--spacing);
+  font-size: 1.5rem;
+  background: var(--color-primary);
+  color: var(--color-fg);
   border: none;
-  border-radius: 6px;
-  font-size: 1.25rem;
-  font-weight: 500;
-  padding: 0.75rem;
+  border-radius: var(--border-radius);
   cursor: pointer;
   user-select: none;
-  transition: background 0.15s ease, transform 0.05s ease;
+  transition: background 0.2s ease;
 }
 
-/* Hover / active states */
-.button:hover {
-  background: var(--button-hover-bg);
-}
-.button:active {
-  background: var(--button-active-bg);
-  transform: translateY(1px);
+/* Hover / active states – keep contrast */
+.button-grid button:hover,
+.button-grid button:focus-visible {
+  background: var(--color-primary-hover);
 }
 
-/* Clear & Equals – visual hierarchy */
-.clear,
-.equals {
-  background: var(--clear-bg);
-  font-weight: 700;
-  color: #fff;
-}
-.equals {
-  background: var(--equals-bg);
-}
-
-/* Focus outline for accessibility */
-.button:focus-visible {
-  outline: 3px solid var(--accent-color);
+/* Focus outline – high visibility */
+.button-grid button:focus-visible {
+  outline: 3px solid var(--color-focus);
   outline-offset: 2px;
 }
 
-/* Responsive scaling */
-@media (max-width: 480px) {
-  #calculator {
-    padding: 0.75rem;
-  }
-  #display {
-    height: 2.5rem;
-    font-size: 1.25rem;
-    line-height: 2.5rem;
-  }
-  .button {
-    font-size: 1rem;
-    padding: 0.6rem;
+/* -------------------------------------------------
+   Responsive adjustments
+   ------------------------------------------------- */
+@media (max-width: 600px) {
+  .button-grid button {
+    min-height: 4rem;            /* larger touch targets on small screens */
   }
 }
