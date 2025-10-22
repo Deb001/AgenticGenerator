@@ -1,178 +1,128 @@
 # Simple Web Calculator
 
-A lightweight, zero‑dependency web calculator built with vanilla JavaScript, HTML, and CSS.  
-It parses arithmetic expressions using the shunting‑yard algorithm and evaluates them in Reverse Polish Notation (RPN). The UI is fully accessible and works on desktop and mobile browsers.
+A lightweight, zero‑dependency calculator built with vanilla HTML, CSS, and JavaScript.  
+The core of the application lives in **`src/evaluator.js`**, which safely parses and evaluates arithmetic
+expressions using the shunting‑yard algorithm and a Reverse Polish Notation (RPN) evaluator.
 
 ---
 
 ## Table of Contents
 
-- [Features](#features)
 - [Demo](#demo)
 - [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
-- [Running the Tests](#running-the-tests)
-- [Development](#development)
+- [Setup & Run](#setup--run)
+- [Evaluator API](#evaluator-api)
+- [Keyboard & Accessibility](#keyboard--accessibility)
 - [Extending the Calculator](#extending-the-calculator)
 - [License](#license)
 
 ---
 
-## Features
-
-- **Basic arithmetic**: `+`, `-`, `*`, `/`
-- **Parentheses** for grouping
-- **Unary minus** (e.g., `-5 + 3`)
-- **Decimal numbers**
-- **Robust error handling**: division by zero, syntax errors, mismatched parentheses, invalid token sequences
-- **Responsive UI**: works on desktop and mobile
-- **Keyboard support**: type expressions directly
-- **Accessible markup**: proper ARIA labels and button semantics
-- **Zero‑build**: open `index.html` in a browser, no bundler required
-- **Unit‑tested core engine** (Jest‑compatible or plain Node)
-
----
-
 ## Demo
 
-Open `index.html` in any modern browser:
-
-# From the project root
-open index.html   # macOS
-# or
-start index.html  # Windows
-# or simply double‑click the file in your file explorer
+Open `index.html` in a modern browser (or serve the folder with any static HTTP server) and you’ll see a responsive calculator UI.
 
 ---
 
 ## Project Structure
 
-root
-├─ .gitignore          # Excludes node_modules, OS files, etc.
-├─ README.md           # 📖 This documentation
-├─ index.html          # Root view – display + button grid
-├─ package.json        # Optional npm scripts (test, lint)
-├─ src
-│  ├─ css
-│  │   └─ styles.css   # Responsive layout & button styling
-│  └─ js
-│      ├─ calculator.js # Core expression parser/evaluator
-│      └─ ui.js         # UI controller – event handling & DOM updates
-└─ tests
-    └─ test_calculator.js # Unit tests for the arithmetic engine
+/ (root)
+├─ index.html          # Main view – layout, display, button container
+├─ styles.css          # Responsive grid, button styling, focus states
+└─ src
+   ├─ main.js          # UI controller – renders UI, handles events, updates display
+   └─ evaluator.js     # Expression parser & evaluator – export evaluate(expression)
 
 ---
 
-## Getting Started
+## Setup & Run
 
-### Prerequisites
+1. **Clone / download** the repository.
+2. **Serve** the folder (optional but recommended for proper module loading):
+      # Using Python 3
+   python -m http.server 8000
+   # Then open http://localhost:8000 in your browser
+      *You can also open `index.html` directly, but some browsers block ES modules when opened via `file://`.*
 
-- A modern web browser (Chrome, Firefox, Edge, Safari)
-- (Optional) Node.js ≥ 14 if you want to run the test suite or use npm scripts
+3. **Interact** with the calculator using mouse clicks or the keyboard (see below).
 
-### Running the Application
-
-1. Clone or download the repository.
-2. Open `index.html` directly in your browser – no server or build step is required.
-
-### Installing Development Dependencies (optional)
-
-If you plan to run the test suite or use the provided npm scripts:
-
-npm install
-
-This will install the minimal dev dependencies defined in `package.json` (e.g., Jest).
+No build step, package manager, or external dependencies are required.
 
 ---
 
-## Running the Tests
+## Evaluator API
 
-### Using npm (recommended)
+The module `src/evaluator.js` exports a single function:
 
-npm test
+import { evaluate } from './evaluator.js';
 
-The script runs the test file `tests/test_calculator.js` with Jest (or the built‑in Node runner if Jest is not installed).
+/**
+ * Evaluates a mathematical expression.
+ *
+ * @param {string} expression - A string containing a valid arithmetic expression.
+ *   Supported tokens:
+ *     - Numbers (integers or decimals, e.g., 3, 4.56)
+ *     - Binary operators: +, -, *, /
+ *     - Parentheses: ( )
+ *
+ * @returns {number} The numeric result of the expression.
+ *
+ * @throws {SyntaxError}   If the expression contains invalid characters,
+ *                         mismatched parentheses, or malformed token order.
+ * @throws {Error}         If a runtime error occurs (e.g., division by zero).
+ *
+ * @example
+ * evaluate('3 + 4 * (2 - 1) / 5'); // → 3.8
+ */
 
-### Using Node directly (no npm)
+### How It Works
 
-node tests/test_calculator.js
+1. **Tokenisation** – The input string is split into numbers, operators, and parentheses while ignoring whitespace.
+2. **Shunting‑yard** – Tokens are converted to Reverse Polish Notation (RPN) respecting operator precedence and associativity.
+3. **RPN Evaluation** – A stack processes the RPN tokens to produce the final numeric result.
+4. **Error handling** – The function validates the expression at each stage and throws descriptive errors for:
+   - Unknown characters
+   - Unbalanced parentheses
+   - Invalid token sequences
+   - Division by zero
 
-The test file prints a concise summary of passed/failed cases to the console.
+### Integration Example
+
+import { evaluate } from './src/evaluator.js';
+
+try {
+  const result = evaluate('12 / (2 + 4)');
+  console.log(result); // 2
+} catch (err) {
+  console.error('Evaluation error:', err.message);
+}
 
 ---
 
-## Development
+## Keyboard & Accessibility
 
-### Core Engine (`src/js/calculator.js`)
-
-- Exposes a single function:  
-
-    const { result, error } = evaluate(expression);
-  
-- Returns an object where `result` is a `number` (or `null` on error) and `error` is a human‑readable string (or `null` on success).
-
-### UI Controller (`src/js/ui.js`)
-
-- Binds click events for all calculator buttons.
-- Listens to keyboard input (`keydown`) for digits, operators, `Enter`, `Backspace`, and `Escape`.
-- Maintains an expression string, validates user input, and forwards it to `evaluate`.
-- Updates the display area with the current expression, the computed result, or error messages.
-
-### Styles (`src/css/styles.css`)
-
-- CSS variables for colors, spacing, and font sizes.
-- Flexbox layout for the button grid.
-- Media queries for a mobile‑friendly layout.
-- Focus/hover states for accessibility.
-
-### Testing (`tests/test_calculator.js`)
-
-- Covers:
-  - Simple binary operations
-  - Operator precedence
-  - Parentheses nesting
-  - Unary minus handling
-  - Decimal arithmetic
-  - Division by zero
-  - Syntax errors (e.g., `5++2`, `(.5)`, mismatched parentheses)
+- **Digits & operators** (`0‑9`, `+`, `-`, `*`, `/`, `(`, `)`) insert the corresponding character.
+- **Enter** → evaluates the current expression (same as `=` button).
+- **Backspace** → deletes the last character (same as `C` button).
+- **Escape** → clears the entire display.
+- All interactive elements have appropriate `role="button"` and `aria-label` attributes.
+- Focus order follows the visual layout, and focus styles are clearly visible.
 
 ---
 
 ## Extending the Calculator
 
-### Adding New Operators
+- **Additional operators** – Add entries to the `OPERATORS` map in `evaluator.js` (define precedence, associativity, and implementation).
+- **Functions** (e.g., `sqrt`, `pow`) – Extend the tokenizer to recognise identifiers, push them onto the operator stack, and handle them during RPN evaluation.
+- **Theming** – Override variables in `styles.css` or add a new stylesheet and load it after the default one.
 
-1. **Update the operator table** in `calculator.js`:
-      const OPERATORS = {
-     '+': { precedence: 2, associativity: 'Left', fn: (a, b) => a + b },
-     '-': { precedence: 2, associativity: 'Left', fn: (a, b) => a - b },
-     '*': { precedence: 3, associativity: 'Left', fn: (a, b) => a * b },
-     '/': { precedence: 3, associativity: 'Left', fn: (a, b) => {
-       if (b === 0) throw new Error('Division by zero');
-       return a / b;
-     } },
-     // Example: exponentiation
-     '^': { precedence: 4, associativity: 'Right', fn: (a, b) => Math.pow(a, b) }
-   };
-   2. **Add a button** in `index.html` with the appropriate label and `data-key` attribute.
-3. **Update UI validation** in `ui.js` if the new operator has special rules (e.g., unary vs binary).
-
-### Custom Functions (e.g., `sqrt`, `log`)
-
-- Extend the tokeniser in `calculator.js` to recognise identifiers.
-- Add a `FUNCTIONS` map with implementation callbacks.
-- Adjust the RPN evaluator to handle function tokens (pop required arguments, push result).
-
-### Styling Adjustments
-
-- Modify `src/css/styles.css` – all layout values are driven by CSS variables (`--spacing`, `--primary-color`, etc.).
-- Add new classes for custom button types (e.g., `.operator`, `.function`).
+When extending, keep the public API (`evaluate`) stable to avoid breaking `src/main.js`.
 
 ---
 
 ## License
 
-This project is released under the **MIT License** – feel free to use, modify, and distribute it as you see fit.
+This project is released under the **MIT License**. Feel free to use, modify, and distribute it in personal or commercial projects.
 
 --- 
 
