@@ -1,129 +1,110 @@
 # Simple Web Calculator
 
-A lightweight, zero‑dependency calculator built with vanilla HTML, CSS, and JavaScript.  
-The core of the application lives in **`src/evaluator.js`**, which safely parses and evaluates arithmetic
-expressions using the shunting‑yard algorithm and a Reverse Polish Notation (RPN) evaluator.
+## Overview
+A lightweight, client‑side calculator built with vanilla HTML, CSS, and JavaScript.  
+It supports:
+
+- Basic arithmetic: `+`, `-`, `*`, `/`
+- Parentheses for grouping
+- Floating‑point numbers
+- Unary minus (e.g., `-5 + 3`)
+- Full keyboard navigation and accessibility features
+
+The core evaluation logic lives in **`js/evaluator.js`**, which safely parses an expression using the shunting‑yard algorithm and evaluates the resulting Reverse Polish Notation (RPN). The UI is defined in **`index.html`**, styled by **`css/styles.css`**, and driven by **`js/app.js`**.
 
 ---
 
-## Table of Contents
+## Run Instructions
+1. Clone or download the repository.
+2. Open **`index.html`** in any modern web browser (no server required).
+3. Use the on‑screen buttons or your keyboard to enter expressions.
+4. Press **`=`** (or `Enter`) to evaluate. Results or error messages appear in the display area.
 
-- [Demo](#demo)
-- [Project Structure](#project-structure)
-- [Setup & Run](#setup--run)
-- [Evaluator API](#evaluator-api)
-- [Keyboard & Accessibility](#keyboard--accessibility)
-- [Extending the Calculator](#extending-the-calculator)
-- [License](#license)
+> **Tip:** The calculator works offline – all logic runs locally in the browser.
 
 ---
 
-## Demo
+## API
 
-Open `index.html` in a modern browser (or serve the folder with any static HTTP server) and you’ll see a responsive calculator UI.
+### `evaluator.evaluate(expression)`
 
----
+import { evaluate } from './js/evaluator.js';
 
-## Project Structure
+const result = evaluate('3 + (2 * 4) - 5 / 2');
 
-/ (root)
-├─ index.html          # Main view – layout, display, button container
-├─ styles.css          # Responsive grid, button styling, focus states
-└─ src
-   ├─ main.js          # UI controller – renders UI, handles events, updates display
-   └─ evaluator.js     # Expression parser & evaluator – export evaluate(expression)
+| Parameter | Type   | Description |
+|-----------|--------|-------------|
+| `expression` | `string` | A mathematical expression consisting of numbers, `+ - * /`, parentheses, and optional whitespace. Unary minus is supported. |
 
----
+**Returns:**  
+- `number` – the computed result of the expression.  
+- Throws an `Error` with a clear message for malformed input, unmatched parentheses, division by zero, or any other evaluation failure.
 
-## Setup & Run
-
-1. **Clone / download** the repository.
-2. **Serve** the folder (optional but recommended for proper module loading):
-      # Using Python 3
-   python -m http.server 8000
-   # Then open http://localhost:8000 in your browser
-      *You can also open `index.html` directly, but some browsers block ES modules when opened via `file://`.*
-
-3. **Interact** with the calculator using mouse clicks or the keyboard (see below).
-
-No build step, package manager, or external dependencies are required.
-
----
-
-## Evaluator API
-
-The module `src/evaluator.js` exports a single function:
-
-import { evaluate } from './evaluator.js';
-
-/**
- * Evaluates a mathematical expression.
- *
- * @param {string} expression - A string containing a valid arithmetic expression.
- *   Supported tokens:
- *     - Numbers (integers or decimals, e.g., 3, 4.56)
- *     - Binary operators: +, -, *, /
- *     - Parentheses: ( )
- *
- * @returns {number} The numeric result of the expression.
- *
- * @throws {SyntaxError}   If the expression contains invalid characters,
- *                         mismatched parentheses, or malformed token order.
- * @throws {Error}         If a runtime error occurs (e.g., division by zero).
- *
- * @example
- * evaluate('3 + 4 * (2 - 1) / 5'); // → 3.8
- */
-
-### How It Works
-
-1. **Tokenisation** – The input string is split into numbers, operators, and parentheses while ignoring whitespace.
-2. **Shunting‑yard** – Tokens are converted to Reverse Polish Notation (RPN) respecting operator precedence and associativity.
-3. **RPN Evaluation** – A stack processes the RPN tokens to produce the final numeric result.
-4. **Error handling** – The function validates the expression at each stage and throws descriptive errors for:
-   - Unknown characters
-   - Unbalanced parentheses
-   - Invalid token sequences
-   - Division by zero
-
-### Integration Example
-
-import { evaluate } from './src/evaluator.js';
+**Error handling example**
 
 try {
-  const result = evaluate('12 / (2 + 4)');
-  console.log(result); // 2
-} catch (err) {
-  console.error('Evaluation error:', err.message);
+  const value = evaluate('10 / (5 - 5)');
+} catch (e) {
+  console.error(e.message); // "Division by zero"
 }
 
 ---
 
-## Keyboard & Accessibility
+## Example Expressions
 
-- **Digits & operators** (`0‑9`, `+`, `-`, `*`, `/`, `(`, `)`) insert the corresponding character.
-- **Enter** → evaluates the current expression (same as `=` button).
-- **Backspace** → deletes the last character (same as `C` button).
-- **Escape** → clears the entire display.
-- All interactive elements have appropriate `role="button"` and `aria-label` attributes.
-- Focus order follows the visual layout, and focus styles are clearly visible.
+| Expression | Expected Result |
+|------------|-----------------|
+| `2 + 3 * 4` | `14` |
+| `(1 + 2) * (3 + 4)` | `21` |
+| `-5 + 8` | `3` |
+| `3.5 * 2 - 1.2` | `5.8` |
+| `10 / (2 + 3)` | `2` |
+| `((2.5))` | `2.5` |
+| `- (4 + 1) * 2` | `-10` |
 
 ---
 
-## Extending the Calculator
+## Extensibility Notes
 
-- **Additional operators** – Add entries to the `OPERATORS` map in `evaluator.js` (define precedence, associativity, and implementation).
-- **Functions** (e.g., `sqrt`, `pow`) – Extend the tokenizer to recognise identifiers, push them onto the operator stack, and handle them during RPN evaluation.
-- **Theming** – Override variables in `styles.css` or add a new stylesheet and load it after the default one.
+### Adding New Functions (e.g., `sin`, `cos`, `pow`)
+1. **Extend the tokenizer** in `js/evaluator.js` to recognise identifiers (`sin`, `cos`, …).  
+2. **Update the shunting‑yard implementation** to treat identifiers as functions and handle their argument count.  
+3. **Add the actual implementations** to the `OPERATORS` map (or a separate `FUNCTIONS` map) with the desired JavaScript `Math` calls:
 
-When extending, keep the public API (`evaluate`) stable to avoid breaking `src/main.js`.
+const FUNCTIONS = {
+  sin: (x) => Math.sin(x),
+  cos: (x) => Math.cos(x),
+  pow: (a, b) => Math.pow(a, b),
+};
+
+4. Adjust the RPN evaluator to pop the correct number of operands and invoke the function.
+
+### Swapping the Parser/Evaluator
+The evaluator is deliberately isolated:
+
+- **Parser** (`tokenize` + `toRPN`) → returns an array of RPN tokens.  
+- **Evaluator** (`evaluateRPN`) → consumes the RPN array.
+
+To replace the algorithm (e.g., with a third‑party library), simply export a new `evaluate` function that follows the same signature and error‑throwing contract. `js/app.js` will continue to work unchanged because it only calls `evaluate(expression)`.
 
 ---
 
 ## License
+This project is licensed under the **MIT License**.
 
-This project is released under the **MIT License**. Feel free to use, modify, and distribute it in personal or commercial projects.
+MIT License
+
+Copyright (c) 2025
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+... (full MIT text omitted for brevity) ...
 
 --- 
 
-*Happy calculating!*
+*Happy calculating!* 🚀
