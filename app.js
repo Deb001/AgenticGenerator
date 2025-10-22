@@ -1,207 +1,196 @@
-Sure, here is the complete implementation of `app.js` based on the provided specifications:
+/* app.js - Calculator logic (no external dependencies) */
+'use strict';
 
-document.addEventListener('DOMContentLoaded', () => {
-  init();
-});
+let expression = ''; // holds the current arithmetic expression as a plain string.
 
-let currentInput = ""; // string buffer for the number being entered
-let previousValue = null; // numeric value stored after an operator is pressed
-let pendingOperator = null; // '+', '-', '*', '/'
-let errorState = false; // true when a fatal error (e.g., divide by zero) occurs
+/* Utility helpers */
+const isOperator = (ch) => ['+', '-', '*', '/'].includes(ch);
+const mapToken = (t) => {
+  if (t === '×') return '*';
+  if (t === '÷') return '/';
+  return t;
+};
 
-function init() {
-  bindEvents();
-  updateDisplay();
+/* UI update */
+function updateDisplay(value) {
+  const display = document.getElementById('display');
+  if (display) display.textContent = value;
 }
 
-function bindEvents() {
-  const buttons = document.querySelectorAll('[data-action]');
-  buttons.forEach(button => {
-    button.addEventListener('click', handleButtonClick);
-  });
-
-  document.addEventListener('keydown', handleKeyPress);
+/* Reset state */
+function clearDisplay() {
+  expression = '';
+  updateDisplay('');
 }
 
-function handleButtonClick(event) {
-  const action = event.target.dataset.action;
-  switch (action) {
-    case 'digit':
-      appendDigit(event.target.textContent);
-      break;
-    case 'decimal':
-      appendDecimal();
-      break;
-    case 'operator':
-      setOperator(event.target.textContent);
-      break;
-    case 'clear':
-      clearAll();
-      break;
-    case 'delete':
-      deleteLast();
-      break;
-    case 'equals':
-      computeResult();
-      break;
-  }
-  updateDisplay();
-}
+/* Append a token after validation */
+function appendToken(rawToken) {
+  const token = mapToken(rawToken);
 
-function handleKeyPress(event) {
-  const key = event.key;
-  if (/\d/.test(key)) {
-    appendDigit(key);
-  } else if (key === '.') {
-    appendDecimal();
-  } else if (/[+\-*/]/.test(key)) {
-    setOperator(key);
-  } else if (key === 'Enter' || key === '=') {
-    computeResult();
-  } else if (key === 'Escape' || key === 'C') {
-    clearAll();
-  } else if (key === 'Backspace') {
-    deleteLast();
-  }
-  updateDisplay();
-}
-
-function appendDigit(digit) {
-  if (errorState) return;
-  currentInput += digit;
-  if (currentInput.length > 10) { // Limit input length to prevent overflow
-    currentInput = currentInput.slice(0, 10);
-  }
-}
-
-function appendDecimal() {
-  if (errorState || currentInput.includes('.')) return;
-  currentInput += '.';
-}
-
-function setOperator(operator) {
-  if (errorState) return;
-  if (previousValue !== null && pendingOperator !== null) {
-    computeResult();
-  }
-  previousValue = parseFloat(currentInput);
-  pendingOperator = operator;
-  currentInput = '';
-}
-
-function computeResult() {
-  if (errorState || previousValue === null || pendingOperator === null) return;
-  let result;
-  try {
-    const tokens = tokenize(previousValue + pendingOperator + currentInput);
-    result = evaluateTokens(tokens);
-  } catch (e) {
-    if (e.message === 'Division by zero') {
-      errorState = true;
-      result = NaN;
-    } else {
-      throw e;
+  // Digits and decimal point
+  if (/\d/.test(token) || token === '.') {
+    if (token === '.') {
+      // Prevent multiple decimals in the current number segment
+      const parts = expression.split(/[\+\-\*\/]/);
+      const lastNumber = parts[parts.length - 1];
+      if (lastNumber.includes('.')) return; // ignore invalid decimal
+      if (lastNumber === '') return; // prevent leading decimal without a digit (optional)
     }
+    expression += token;
+    updateDisplay(expression);
+    return;
   }
-  currentInput = formatNumber(result);
-  previousValue = null;
-  pendingOperator = null;
-}
 
-function clearAll() {
-  currentInput = '';
-  previousValue = null;
-  pendingOperator = null;
-  errorState = false;
-}
-
-function deleteLast() {
-  if (errorState) return;
-  currentInput = currentInput.slice(0, -1);
-}
-
-function updateDisplay() {
-  const display = document.querySelector('#calc-display');
-  const history = document.querySelector('#calc-history');
-  display.textContent = formatNumber(currentInput || '0');
-  if (previousValue !== null && pendingOperator !== null) {
-    history.textContent = `${formatNumber(previousValue)} ${pendingOperator} ${currentInput}`;
-  } else {
-    history.textContent = '';
+  // Operators
+  if (isOperator(token)) {
+    if (expression === '') return; // cannot start with an operator
+    const lastChar = expression[expression.length - 1];
+    if (isOperator(lastChar)) return; // prevent consecutive operators
+    expression += token;
+    updateDisplay(expression);
+    return;
   }
+
+  // Any other token is ignored
 }
 
-function tokenize(exprString) {
-  return exprString.match(/(\d+|\.\d+|\d+\.\d+|[+\-*/])/g);
-}
+/* Evaluate the current expression using Shunting‑Yard + RPN */
+function evaluateExpression() {
+  if (expression === '') return;
 
-function evaluateTokens(tokens) {
-  let stack = [];
-  let operators = [];
-  const precedence = { '+': 1, '-': 1, '*': 2, '/': 2 };
+  // Disallow trailing operator
+  if (isOperator(expression[expression.length - 1])) {
+    updateDisplay('Error');
+    expression = '';
+    return;
+  }
 
-  for (let token of tokens) {
-    if (/^\d+$/.test(token)) {
-      stack.push(parseFloat(token));
-    } else if ('+-*/'.includes(token)) {
-      while (operators.length > 0 && precedence[operators[operators.length - 1]] >= precedence[token]) {
-        const b = stack.pop();
-        const a = stack.pop();
-        const operator = operators.pop();
-        switch (operator) {
-          case '+':
-            stack.push(a + b);
-            break;
-          case '-':
-            stack.push(a - b);
-            break;
-          case '*':
-            stack.push(a * b);
-            break;
-          case '/':
-            if (b === 0) throw new Error('Division by zero');
-            stack.push(a / b);
-            break;
-        }
+  // Tokenize (numbers may contain a decimal point)
+  const tokens = [];
+  let numberBuffer = '';
+  for (let i = 0; i < expression.length; i++) {
+    const ch = expression[i];
+    if (/\d/.test(ch) || ch === '.') {
+      numberBuffer += ch;
+    } else if (isOperator(ch)) {
+      if (numberBuffer !== '') {
+        tokens.push(numberBuffer);
+        numberBuffer = '';
       }
-      operators.push(token);
+      tokens.push(ch);
     } else {
-      throw new Error(`Invalid token: ${token}`);
+      // Invalid character – abort
+      updateDisplay('Error');
+      expression = '';
+      return;
+    }
+  }
+  if (numberBuffer !== '') tokens.push(numberBuffer);
+
+  // Shunting‑Yard to produce RPN
+  const outputQueue = [];
+  const operatorStack = [];
+  const precedence = { '+': 1, '-': 1, '*': 2, '/': 2 };
+  const associativity = { '+': 'L', '-': 'L', '*': 'L', '/': 'L' };
+
+  for (const tok of tokens) {
+    if (!isOperator(tok)) {
+      outputQueue.push(tok);
+    } else {
+      while (
+        operatorStack.length &&
+        isOperator(operatorStack[operatorStack.length - 1]) &&
+        ((associativity[tok] === 'L' && precedence[tok] <= precedence[operatorStack[operatorStack.length - 1]]) ||
+          (associativity[tok] === 'R' && precedence[tok] < precedence[operatorStack[operatorStack.length - 1]]))
+      ) {
+        outputQueue.push(operatorStack.pop());
+      }
+      operatorStack.push(tok);
+    }
+  }
+  while (operatorStack.length) {
+    const op = operatorStack.pop();
+    if (!isOperator(op)) {
+      updateDisplay('Error');
+      expression = '';
+      return;
+    }
+    outputQueue.push(op);
+  }
+
+  // Evaluate RPN
+  const evalStack = [];
+  for (const tok of outputQueue) {
+    if (!isOperator(tok)) {
+      evalStack.push(parseFloat(tok));
+    } else {
+      if (evalStack.length < 2) {
+        updateDisplay('Error');
+        expression = '';
+        return;
+      }
+      const b = evalStack.pop();
+      const a = evalStack.pop();
+      let result;
+      switch (tok) {
+        case '+':
+          result = a + b;
+          break;
+        case '-':
+          result = a - b;
+          break;
+        case '*':
+          result = a * b;
+          break;
+        case '/':
+          if (b === 0) {
+            updateDisplay('Error');
+            expression = '';
+            return;
+          }
+          result = a / b;
+          break;
+        default:
+          updateDisplay('Error');
+          expression = '';
+          return;
+      }
+      evalStack.push(result);
     }
   }
 
-  while (operators.length > 0) {
-    const b = stack.pop();
-    const a = stack.pop();
-    const operator = operators.pop();
-    switch (operator) {
-      case '+':
-        stack.push(a + b);
-        break;
-      case '-':
-        stack.push(a - b);
-        break;
-      case '*':
-        stack.push(a * b);
-        break;
-      case '/':
-        if (b === 0) throw new Error('Division by zero');
-        stack.push(a / b);
-        break;
-    }
+  if (evalStack.length !== 1) {
+    updateDisplay('Error');
+    expression = '';
+    return;
   }
 
-  return stack[0];
+  const finalResult = evalStack[0];
+  const displayValue = Number.isFinite(finalResult) ? String(finalResult) : 'Error';
+  expression = displayValue === 'Error' ? '' : displayValue;
+  updateDisplay(displayValue);
 }
 
-function formatNumber(num) {
-  const str = num.toString();
-  if (str.includes('.')) {
-    return str.replace(/\.?0+$/, ''); // Remove trailing zeros and decimal point if not needed
+/* Central event dispatcher */
+function handleButtonPress(event) {
+  const token = event.target.dataset?.token;
+  if (!token) return;
+
+  if (token === 'C') {
+    clearDisplay();
+  } else if (token === '=') {
+    evaluateExpression();
+  } else {
+    appendToken(token);
   }
-  return str;
 }
 
-window.evaluate = evaluateTokens; // Expose evaluate function for testing
+/* Initial wiring */
+function initCalculator() {
+  const buttons = document.querySelectorAll('.calc-button');
+  buttons.forEach((btn) => btn.addEventListener('click', handleButtonPress));
+  updateDisplay('');
+}
 
-This code provides a complete implementation of the calculator app as specified in the task. It includes all necessary functions to handle button clicks, key presses, and state management, along with error handling and display updates.
+/* Run after DOM is ready */
+document.addEventListener('DOMContentLoaded', initCalculator);
