@@ -1,97 +1,146 @@
-Here is the complete implementation of `styles.css` for the calculator application:
+/* -------------------------------------------------
+   Calculator UI Styles
+   ------------------------------------------------- */
 
-/* 
- * styles.css - CSS file for the calculator app
- * This file defines custom properties and responsive layout that does not modify directly by app.js.
- */
-
-/* Custom Properties (CSS Variables) */
+/* Root variables – easy theming */
 :root {
-    --primary-color: #3498db;
-    --secondary-color: #2ecc71;
-    --bg-color: #ecf0f1;
-    --text-color: #333;
-    --btn-color: #fff;
-    --btn-hover-color: #ddd;
+  --calc-bg: #f5f5f5;
+  --calc-fg: #222222;
+  --calc-display-bg: #ffffff;
+  --calc-display-fg: #000000;
+  --calc-button-bg: #e0e0e0;
+  --calc-button-fg: #000000;
+  --calc-button-bg-hover: #d5d5d5;
+  --calc-button-bg-active: #c0c0c0;
+  --calc-button-primary-bg: #ff9500;
+  --calc-button-primary-fg: #ffffff;
+  --calc-border-radius: 6px;
+  --calc-gap: 8px;
+  --calc-font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-/* Basic Reset */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+/* Dark‑mode overrides */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --calc-bg: #1e1e1e;
+    --calc-fg: #e0e0e0;
+    --calc-display-bg: #2c2c2c;
+    --calc-display-fg: #e0e0e0;
+    --calc-button-bg: #3a3a3a;
+    --calc-button-fg: #e0e0e0;
+    --calc-button-bg-hover: #4a4a4a;
+    --calc-button-bg-active: #5a5a5a;
+    --calc-button-primary-bg: #ff9500;
+    --calc-button-primary-fg: #ffffff;
+  }
 }
 
-body {
-    font-family: 'Arial', sans-serif;
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-}
-
-/* Calculator Container */
+/* -------------------------------------------------
+   Layout – the calculator container
+   ------------------------------------------------- */
 .calculator {
-    background-color: #fff;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    padding: 20px;
-    width: 350px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--calc-gap);
+  max-width: 400px;
+  margin: 0 auto;
+  padding: var(--calc-gap);
+  background: var(--calc-bg);
+  color: var(--calc-fg);
+  font-family: var(--calc-font-family);
+  border-radius: var(--calc-border-radius);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* Display Area */
+/* -------------------------------------------------
+   Display – shows the current expression / result
+   ------------------------------------------------- */
 .display {
-    background-color: #2c3e50;
-    color: var(--btn-color);
-    font-size: 1.5em;
-    border-radius: 5px;
-    padding: 20px;
-    text-align: right;
-    margin-bottom: 20px;
+  grid-column: 1 / -1;               /* span all columns */
+  background: var(--calc-display-bg);
+  color: var(--calc-display-fg);
+  font-size: 2rem;
+  line-height: 1.2;
+  text-align: right;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--calc-border-radius);
+  overflow-x: auto;
+  white-space: nowrap;
 }
 
-/* Button Styles */
-button {
-    background-color: var(--primary-color);
-    color: var(--btn-color);
-    border: none;
-    border-radius: 5px;
-    padding: 20px;
-    font-size: 1em;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
+/* -------------------------------------------------
+   Buttons – common styling
+   ------------------------------------------------- */
+.button {
+  background: var(--calc-button-bg);
+  color: var(--calc-button-fg);
+  border: none;
+  border-radius: var(--calc-border-radius);
+  font-size: 1.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  transition: background 0.15s ease, transform 0.05s ease;
 }
 
-button:hover {
-    background-color: var(--secondary-color);
+/* Primary (operator) buttons – e.g., =, +, –, ×, ÷ */
+.button[data-primary="true"] {
+  background: var(--calc-button-primary-bg);
+  color: var(--calc-button-primary-fg);
 }
 
-/* Operator Buttons */
-.operator {
-    background-color: #e74c3c;
+/* Hover & focus-visible */
+.button:hover,
+.button:focus-visible {
+  background: var(--calc-button-bg-hover);
+  outline: 2px solid #005fcc;
+  outline-offset: 2px;
 }
 
-.operator:hover {
-    background-color: #c0392b;
+/* Active (pressed) state */
+.button:active {
+  background: var(--calc-button-bg-active);
+  transform: translateY(1px);
 }
 
-/* Grid Layout for Buttons */
-.buttons {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
+/* Ensure focus-visible works on keyboard navigation */
+.button:focus:not(:focus-visible) {
+  outline: none;
 }
 
-/* Responsive Design */
-@media (max-width: 600px) {
-    .calculator {
-        width: 95%;
-    }
+/* -------------------------------------------------
+   Responsive adjustments
+   ------------------------------------------------- */
+@media (max-width: 480px) {
+  .calculator {
+    max-width: 100%;
+    gap: 6px;
+    padding: 6px;
+  }
 
-    button {
-        padding: 15px;
-        font-size: 0.9em;
-    }
+  .display {
+    font-size: 1.75rem;
+    padding: 0.4rem 0.6rem;
+  }
+
+  .button {
+    font-size: 1.25rem;
+    padding: 0.6rem;
+  }
+}
+
+/* -------------------------------------------------
+   Utility – hide number input spinners if any
+   ------------------------------------------------- */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
 }
