@@ -1,118 +1,143 @@
-/* -------------------------------------------------
-   Root variables – colors, spacing, typography
-   ------------------------------------------------- */
-:root {
-  /* High‑contrast palette */
-  --color-bg: #000;          /* page background */
-  --color-fg: #fff;          /* default text */
-  --color-primary: #222;    /* button background */
-  --color-primary-hover: #444; /* button hover */
-  --color-focus: #ff0;      /* focus outline */
-  --color-display-bg: #111; /* display background */
+/* --------------------------------------------------------------
+   Calculator Styles – Production Ready
+   --------------------------------------------------------------
+   Class names must match the HTML markup:
+   .calc-container   – main wrapper (grid)
+   .calc-display     – read‑only output area
+   .calc-button      – all calculator keys
+   -------------------------------------------------------------- */
 
-  /* Layout & sizing */
-  --spacing: 0.5rem;
-  --border-radius: 0.25rem;
-  --font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-}
-
-/* -------------------------------------------------
-   Global resets
-   ------------------------------------------------- */
+/* Global box‑sizing and reset */
 *, *::before, *::after {
-  box-sizing: border-box;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
-html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  background: var(--color-bg);
-  color: var(--color-fg);
-  font-family: var(--font-family);
-  line-height: 1.5;
+/* Root custom properties – easy theming */
+:root {
+    --font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --bg-color: #f5f5f5;
+    --container-bg: #ffffff;
+    --display-bg: #222222;
+    --display-color: #00ff00;
+    --button-bg: #e0e0e0;
+    --button-bg-hover: #d5d5d5;
+    --button-bg-active: #c0c0c0;
+    --button-color: #000000;
+    --button-shadow: inset 0 -2px 0 rgba(0,0,0,0.1);
+    --focus-color: #0066ff;
+    --border-radius: 6px;
+    --gap: 0.5rem;
+    --font-size-base: 1rem;
 }
 
-/* Center the calculator vertically & horizontally */
+/* Body – centre the calculator */
 body {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: var(--bg-color);
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
 }
 
-/* -------------------------------------------------
-   Calculator container
-   ------------------------------------------------- */
-.calculator {
-  width: 100%;
-  max-width: 400px;               /* reasonable desktop width */
-  padding: var(--spacing);
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing);
+/* --------------------------------------------------------------
+   Calculator container – responsive grid
+   -------------------------------------------------------------- */
+.calc-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--gap);
+    width: 100%;
+    max-width: 320px;
+    padding: var(--gap);
+    background: var(--container-bg);
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
-/* -------------------------------------------------
-   Display (read‑only input)
-   ------------------------------------------------- */
-.display {
-  width: 100%;
-  padding: var(--spacing);
-  font-size: 2rem;
-  text-align: right;
-  background: var(--color-display-bg);
-  color: var(--color-fg);
-  border: 2px solid var(--color-fg);
-  border-radius: var(--border-radius);
+/* --------------------------------------------------------------
+   Display area
+   -------------------------------------------------------------- */
+.calc-display {
+    grid-column: 1 / -1;               /* span all columns */
+    background: var(--display-bg);
+    color: var(--display-color);
+    padding: 0.75rem 1rem;
+    border-radius: var(--border-radius);
+    font-size: 1.5rem;
+    text-align: right;
+    overflow-x: auto;
+    white-space: nowrap;
+    user-select: none;
 }
 
-/* Remove default input styling for read‑only fields */
-.display[readonly] {
-  cursor: default;
+/* --------------------------------------------------------------
+   Buttons – uniform sizing & interaction
+   -------------------------------------------------------------- */
+.calc-button {
+    background: var(--button-bg);
+    color: var(--button-color);
+    border: none;
+    border-radius: var(--border-radius);
+    font-size: 1.25rem;
+    font-weight: 600;
+    padding: 0.75rem;
+    cursor: pointer;
+    box-shadow: var(--button-shadow);
+    transition: background 0.15s ease, transform 0.05s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
 }
 
-/* -------------------------------------------------
-   Button grid
-   ------------------------------------------------- */
-.button-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--spacing);
+/* Hover state – mouse users */
+.calc-button:hover {
+    background: var(--button-bg-hover);
 }
 
-/* -------------------------------------------------
-   Buttons
-   ------------------------------------------------- */
-.button-grid button {
-  min-height: 3rem;               /* adequate touch target */
-  padding: var(--spacing);
-  font-size: 1.5rem;
-  background: var(--color-primary);
-  color: var(--color-fg);
-  border: none;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  user-select: none;
-  transition: background 0.2s ease;
+/* Active state – mouse or touch */
+.calc-button:active {
+    background: var(--button-bg-active);
+    transform: translateY(1px);
 }
 
-/* Hover / active states – keep contrast */
-.button-grid button:hover,
-.button-grid button:focus-visible {
-  background: var(--color-primary-hover);
+/* Focus state – keyboard navigation (ARIA compliance) */
+.calc-button:focus-visible {
+    outline: 2px solid var(--focus-color);
+    outline-offset: 2px;
 }
 
-/* Focus outline – high visibility */
-.button-grid button:focus-visible {
-  outline: 3px solid var(--color-focus);
-  outline-offset: 2px;
-}
-
-/* -------------------------------------------------
+/* --------------------------------------------------------------
    Responsive adjustments
-   ------------------------------------------------- */
-@media (max-width: 600px) {
-  .button-grid button {
-    min-height: 4rem;            /* larger touch targets on small screens */
-  }
+   -------------------------------------------------------------- */
+@media (max-width: 480px) {
+    :root {
+        --font-size-base: 0.9rem;
+    }
+
+    .calc-container {
+        gap: 0.4rem;
+        padding: 0.4rem;
+    }
+
+    .calc-display {
+        font-size: 1.25rem;
+        padding: 0.6rem 0.8rem;
+    }
+
+    .calc-button {
+        font-size: 1.1rem;
+        padding: 0.6rem;
+    }
+}
+
+/* Ensure high‑contrast mode respects focus outline */
+@media (prefers-contrast: more) {
+    .calc-button:focus-visible {
+        outline-width: 3px;
+    }
 }
