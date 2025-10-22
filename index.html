@@ -1,17 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simple Calculator</title>
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Calculator</title>
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-  <div class="calculator">
-    <div id="display" role="textbox" aria-live="polite" aria-label="Calculator display"></div>
-    <div id="buttons" class="button-grid"></div>
-  </div>
+    <main class="calculator" role="application" aria-label="Simple arithmetic calculator">
+        <!-- Result / expression display -->
+        <div id="display" aria-live="polite" class="display" role="status"></div>
 
-  <script type="module" src="src/main.js"></script>
+        <!-- Buttons -->
+        <div class="buttons">
+            <!-- Row 1 -->
+            <button type="button" class="calc-button" data-value="C" aria-label="Clear">C</button>
+            <button type="button" class="calc-button" data-value="←" aria-label="Backspace">←</button>
+            <button type="button" class="calc-button" data-value="(" aria-label="Open parenthesis">(</button>
+            <button type="button" class="calc-button" data-value=")" aria-label="Close parenthesis">)</button>
+
+            <!-- Row 2 -->
+            <button type="button" class="calc-button" data-value="7" aria-label="Number 7">7</button>
+            <button type="button" class="calc-button" data-value="8" aria-label="Number 8">8</button>
+            <button type="button" class="calc-button" data-value="9" aria-label="Number 9">9</button>
+            <button type="button" class="calc-button" data-value="/" aria-label="Divide">÷</button>
+
+            <!-- Row 3 -->
+            <button type="button" class="calc-button" data-value="4" aria-label="Number 4">4</button>
+            <button type="button" class="calc-button" data-value="5" aria-label="Number 5">5</button>
+            <button type="button" class="calc-button" data-value="6" aria-label="Number 6">6</button>
+            <button type="button" class="calc-button" data-value="*" aria-label="Multiply">×</button>
+
+            <!-- Row 4 -->
+            <button type="button" class="calc-button" data-value="1" aria-label="Number 1">1</button>
+            <button type="button" class="calc-button" data-value="2" aria-label="Number 2">2</button>
+            <button type="button" class="calc-button" data-value="3" aria-label="Number 3">3</button>
+            <button type="button" class="calc-button" data-value="-" aria-label="Subtract">−</button>
+
+            <!-- Row 5 -->
+            <button type="button" class="calc-button" data-value="0" aria-label="Number 0">0</button>
+            <button type="button" class="calc-button" data-value="." aria-label="Decimal point">.</button>
+            <button type="button" class="calc-button" data-value="=" aria-label="Equals">=</button>
+            <button type="button" class="calc-button" data-value="+" aria-label="Add">+</button>
+        </div>
+    </main>
+
+    <!-- Scripts (evaluator must load before app) -->
+    <script src="js/evaluator.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
