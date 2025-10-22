@@ -1,142 +1,85 @@
-/* -------------------------------------------------
-   Calculator Styling (styles.css)
-   ------------------------------------------------- */
-
-/* ---- Root variables for easy theming ---- */
-:root {
-    --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    --bg-color: #f4f4f9;
-    --calc-bg: #ffffff;
-    --display-bg: #eaeaea;
-    --display-color: #333333;
-    --button-bg: #e0e0e0;
-    --button-color: #000000;
-    --operator-bg: #ff9500;
-    --operator-color: #ffffff;
-    --equal-bg: #34c759;
-    --equal-color: #ffffff;
-    --border-radius: 8px;
-    --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-/* ---- Global reset & base ---- */
-*,
-*::before,
-*::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
-
-html {
-    font-family: var(--font-family);
-    font-size: 16px;
-    background: var(--bg-color);
-    height: 100%;
-}
-
+/* Global layout */
 body {
+    margin: 0;
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
+    background: #f0f0f0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-/* ---- Calculator container ---- */
+/* Calculator container */
 .calculator {
-    width: 100%;
-    max-width: 380px;
-    background: var(--calc-bg);
-    border-radius: var(--border-radius);
-    box-shadow: var(--shadow);
-    padding: 1rem;
+    width: 320px;
+    max-width: 100%;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
 }
 
-/* ---- Display ---- */
-.calculator .display {
+/* Display area */
+.display {
     width: 100%;
-    height: 3.5rem;
-    background: var(--display-bg);
-    color: var(--display-color);
+    height: 60px;
+    padding: 0.5rem 0.75rem;
     font-size: 2rem;
+    line-height: 1.2;
     text-align: right;
-    line-height: 3.5rem;
-    padding: 0 0.75rem;
-    border-radius: var(--border-radius);
+    background: #e9e9e9;
+    border-bottom: 1px solid #ccc;
+    box-sizing: border-box;
     overflow-x: auto;
     white-space: nowrap;
-}
-
-/* ---- Buttons grid ---- */
-.calculator .buttons {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.75rem;
-    margin-top: 1rem;
-}
-
-/* ---- Individual button ---- */
-.calculator .button {
-    font-size: 1.5rem;
-    padding: 0.75rem;
-    background: var(--button-bg);
-    color: var(--button-color);
-    border: none;
-    border-radius: var(--border-radius);
-    cursor: pointer;
-    transition: background 0.2s, transform 0.1s;
     user-select: none;
 }
 
-/* Hover / active feedback */
-.calculator .button:hover {
-    background: #d5d5d5;
+/* Error state */
+.error {
+    color: #d8000c;
+    background: #ffebeb;
 }
 
-.calculator .button:active {
-    transform: translateY(1px);
+/* Keypad layout */
+.keypad {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+    padding: 5px;
 }
 
-/* ---- Operator buttons ---- */
-.calculator .button.operator {
-    background: var(--operator-bg);
-    color: var(--operator-color);
+/* Buttons */
+.keypad button {
+    min-height: 44px;               /* Minimum touch target */
+    font-size: 1.2rem;
+    background: #f5f5f5;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    color: #333;
 }
 
-.calculator .button.operator:hover {
-    background: #e68a00;
+.keypad button:hover {
+    background: #e0e0e0;
 }
 
-/* ---- Equal button (spans full width) ---- */
-.calculator .button.equal {
-    grid-column: span 4;
-    background: var(--equal-bg);
-    color: var(--equal-color);
-    font-weight: bold;
+.keypad button:active {
+    background: #d0d0d0;
 }
 
-.calculator .button.equal:hover {
-    background: #28a745;
+/* Focus outline for accessibility */
+.keypad button:focus-visible {
+    outline: 2px solid #0066ff;
+    outline-offset: 2px;
 }
 
-/* ---- Responsive adjustments ---- */
-@media (max-width: 480px) {
+/* Responsive tweak */
+@media (max-width: 360px) {
     .calculator {
-        padding: 0.75rem;
-    }
-
-    .calculator .display {
-        height: 2.8rem;
-        font-size: 1.6rem;
-        line-height: 2.8rem;
-    }
-
-    .calculator .button {
-        font-size: 1.2rem;
-        padding: 0.6rem;
-    }
-
-    .calculator .buttons {
-        gap: 0.5rem;
+        width: 100%;
+        margin: 0 0.5rem;
     }
 }
