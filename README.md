@@ -1,110 +1,75 @@
-# Simple Web Calculator
+# Calculator Web App
 
 ## Overview
-A lightweight, client‑side calculator built with vanilla HTML, CSS, and JavaScript.  
-It supports:
+A lightweight, zero‑dependency web calculator that runs entirely in the browser.  
+It provides a clean UI, full keyboard support, and an **evaluate(expression)** API that safely parses and computes arithmetic expressions without using `eval`. The core logic lives in `src/calculator.js`, while `src/ui.js` handles all user interactions and accessibility concerns.
 
-- Basic arithmetic: `+`, `-`, `*`, `/`
-- Parentheses for grouping
-- Floating‑point numbers
-- Unary minus (e.g., `-5 + 3`)
-- Full keyboard navigation and accessibility features
+## File Structure
+/ (project root)
+│
+├─ index.html          # Main page – loads UI and core scripts, defines the calculator UI
+├─ styles.css          # Responsive, high‑contrast styling and focus indicators
+│
+└─ src/
+   ├─ calculator.js   # Pure‑logic module – tokenises, parses (shunting‑yard) and evaluates expressions
+   └─ ui.js           # UI controller – DOM handling, keyboard shortcuts, ARIA attributes
 
-The core evaluation logic lives in **`js/evaluator.js`**, which safely parses an expression using the shunting‑yard algorithm and evaluates the resulting Reverse Polish Notation (RPN). The UI is defined in **`index.html`**, styled by **`css/styles.css`**, and driven by **`js/app.js`**.
+## Setup & Run
+1. **Clone / download** the repository.  
+2. Open `index.html` in any modern browser (Chrome, Edge, Firefox, Safari). No build step, server, or package manager is required.  
+3. The calculator is ready to use immediately – click the buttons or use the keyboard.
 
----
+### Keyboard shortcuts
+| Key            | Action                     |
+|----------------|----------------------------|
+| `0‑9` `.`      | Append digit / decimal     |
+| `+` `-` `*` `/`| Append operator            |
+| `(` `)`        | Append parenthesis         |
+| `Enter`        | Evaluate (`=`)             |
+| `Escape`       | Clear (`C`)                |
+| `Backspace`    | Delete last character (`⌫`) |
 
-## Run Instructions
-1. Clone or download the repository.
-2. Open **`index.html`** in any modern web browser (no server required).
-3. Use the on‑screen buttons or your keyboard to enter expressions.
-4. Press **`=`** (or `Enter`) to evaluate. Results or error messages appear in the display area.
+## Testing `evaluate()`
+A minimal test harness is included in `test/test_evaluator.html`. Open that file in a browser console or run the script directly in the console:
 
-> **Tip:** The calculator works offline – all logic runs locally in the browser.
+import { evaluate } from '../src/calculator.js';
 
----
+// Basic operations
+console.assert(evaluate('2+3') === 5, '2+3 should be 5');
+console.assert(evaluate('4-7') === -3, '4-7 should be -3');
+console.assert(evaluate('6*7') === 42, '6*7 should be 42');
+console.assert(evaluate('8/2') === 4, '8/2 should be 4');
 
-## API
+// Decimals and precedence
+console.assert(evaluate('3.5+2.1') === 5.6, 'Decimal addition');
+console.assert(evaluate('2+3*4') === 14, 'Operator precedence');
+console.assert(evaluate('(2+3)*4') === 20, 'Parentheses');
 
-### `evaluator.evaluate(expression)`
-
-import { evaluate } from './js/evaluator.js';
-
-const result = evaluate('3 + (2 * 4) - 5 / 2');
-
-| Parameter | Type   | Description |
-|-----------|--------|-------------|
-| `expression` | `string` | A mathematical expression consisting of numbers, `+ - * /`, parentheses, and optional whitespace. Unary minus is supported. |
-
-**Returns:**  
-- `number` – the computed result of the expression.  
-- Throws an `Error` with a clear message for malformed input, unmatched parentheses, division by zero, or any other evaluation failure.
-
-**Error handling example**
-
+// Edge cases
 try {
-  const value = evaluate('10 / (5 - 5)');
+  evaluate('5/0');
+  console.error('Division by zero should throw');
 } catch (e) {
-  console.error(e.message); // "Division by zero"
+  console.assert(e.message.includes('divide by zero'), 'Correct error for divide by zero');
 }
 
----
+try {
+  evaluate('2++2');
+  console.error('Malformed expression should throw');
+} catch (e) {
+  console.assert(e.message.includes('syntax'), 'Correct error for malformed expression');
+}
 
-## Example Expressions
+All assertions should pass without throwing. If any fail, open an issue with the failing expression and expected result.
 
-| Expression | Expected Result |
-|------------|-----------------|
-| `2 + 3 * 4` | `14` |
-| `(1 + 2) * (3 + 4)` | `21` |
-| `-5 + 8` | `3` |
-| `3.5 * 2 - 1.2` | `5.8` |
-| `10 / (2 + 3)` | `2` |
-| `((2.5))` | `2.5` |
-| `- (4 + 1) * 2` | `-10` |
-
----
-
-## Extensibility Notes
-
-### Adding New Functions (e.g., `sin`, `cos`, `pow`)
-1. **Extend the tokenizer** in `js/evaluator.js` to recognise identifiers (`sin`, `cos`, …).  
-2. **Update the shunting‑yard implementation** to treat identifiers as functions and handle their argument count.  
-3. **Add the actual implementations** to the `OPERATORS` map (or a separate `FUNCTIONS` map) with the desired JavaScript `Math` calls:
-
-const FUNCTIONS = {
-  sin: (x) => Math.sin(x),
-  cos: (x) => Math.cos(x),
-  pow: (a, b) => Math.pow(a, b),
-};
-
-4. Adjust the RPN evaluator to pop the correct number of operands and invoke the function.
-
-### Swapping the Parser/Evaluator
-The evaluator is deliberately isolated:
-
-- **Parser** (`tokenize` + `toRPN`) → returns an array of RPN tokens.  
-- **Evaluator** (`evaluateRPN`) → consumes the RPN array.
-
-To replace the algorithm (e.g., with a third‑party library), simply export a new `evaluate` function that follows the same signature and error‑throwing contract. `js/app.js` will continue to work unchanged because it only calls `evaluate(expression)`.
+## Accessibility Notes
+- **Semantic markup** – every button is a native `<button>` element with an appropriate `aria-label` (e.g., `aria-label="Add"` for `+`).  
+- **Focus management** – the display area is focusable (`tabindex="0"`), and a visible focus ring is applied via CSS.  
+- **Screen‑reader friendly** – the calculator announces the current expression and results through `aria-live="polite"` on the display element.  
+- **Keyboard‑first** – all functionality is reachable via the keyboard shortcuts listed above; mouse/touch is a convenience layer.  
+- **Contrast** – colors meet WCAG AA contrast ratios (minimum 4.5:1).  
+- **Touch targets** – buttons are at least 44 × 44 px, ensuring comfortable use on mobile devices.
 
 ---
-
-## License
-This project is licensed under the **MIT License**.
-
-MIT License
-
-Copyright (c) 2025
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-... (full MIT text omitted for brevity) ...
-
---- 
 
 *Happy calculating!* 🚀
