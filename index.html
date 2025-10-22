@@ -3,39 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Calculator</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Accessible Calculator</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <main id="calculator">
-        <input type="text" id="display" readonly aria-label="Calculator display">
+    <!-- Calculator display -->
+    <section role="region" aria-label="Calculator display" class="display-section">
+        <div id="calc-display" aria-live="polite" class="display"></div>
+    </section>
 
-        <section class="buttons">
-            <button class="btn" data-action="clear">C</button>
-            <button class="btn" data-action="backspace">←</button>
-            <button class="btn" data-action="divide">÷</button>
-            <button class="btn" data-action="multiply">×</button>
+    <!-- Calculator keypad -->
+    <div class="keypad">
+        <!-- Row 1 -->
+        <button type="button" data-action="clear" aria-label="Clear">C</button>
+        <button type="button" data-action="backspace" aria-label="Backspace">←</button>
+        <button type="button" data-action="operator" data-value="/" aria-label="Divide">÷</button>
+        <button type="button" data-action="operator" data-value="*" aria-label="Multiply">×</button>
 
-            <button class="btn" data-action="digit">7</button>
-            <button class="btn" data-action="digit">8</button>
-            <button class="btn" data-action="digit">9</button>
-            <button class="btn" data-action="subtract">−</button>
+        <!-- Row 2 -->
+        <button type="button" data-action="digit" data-value="7" aria-label="Digit 7">7</button>
+        <button type="button" data-action="digit" data-value="8" aria-label="Digit 8">8</button>
+        <button type="button" data-action="digit" data-value="9" aria-label="Digit 9">9</button>
+        <button type="button" data-action="operator" data-value="-" aria-label="Subtract">−</button>
 
-            <button class="btn" data-action="digit">4</button>
-            <button class="btn" data-action="digit">5</button>
-            <button class="btn" data-action="digit">6</button>
-            <button class="btn" data-action="add">+</button>
+        <!-- Row 3 -->
+        <button type="button" data-action="digit" data-value="4" aria-label="Digit 4">4</button>
+        <button type="button" data-action="digit" data-value="5" aria-label="Digit 5">5</button>
+        <button type="button" data-action="digit" data-value="6" aria-label="Digit 6">6</button>
+        <button type="button" data-action="operator" data-value="+" aria-label="Add">+</button>
 
-            <button class="btn" data-action="digit">1</button>
-            <button class="btn" data-action="digit">2</button>
-            <button class="btn" data-action="digit">3</button>
-            <button class="btn" data-action="equals" rowspan="2">=</button>
+        <!-- Row 4 -->
+        <button type="button" data-action="digit" data-value="1" aria-label="Digit 1">1</button>
+        <button type="button" data-action="digit" data-value="2" aria-label="Digit 2">2</button>
+        <button type="button" data-action="digit" data-value="3" aria-label="Digit 3">3</button>
+        <button type="button" data-action="equals" aria-label="Equals">=</button>
 
-            <button class="btn zero" data-action="digit">0</button>
-            <button class="btn" data-action="decimal">.</button>
-        </section>
-    </main>
+        <!-- Row 5 -->
+        <button type="button" class="zero" data-action="digit" data-value="0" aria-label="Digit 0">0</button>
+        <button type="button" data-action="decimal" aria-label="Decimal point">.</button>
+    </div>
 
-    <script src="script.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
