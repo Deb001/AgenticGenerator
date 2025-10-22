@@ -1,180 +1,159 @@
 // src/ui.js
-import { evaluateExpression } from './calculator.js';
+import { evaluate } from './calculator.js';
 
-let currentInput = ''; // stores the expression as the user types
 const MAX_LENGTH = 30;
-const OPERATORS = '+-*/';
 
-function initUI() {
-  // Attach click listeners to all calculator buttons
-  document.querySelectorAll('button[data-action]').forEach(btn => {
-    btn.addEventListener('click', handleButtonClick);
-  });
+let expression = '';
+let displayEl = null;
+let calculatorEl = null;
 
-  // Keyboard support
-  document.addEventListener('keydown', handleKeyPress);
+/**
+ * Writes the provided string to the #display element.
+ * @param {string} content
+ */
+function updateDisplay(content) {
+  if (displayEl) {
+    displayEl.textContent = content;
+  }
 }
 
 /**
- * Click handler for calculator buttons.
- * Buttons use data-action to indicate special functions (clear, backspace, equals)
- * and data-value for characters to be appended to the expression.
+ * Adds a character to the internal expression buffer respecting a maximum length.
+ * @param {string} char
+ */
+function appendToExpression(char) {
+  if (expression.length >= MAX_LENGTH) return;
+  expression += char;
+  updateDisplay(expression);
+}
+
+/**
+ * Resets the expression buffer and clears the display.
+ */
+function clearExpression() {
+  expression = '';
+  updateDisplay('');
+}
+
+/**
+ * Removes the last character from the expression buffer and updates the display.
+ */
+function backspaceExpression() {
+  expression = expression.slice(0, -1);
+  updateDisplay(expression);
+}
+
+/**
+ * Calls evaluate(expression) inside a try/catch, shows the numeric result or error message.
+ */
+function evaluateExpression() {
+  try {
+    const result = evaluate(expression);
+    const resultStr = String(result);
+    updateDisplay(resultStr);
+    expression = resultStr;
+  } catch (e) {
+    updateDisplay(e instanceof Error ? e.message : String(e));
+  }
+}
+
+/**
+ * Determines the button's data-action/value, updates the expression string,
+ * updates the display, or triggers evaluation/clear/backspace.
+ * @param {MouseEvent} event
  */
 function handleButtonClick(event) {
   const btn = event.target.closest('button');
-  if (!btn) return;
+  if (!btn || !calculatorEl.contains(btn)) return;
 
   const action = btn.dataset.action;
   const value = btn.dataset.value;
 
   switch (action) {
+    case 'digit':
+    case 'operator':
+    case 'decimal':
+    case 'parenthesis':
+      appendToExpression(value);
+      break;
     case 'clear':
-      clearAll();
+      clearExpression();
       break;
     case 'backspace':
-      backspace();
+      backspaceExpression();
       break;
     case 'equals':
-      evaluateCurrent();
+      evaluateExpression();
       break;
     default:
-      // digit, operator, decimal etc.
-      if (value && validateAndAppend(value)) {
-        updateDisplay(currentInput);
-      } else {
-        showError('Error');
-      }
+      // Unknown action – ignore.
+      break;
   }
 }
 
 /**
- * Keyboard handler – maps keys to the same actions as the UI buttons.
+ * Maps keyboard keys to the same actions as button clicks.
+ * @param {KeyboardEvent} event
  */
 function handleKeyPress(event) {
   const { key } = event;
+  // Normalise key for easier handling
+  const isDigit = /^[0-9]$/.test(key);
+  const isOperator = /^[+\-*/]$/.test(key);
+  const isDecimal = key === '.';
+  const isParenthesis = key === '(' || key === ')';
+  const isEnter = key === 'Enter';
+  const isEscape = key === 'Escape';
+  const isBackspace = key === 'Backspace';
 
-  if (key >= '0' && key <= '9') {
-    if (validateAndAppend(key)) updateDisplay(currentInput);
+  if (isDigit) {
     event.preventDefault();
-  } else if (key === '.' || key === ',') {
-    if (validateAndAppend('.')) updateDisplay(currentInput);
+    appendToExpression(key);
+  } else if (isOperator) {
     event.preventDefault();
-  } else if (OPERATORS.includes(key)) {
-    if (validateAndAppend(key)) updateDisplay(currentInput);
+    // Map '*' and '/' to the symbols used in the UI if needed
+    const op = key === '*' ? '*' : key === '/' ? '/' : key;
+    appendToExpression(op);
+  } else if (isDecimal) {
     event.preventDefault();
-  } else if (key === 'Enter') {
-    evaluateCurrent();
+    appendToExpression('.');
+  } else if (isParenthesis) {
     event.preventDefault();
-  } else if (key === 'Backspace') {
-    backspace();
+    appendToExpression(key);
+  } else if (isEnter) {
     event.preventDefault();
-  } else if (key === 'Escape') {
-    clearAll();
+    evaluateExpression();
+  } else if (isEscape) {
     event.preventDefault();
+    clearExpression();
+  } else if (isBackspace) {
+    event.preventDefault();
+    backspaceExpression();
   }
 }
 
 /**
- * Append a character to the current input after validation.
- * Returns true if the character was accepted.
+ * Sets up DOM references, registers click and keyboard listeners,
+ * and initializes the expression state.
  */
-function validateAndAppend(char) {
-  if (currentInput.length >= MAX_LENGTH) return false;
+export function initCalculator() {
+  displayEl = document.getElementById('display');
+  calculatorEl = document.getElementById('calculator');
 
-  const lastChar = currentInput.slice(-1);
-
-  // Operator handling
-  if (OPERATORS.includes(char)) {
-    // allow leading minus for negative numbers
-    if (currentInput === '' && char === '-') return true;
-    // prevent two operators in a row
-    if (OPERATORS.includes(lastChar)) return false;
-    currentInput += char;
-    return true;
+  if (!displayEl || !calculatorEl) {
+    console.error('Calculator UI elements not found.');
+    return;
   }
 
-  // Decimal point handling
-  if (char === '.') {
-    const parts = currentInput.split(/[+\-*/]/);
-    const lastNumber = parts[parts.length - 1];
-    if (lastNumber.includes('.')) return false;
-    // prevent starting a number with just a dot (e.g., ".5" is allowed)
-    if (lastNumber === '' && (lastChar && OPERATORS.includes(lastChar))) {
-      // allow ".5" after an operator
-      currentInput += '0';
-    }
-    currentInput += '.';
-    return true;
-  }
+  calculatorEl.addEventListener('click', handleButtonClick);
+  document.addEventListener('keydown', handleKeyPress);
 
-  // Digits
-  if (/\d/.test(char)) {
-    currentInput += char;
-    return true;
-  }
-
-  return false;
+  clearExpression();
 }
 
-/**
- * Evaluate the current expression and display the result.
- */
-function evaluateCurrent() {
-  if (!currentInput) return;
-  try {
-    const rawResult = evaluateExpression(currentInput);
-    let formatted = Number(rawResult).toFixed(8);
-    // Trim trailing zeros and possible trailing decimal point
-    formatted = formatted.replace(/\.?0+$/, '');
-    updateDisplay(formatted);
-    currentInput = formatted;
-  } catch (e) {
-    showError('Error');
-  }
-}
-
-/**
- * Write the provided string into the .display element.
- */
-function updateDisplay(value) {
-  const displayEl = document.querySelector('.display');
-  if (displayEl) {
-    displayEl.textContent = value;
-    displayEl.classList.remove('error');
-  }
-}
-
-/**
- * Show a user‑friendly error message and log details.
- */
-function showError(message) {
-  const displayEl = document.querySelector('.display');
-  if (displayEl) {
-    displayEl.textContent = 'Error';
-    displayEl.classList.add('error');
-  }
-  console.error(message);
-}
-
-/**
- * Reset the input buffer and clear the display.
- */
-function clearAll() {
-  currentInput = '';
-  updateDisplay('');
-}
-
-/**
- * Remove the last character from the input buffer and update the display.
- */
-function backspace() {
-  currentInput = currentInput.slice(0, -1);
-  updateDisplay(currentInput);
-}
-
-// Bootstrap UI when the document is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initUI);
+// Auto‑initialize when the module is loaded in a browser environment.
+if (document.readyState !== 'loading') {
+  initCalculator();
 } else {
-  initUI();
+  document.addEventListener('DOMContentLoaded', initCalculator);
 }
