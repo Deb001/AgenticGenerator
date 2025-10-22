@@ -1,196 +1,217 @@
-/* app.js - Calculator logic (no external dependencies) */
+/* app.js - Core calculator logic */
 'use strict';
 
-let expression = ''; // holds the current arithmetic expression as a plain string.
+let expressionString = '';
+const operatorPrecedence = { '+': 1, '-': 1, '*': 2, '/': 2 };
+let displayElement = null;
 
-/* Utility helpers */
-const isOperator = (ch) => ['+', '-', '*', '/'].includes(ch);
-const mapToken = (t) => {
-  if (t === '×') return '*';
-  if (t === '÷') return '/';
-  return t;
-};
-
-/* UI update */
-function updateDisplay(value) {
-  const display = document.getElementById('display');
-  if (display) display.textContent = value;
+/* UI Update helpers */
+function updateDisplay(content) {
+    if (displayElement) displayElement.textContent = content;
 }
 
-/* Reset state */
-function clearDisplay() {
-  expression = '';
-  updateDisplay('');
+function showError(message) {
+    updateDisplay(message);
+    expressionString = '';
 }
 
-/* Append a token after validation */
-function appendToken(rawToken) {
-  const token = mapToken(rawToken);
-
-  // Digits and decimal point
-  if (/\d/.test(token) || token === '.') {
-    if (token === '.') {
-      // Prevent multiple decimals in the current number segment
-      const parts = expression.split(/[\+\-\*\/]/);
-      const lastNumber = parts[parts.length - 1];
-      if (lastNumber.includes('.')) return; // ignore invalid decimal
-      if (lastNumber === '') return; // prevent leading decimal without a digit (optional)
-    }
-    expression += token;
-    updateDisplay(expression);
-    return;
-  }
-
-  // Operators
-  if (isOperator(token)) {
-    if (expression === '') return; // cannot start with an operator
-    const lastChar = expression[expression.length - 1];
-    if (isOperator(lastChar)) return; // prevent consecutive operators
-    expression += token;
-    updateDisplay(expression);
-    return;
-  }
-
-  // Any other token is ignored
+/* Input manipulation */
+function appendDigit(digit) {
+    expressionString += digit;
+    updateDisplay(expressionString);
 }
 
-/* Evaluate the current expression using Shunting‑Yard + RPN */
-function evaluateExpression() {
-  if (expression === '') return;
+function appendOperator(operator) {
+    if (!expressionString && operator !== '-') return; // prevent leading operators except minus
+    if (/[+\-*/]$/.test(expressionString)) return; // avoid consecutive operators
+    expressionString += operator;
+    updateDisplay(expressionString);
+}
 
-  // Disallow trailing operator
-  if (isOperator(expression[expression.length - 1])) {
-    updateDisplay('Error');
-    expression = '';
-    return;
-  }
-
-  // Tokenize (numbers may contain a decimal point)
-  const tokens = [];
-  let numberBuffer = '';
-  for (let i = 0; i < expression.length; i++) {
-    const ch = expression[i];
-    if (/\d/.test(ch) || ch === '.') {
-      numberBuffer += ch;
-    } else if (isOperator(ch)) {
-      if (numberBuffer !== '') {
-        tokens.push(numberBuffer);
-        numberBuffer = '';
-      }
-      tokens.push(ch);
-    } else {
-      // Invalid character – abort
-      updateDisplay('Error');
-      expression = '';
-      return;
+function addDecimal() {
+    const parts = expressionString.split(/[+\-*/]/);
+    const last = parts[parts.length - 1];
+    if (last.includes('.')) return;
+    // If starting a new number with a decimal, prepend a zero
+    if (last === '' && (expressionString === '' || /[+\-*/]$/.test(expressionString))) {
+        expressionString += '0';
     }
-  }
-  if (numberBuffer !== '') tokens.push(numberBuffer);
+    expressionString += '.';
+    updateDisplay(expressionString);
+}
 
-  // Shunting‑Yard to produce RPN
-  const outputQueue = [];
-  const operatorStack = [];
-  const precedence = { '+': 1, '-': 1, '*': 2, '/': 2 };
-  const associativity = { '+': 'L', '-': 'L', '*': 'L', '/': 'L' };
+function clearAll() {
+    expressionString = '';
+    updateDisplay('');
+}
 
-  for (const tok of tokens) {
-    if (!isOperator(tok)) {
-      outputQueue.push(tok);
-    } else {
-      while (
-        operatorStack.length &&
-        isOperator(operatorStack[operatorStack.length - 1]) &&
-        ((associativity[tok] === 'L' && precedence[tok] <= precedence[operatorStack[operatorStack.length - 1]]) ||
-          (associativity[tok] === 'R' && precedence[tok] < precedence[operatorStack[operatorStack.length - 1]]))
-      ) {
-        outputQueue.push(operatorStack.pop());
-      }
-      operatorStack.push(tok);
+function deleteLast() {
+    expressionString = expressionString.slice(0, -1);
+    updateDisplay(expressionString);
+}
+
+/* Evaluation pipeline */
+function computeResult() {
+    try {
+        const result = evaluateExpression(expressionString);
+        const resultStr = String(result);
+        expressionString = resultStr;
+        updateDisplay(resultStr);
+    } catch (e) {
+        showError('Error');
     }
-  }
-  while (operatorStack.length) {
-    const op = operatorStack.pop();
-    if (!isOperator(op)) {
-      updateDisplay('Error');
-      expression = '';
-      return;
-    }
-    outputQueue.push(op);
-  }
+}
 
-  // Evaluate RPN
-  const evalStack = [];
-  for (const tok of outputQueue) {
-    if (!isOperator(tok)) {
-      evalStack.push(parseFloat(tok));
-    } else {
-      if (evalStack.length < 2) {
-        updateDisplay('Error');
-        expression = '';
-        return;
-      }
-      const b = evalStack.pop();
-      const a = evalStack.pop();
-      let result;
-      switch (tok) {
-        case '+':
-          result = a + b;
-          break;
-        case '-':
-          result = a - b;
-          break;
-        case '*':
-          result = a * b;
-          break;
-        case '/':
-          if (b === 0) {
-            updateDisplay('Error');
-            expression = '';
-            return;
-          }
-          result = a / b;
-          break;
+function evaluateExpression(expr) {
+    const tokens = tokenize(expr);
+    const rpn = shuntingYard(tokens);
+    return computeRPN(rpn);
+}
+
+/* Tokenizer */
+function tokenize(expr) {
+    const tokens = [];
+    let numberBuffer = '';
+    for (let i = 0; i < expr.length; i++) {
+        const ch = expr[i];
+        if (/\d/.test(ch) || ch === '.') {
+            numberBuffer += ch;
+        } else if (/[+\-*/]/.test(ch)) {
+            if (numberBuffer) {
+                tokens.push(numberBuffer);
+                numberBuffer = '';
+            }
+            tokens.push(ch);
+        } else if (/\s/.test(ch)) {
+            continue;
+        } else {
+            throw new Error(`Invalid character: ${ch}`);
+        }
+    }
+    if (numberBuffer) tokens.push(numberBuffer);
+    return tokens;
+}
+
+/* Shunting‑Yard algorithm */
+function shuntingYard(tokens) {
+    const output = [];
+    const stack = [];
+    tokens.forEach(token => {
+        if (/[+\-*/]/.test(token)) {
+            while (
+                stack.length &&
+                /[+\-*/]/.test(stack[stack.length - 1]) &&
+                operatorPrecedence[stack[stack.length - 1]] >= operatorPrecedence[token]
+            ) {
+                output.push(stack.pop());
+            }
+            stack.push(token);
+        } else {
+            output.push(token);
+        }
+    });
+    while (stack.length) {
+        const op = stack.pop();
+        if (!/[+\-*/]/.test(op)) {
+            throw new Error('Mismatched operators');
+        }
+        output.push(op);
+    }
+    return output;
+}
+
+/* RPN evaluator */
+function computeRPN(rpnTokens) {
+    const stack = [];
+    rpnTokens.forEach(token => {
+        if (/[+\-*/]/.test(token)) {
+            if (stack.length < 2) throw new Error('Insufficient operands');
+            const b = stack.pop();
+            const a = stack.pop();
+            let res;
+            switch (token) {
+                case '+': res = a + b; break;
+                case '-': res = a - b; break;
+                case '*': res = a * b; break;
+                case '/':
+                    if (b === 0) throw new Error('Division by zero');
+                    res = a / b;
+                    break;
+                default: throw new Error(`Unknown operator: ${token}`);
+            }
+            stack.push(res);
+        } else {
+            const num = parseFloat(token);
+            if (isNaN(num)) throw new Error(`Invalid number: ${token}`);
+            stack.push(num);
+        }
+    });
+    if (stack.length !== 1) throw new Error('Malformed expression');
+    return stack[0];
+}
+
+/* Event handlers */
+function handleButtonClick(event) {
+    const btn = event.target.closest('.btn');
+    if (!btn) return;
+    const action = btn.dataset.action;
+    const label = btn.innerText.trim();
+
+    switch (action) {
+        case 'digit':
+            appendDigit(label);
+            break;
+        case 'operator':
+            const op = label === '×' ? '*' : label === '÷' ? '/' : label;
+            appendOperator(op);
+            break;
+        case 'decimal':
+            addDecimal();
+            break;
+        case 'clear':
+            clearAll();
+            break;
+        case 'delete':
+            deleteLast();
+            break;
+        case 'equals':
+            computeResult();
+            break;
         default:
-          updateDisplay('Error');
-          expression = '';
-          return;
-      }
-      evalStack.push(result);
+            break;
     }
-  }
-
-  if (evalStack.length !== 1) {
-    updateDisplay('Error');
-    expression = '';
-    return;
-  }
-
-  const finalResult = evalStack[0];
-  const displayValue = Number.isFinite(finalResult) ? String(finalResult) : 'Error';
-  expression = displayValue === 'Error' ? '' : displayValue;
-  updateDisplay(displayValue);
 }
 
-/* Central event dispatcher */
-function handleButtonPress(event) {
-  const token = event.target.dataset?.token;
-  if (!token) return;
-
-  if (token === 'C') {
-    clearDisplay();
-  } else if (token === '=') {
-    evaluateExpression();
-  } else {
-    appendToken(token);
-  }
+function handleKeyPress(event) {
+    const { key } = event;
+    if (/\d/.test(key)) {
+        appendDigit(key);
+        event.preventDefault();
+    } else if (key === '.' ) {
+        addDecimal();
+        event.preventDefault();
+    } else if (['+', '-', '*', '/'].includes(key)) {
+        appendOperator(key);
+        event.preventDefault();
+    } else if (key === 'Enter') {
+        computeResult();
+        event.preventDefault();
+    } else if (key === 'Backspace') {
+        deleteLast();
+        event.preventDefault();
+    } else if (key === 'Escape') {
+        clearAll();
+        event.preventDefault();
+    }
 }
 
-/* Initial wiring */
+/* Initialization */
 function initCalculator() {
-  const buttons = document.querySelectorAll('.calc-button');
-  buttons.forEach((btn) => btn.addEventListener('click', handleButtonPress));
-  updateDisplay('');
+    displayElement = document.getElementById('display');
+    const buttons = document.querySelectorAll('.btn');
+    buttons.forEach(btn => btn.addEventListener('click', handleButtonClick));
+    document.addEventListener('keydown', handleKeyPress);
+    clearAll();
 }
 
-/* Run after DOM is ready */
 document.addEventListener('DOMContentLoaded', initCalculator);
