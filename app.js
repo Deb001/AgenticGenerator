@@ -1,170 +1,207 @@
-/* app.js – Calculator core logic */
+Sure, here is the complete implementation of `app.js` based on the provided specifications:
 
-(() => {
-  // Internal state
-  let expression = '';
+document.addEventListener('DOMContentLoaded', () => {
+  init();
+});
 
-  // Cached DOM nodes
-  let displayEl = null;
-  let buttonNodes = [];
+let currentInput = ""; // string buffer for the number being entered
+let previousValue = null; // numeric value stored after an operator is pressed
+let pendingOperator = null; // '+', '-', '*', '/'
+let errorState = false; // true when a fatal error (e.g., divide by zero) occurs
 
-  /** Initialize the calculator once the DOM is ready */
-  function init() {
-    displayEl = document.getElementById('calc-display');
-    buttonNodes = Array.from(document.querySelectorAll('.keypad button'));
+function init() {
+  bindEvents();
+  updateDisplay();
+}
 
-    buttonNodes.forEach(btn => btn.addEventListener('click', handleButtonClick));
-    document.addEventListener('keydown', handleKeyboard);
+function bindEvents() {
+  const buttons = document.querySelectorAll('[data-action]');
+  buttons.forEach(button => {
+    button.addEventListener('click', handleButtonClick);
+  });
+
+  document.addEventListener('keydown', handleKeyPress);
+}
+
+function handleButtonClick(event) {
+  const action = event.target.dataset.action;
+  switch (action) {
+    case 'digit':
+      appendDigit(event.target.textContent);
+      break;
+    case 'decimal':
+      appendDecimal();
+      break;
+    case 'operator':
+      setOperator(event.target.textContent);
+      break;
+    case 'clear':
+      clearAll();
+      break;
+    case 'delete':
+      deleteLast();
+      break;
+    case 'equals':
+      computeResult();
+      break;
   }
+  updateDisplay();
+}
 
-  /** Click handler for all calculator buttons */
-  function handleButtonClick(event) {
-    const btn = event.currentTarget;
-    const action = btn.dataset.action;
-
-    switch (action) {
-      case 'digit':
-      case 'operator':
-      case 'decimal':
-        const char = btn.dataset.value ?? btn.textContent.trim();
-        appendToExpression(char);
-        break;
-      case 'clear':
-        clearExpression();
-        break;
-      case 'backspace':
-        backspace();
-        break;
-      case 'evaluate':
-        evaluateExpression();
-        break;
-      default:
-        // No-op for unknown actions
-        break;
-    }
+function handleKeyPress(event) {
+  const key = event.key;
+  if (/\d/.test(key)) {
+    appendDigit(key);
+  } else if (key === '.') {
+    appendDecimal();
+  } else if (/[+\-*/]/.test(key)) {
+    setOperator(key);
+  } else if (key === 'Enter' || key === '=') {
+    computeResult();
+  } else if (key === 'Escape' || key === 'C') {
+    clearAll();
+  } else if (key === 'Backspace') {
+    deleteLast();
   }
+  updateDisplay();
+}
 
-  /** Append a character to the current expression */
-  function appendToExpression(char) {
-    if (expression.length >= 100) return;
-    expression += char;
-    updateDisplay(expression);
+function appendDigit(digit) {
+  if (errorState) return;
+  currentInput += digit;
+  if (currentInput.length > 10) { // Limit input length to prevent overflow
+    currentInput = currentInput.slice(0, 10);
   }
+}
 
-  /** Reset the expression and clear the display */
-  function clearExpression() {
-    expression = '';
-    updateDisplay('');
+function appendDecimal() {
+  if (errorState || currentInput.includes('.')) return;
+  currentInput += '.';
+}
+
+function setOperator(operator) {
+  if (errorState) return;
+  if (previousValue !== null && pendingOperator !== null) {
+    computeResult();
   }
+  previousValue = parseFloat(currentInput);
+  pendingOperator = operator;
+  currentInput = '';
+}
 
-  /** Remove the last character from the expression */
-  function backspace() {
-    expression = expression.slice(0, -1);
-    updateDisplay(expression);
-  }
-
-  /** Evaluate the current expression safely */
-  function evaluateExpression() {
-    const sanitized = sanitizeExpression(expression);
-    if (!sanitized) {
-      updateDisplay('Error: Invalid input');
-      return;
-    }
-
-    try {
-      const result = safeEval(sanitized);
-      if (!isFinite(result)) {
-        throw new Error('Division by zero');
-      }
-      const resultStr = String(result);
-      expression = resultStr; // allow chaining
-      updateDisplay(resultStr);
-    } catch (e) {
-      const msg = e.message.toLowerCase().includes('division')
-        ? 'Error: Division by zero'
-        : 'Error';
-      updateDisplay(msg);
-    }
-  }
-
-  /** Allow only safe characters and enforce length limit */
-  function sanitizeExpression(expr) {
-    const allowed = /^[0-9+\-*/().\s]+$/;
-    if (!allowed.test(expr)) return '';
-    return expr.slice(0, 100);
-  }
-
-  /** Evaluate an expression using a Function constructor (after sanitisation) */
-  function safeEval(expr) {
-    // eslint-disable-next-line no-new-func
-    return Function('"use strict";return (' + expr + ')')();
-  }
-
-  /** Update the calculator display */
-  function updateDisplay(value) {
-    if (!displayEl) return;
-    displayEl.textContent = value;
-    if (value.startsWith('Error')) {
-      displayEl.classList.add('error');
+function computeResult() {
+  if (errorState || previousValue === null || pendingOperator === null) return;
+  let result;
+  try {
+    const tokens = tokenize(previousValue + pendingOperator + currentInput);
+    result = evaluateTokens(tokens);
+  } catch (e) {
+    if (e.message === 'Division by zero') {
+      errorState = true;
+      result = NaN;
     } else {
-      displayEl.classList.remove('error');
+      throw e;
+    }
+  }
+  currentInput = formatNumber(result);
+  previousValue = null;
+  pendingOperator = null;
+}
+
+function clearAll() {
+  currentInput = '';
+  previousValue = null;
+  pendingOperator = null;
+  errorState = false;
+}
+
+function deleteLast() {
+  if (errorState) return;
+  currentInput = currentInput.slice(0, -1);
+}
+
+function updateDisplay() {
+  const display = document.querySelector('#calc-display');
+  const history = document.querySelector('#calc-history');
+  display.textContent = formatNumber(currentInput || '0');
+  if (previousValue !== null && pendingOperator !== null) {
+    history.textContent = `${formatNumber(previousValue)} ${pendingOperator} ${currentInput}`;
+  } else {
+    history.textContent = '';
+  }
+}
+
+function tokenize(exprString) {
+  return exprString.match(/(\d+|\.\d+|\d+\.\d+|[+\-*/])/g);
+}
+
+function evaluateTokens(tokens) {
+  let stack = [];
+  let operators = [];
+  const precedence = { '+': 1, '-': 1, '*': 2, '/': 2 };
+
+  for (let token of tokens) {
+    if (/^\d+$/.test(token)) {
+      stack.push(parseFloat(token));
+    } else if ('+-*/'.includes(token)) {
+      while (operators.length > 0 && precedence[operators[operators.length - 1]] >= precedence[token]) {
+        const b = stack.pop();
+        const a = stack.pop();
+        const operator = operators.pop();
+        switch (operator) {
+          case '+':
+            stack.push(a + b);
+            break;
+          case '-':
+            stack.push(a - b);
+            break;
+          case '*':
+            stack.push(a * b);
+            break;
+          case '/':
+            if (b === 0) throw new Error('Division by zero');
+            stack.push(a / b);
+            break;
+        }
+      }
+      operators.push(token);
+    } else {
+      throw new Error(`Invalid token: ${token}`);
     }
   }
 
-  /** Map physical keyboard keys to calculator actions */
-  function handleKeyboard(event) {
-    const { key } = event;
-
-    // Digits
-    if (/^[0-9]$/.test(key)) {
-      appendToExpression(key);
-      event.preventDefault();
-      return;
-    }
-
-    // Decimal point
-    if (key === '.' || key === ',') {
-      appendToExpression('.');
-      event.preventDefault();
-      return;
-    }
-
-    // Operators
-    if (['+', '-', '*', '/'].includes(key)) {
-      appendToExpression(key);
-      event.preventDefault();
-      return;
-    }
-
-    // Parentheses
-    if (key === '(' || key === ')') {
-      appendToExpression(key);
-      event.preventDefault();
-      return;
-    }
-
-    // Evaluate
-    if (key === 'Enter' || key === '=') {
-      evaluateExpression();
-      event.preventDefault();
-      return;
-    }
-
-    // Clear
-    if (key === 'Escape' || key.toLowerCase() === 'c') {
-      clearExpression();
-      event.preventDefault();
-      return;
-    }
-
-    // Backspace
-    if (key === 'Backspace') {
-      backspace();
-      event.preventDefault();
-      return;
+  while (operators.length > 0) {
+    const b = stack.pop();
+    const a = stack.pop();
+    const operator = operators.pop();
+    switch (operator) {
+      case '+':
+        stack.push(a + b);
+        break;
+      case '-':
+        stack.push(a - b);
+        break;
+      case '*':
+        stack.push(a * b);
+        break;
+      case '/':
+        if (b === 0) throw new Error('Division by zero');
+        stack.push(a / b);
+        break;
     }
   }
 
-  // Kick off when DOM is ready
-  document.addEventListener('DOMContentLoaded', init);
-})();
+  return stack[0];
+}
+
+function formatNumber(num) {
+  const str = num.toString();
+  if (str.includes('.')) {
+    return str.replace(/\.?0+$/, ''); // Remove trailing zeros and decimal point if not needed
+  }
+  return str;
+}
+
+window.evaluate = evaluateTokens; // Expose evaluate function for testing
+
+This code provides a complete implementation of the calculator app as specified in the task. It includes all necessary functions to handle button clicks, key presses, and state management, along with error handling and display updates.
