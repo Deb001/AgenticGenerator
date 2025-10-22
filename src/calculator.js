@@ -1,145 +1,231 @@
-// src/calculator.js
+/**
+ * Arithmetic expression evaluator using tokenization,
+ * the shunting‑yard algorithm and RPN evaluation.
+ *
+ * Supported:
+ *   - Numbers (integers & decimals, optional leading sign)
+ *   - Operators: + - * /
+ *   - Parentheses: ( )
+ *
+ * Errors are thrown as `Error` instances with clear messages.
+ */
+
+const OP_PRECEDENCE = { '+': 1, '-': 1, '*': 2, '/': 2 };
+const LEFT_ASSOC = { '+': true, '-': true, '*': true, '/': true };
 
 /**
- * Normalizes the expression and splits it into numbers and operators.
- * Supports decimal numbers and the UI symbols × (multiply) and ÷ (divide).
- *
- * @param {string} expr - Raw arithmetic expression.
- * @returns {string[]} Array of tokens (numbers as strings, operators as single chars).
- * @throws {Error} 'Invalid token' for any unexpected character or malformed number.
+ * Convert a raw expression string into an ordered list of tokens.
+ * @param {string} expr
+ * @returns {Array<{type:string,value:string}>}
+ * @throws {Error} Syntax error for illegal characters or malformed numbers.
  */
-export function tokenize(expr) {
-  // Remove whitespace and normalize UI operators
-  const normalized = expr
-    .replace(/\s+/g, '')
-    .replace(/×/g, '*')
-    .replace(/÷/g, '/');
+function _tokenize(expr) {
+    const tokens = [];
+    let i = 0;
+    const len = expr.length;
+    let lastToken = null;
 
-  const tokens = [];
-  let numberBuffer = '';
+    while (i < len) {
+        const ch = expr[i];
 
-  const isOperator = (c) => '+-*/'.includes(c);
+        // Skip whitespace
+        if (/\s/.test(ch)) {
+            i++;
+            continue;
+        }
 
-  for (let i = 0; i < normalized.length; i++) {
-    const ch = normalized[i];
+        // Number (including optional leading sign)
+        if (/[0-9.]/.test(ch) || (ch === '-' && (
+                // unary minus detection
+                !lastToken ||
+                (lastToken.type === 'operator' && lastToken.value !== ')') ||
+                lastToken.type === 'leftParen'
+            ))) {
+            let numStr = '';
+            let hasDecimal = false;
+            // Capture leading sign if present
+            if (ch === '-') {
+                numStr += '-';
+                i++;
+            }
+            while (i < len) {
+                const c = expr[i];
+                if (c >= '0' && c <= '9') {
+                    numStr += c;
+                } else if (c === '.') {
+                    if (hasDecimal) {
+                        throw new Error('Syntax error: multiple decimal points in number');
+                    }
+                    hasDecimal = true;
+                    numStr += c;
+                } else {
+                    break;
+                }
+                i++;
+            }
+            if (numStr === '-' || numStr === '' || numStr === '.') {
+                throw new Error('Syntax error: malformed number');
+            }
+            tokens.push({ type: 'number', value: numStr });
+            lastToken = tokens[tokens.length - 1];
+            continue;
+        }
 
-    if (/[0-9.]/.test(ch)) {
-      numberBuffer += ch;
-    } else if (isOperator(ch)) {
-      // Flush any pending number
-      if (numberBuffer) {
-        tokens.push(numberBuffer);
-        numberBuffer = '';
-      }
+        // Operators
+        if (/[+\-*/]/.test(ch)) {
+            tokens.push({ type: 'operator', value: ch });
+            lastToken = tokens[tokens.length - 1];
+            i++;
+            continue;
+        }
 
-      // Handle unary minus (e.g., "-5" or "3*-2")
-      if (ch === '-' && (i === 0 || isOperator(normalized[i - 1]))) {
-        numberBuffer = '-';
-      } else {
-        tokens.push(ch);
-      }
-    } else {
-      throw new Error('Invalid token');
+        // Parentheses
+        if (ch === '(') {
+            tokens.push({ type: 'leftParen', value: ch });
+            lastToken = tokens[tokens.length - 1];
+            i++;
+            continue;
+        }
+        if (ch === ')') {
+            tokens.push({ type: 'rightParen', value: ch });
+            lastToken = tokens[tokens.length - 1];
+            i++;
+            continue;
+        }
+
+        // Anything else is invalid
+        throw new Error(`Invalid token: '${ch}'`);
     }
-  }
 
-  if (numberBuffer) {
-    tokens.push(numberBuffer);
-  }
-
-  // Validate numeric tokens
-  for (const t of tokens) {
-    if (!isOperator(t)) {
-      if (!/^[-+]?\d*\.?\d+$/.test(t)) {
-        throw new Error('Invalid token');
-      }
+    if (tokens.length === 0) {
+        throw new Error('Syntax error: empty expression');
     }
-  }
 
-  return tokens;
+    return tokens;
 }
 
 /**
- * Executes a single arithmetic operation.
- *
- * @param {number} a - Left operand.
- * @param {number} b - Right operand.
- * @param {string} op - Operator ('+', '-', '*', '/').
- * @returns {number} Result of the operation.
- * @throws {Error} 'Division by zero' when dividing by zero.
- * @throws {Error} 'Number out of range' when result exceeds allowed magnitude.
+ * Convert token list to Reverse Polish Notation using the shunting‑yard algorithm.
+ * @param {Array<{type:string,value:string}>} tokens
+ * @returns {Array<{type:string,value:string}>}
+ * @throws {Error} Syntax error for mismatched parentheses.
  */
-export function applyOperator(a, b, op) {
-  let result;
-  switch (op) {
-    case '+':
-      result = a + b;
-      break;
-    case '-':
-      result = a - b;
-      break;
-    case '*':
-      result = a * b;
-      break;
-    case '/':
-      if (b === 0) throw new Error('Division by zero');
-      result = a / b;
-      break;
-    default:
-      throw new Error('Invalid token');
-  }
+function _toRPN(tokens) {
+    const output = [];
+    const opStack = [];
 
-  if (Math.abs(result) > 1e12) {
-    throw new Error('Number out of range');
-  }
-  return result;
+    for (const token of tokens) {
+        if (token.type === 'number') {
+            output.push(token);
+        } else if (token.type === 'operator') {
+            while (opStack.length) {
+                const top = opStack[opStack.length - 1];
+                if (top.type !== 'operator') break;
+                const pTop = OP_PRECEDENCE[top.value];
+                const pCur = OP_PRECEDENCE[token.value];
+                if (
+                    pTop > pCur ||
+                    (pTop === pCur && LEFT_ASSOC[token.value])
+                ) {
+                    output.push(opStack.pop());
+                } else {
+                    break;
+                }
+            }
+            opStack.push(token);
+        } else if (token.type === 'leftParen') {
+            opStack.push(token);
+        } else if (token.type === 'rightParen') {
+            let foundLeft = false;
+            while (opStack.length) {
+                const top = opStack.pop();
+                if (top.type === 'leftParen') {
+                    foundLeft = true;
+                    break;
+                }
+                output.push(top);
+            }
+            if (!foundLeft) {
+                throw new Error('Syntax error: mismatched parentheses');
+            }
+        }
+    }
+
+    while (opStack.length) {
+        const top = opStack.pop();
+        if (top.type === 'leftParen' || top.type === 'rightParen') {
+            throw new Error('Syntax error: mismatched parentheses');
+        }
+        output.push(top);
+    }
+
+    return output;
 }
 
 /**
- * Evaluates a simple arithmetic expression containing numbers,
- * +, -, *, / and decimal points.
- *
- * @param {string} expression - The arithmetic expression to evaluate.
- * @returns {number} Rounded result (8 decimal places).
- * @throws {Error} 'Division by zero', 'Invalid token', or 'Number out of range'.
+ * Evaluate an RPN token list.
+ * @param {Array<{type:string,value:string}>} rpnTokens
+ * @returns {number}
+ * @throws {Error} Division by zero or malformed RPN.
  */
-export function evaluateExpression(expression) {
-  const tokens = tokenize(expression);
-  if (tokens.length === 0) {
-    throw new Error('Invalid token');
-  }
+function _evaluateRPN(rpnTokens) {
+    const stack = [];
 
-  // First pass: resolve * and /
-  const firstPass = [];
-  for (let i = 0; i < tokens.length; i++) {
-    const token = tokens[i];
-    if (token === '*' || token === '/') {
-      const left = firstPass.pop();
-      const right = parseFloat(tokens[++i]);
-      const res = applyOperator(left, right, token);
-      firstPass.push(res);
-    } else if (token === '+' || token === '-') {
-      firstPass.push(token);
-    } else {
-      // number token
-      firstPass.push(parseFloat(token));
+    for (const token of rpnTokens) {
+        if (token.type === 'number') {
+            stack.push(parseFloat(token.value));
+        } else if (token.type === 'operator') {
+            if (stack.length < 2) {
+                throw new Error('Syntax error: insufficient values for operation');
+            }
+            const b = stack.pop();
+            const a = stack.pop();
+            let result;
+            switch (token.value) {
+                case '+':
+                    result = a + b;
+                    break;
+                case '-':
+                    result = a - b;
+                    break;
+                case '*':
+                    result = a * b;
+                    break;
+                case '/':
+                    if (b === 0) {
+                        throw new Error('Division by zero');
+                    }
+                    result = a / b;
+                    break;
+                default:
+                    throw new Error(`Invalid operator: ${token.value}`);
+            }
+            stack.push(result);
+        } else {
+            throw new Error(`Invalid token in RPN: ${token.type}`);
+        }
     }
-  }
 
-  // Second pass: resolve + and -
-  let result = firstPass[0];
-  for (let i = 1; i < firstPass.length; i += 2) {
-    const op = firstPass[i];
-    const next = firstPass[i + 1];
-    result = applyOperator(result, next, op);
-  }
+    if (stack.length !== 1) {
+        throw new Error('Syntax error: malformed expression');
+    }
 
-  // Round to 8 decimal places
-  const rounded = Math.round(result * 1e8) / 1e8;
+    return stack[0];
+}
 
-  if (Math.abs(rounded) > 1e12) {
-    throw new Error('Number out of range');
-  }
-
-  return rounded;
+/**
+ * Public API – evaluate an arithmetic expression string.
+ * @param {string} expression
+ * @returns {number}
+ * @throws {Error} Syntax errors, division by zero, or invalid tokens.
+ */
+export function evaluate(expression) {
+    if (typeof expression !== 'string') {
+        throw new Error('Expression must be a string');
+    }
+    const trimmed = expression.trim();
+    const tokens = _tokenize(trimmed);
+    const rpn = _toRPN(tokens);
+    const result = _evaluateRPN(rpn);
+    return result;
 }
