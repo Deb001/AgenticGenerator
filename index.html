@@ -4,43 +4,55 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Simple Calculator</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="src/css/styles.css">
 </head>
 <body>
-  <div class="calculator">
-    <div id="display" class="calculator__display" role="textbox" aria-live="polite"></div>
+  <main class="calculator" role="application" aria-label="Simple calculator">
+    <!-- Display -->
+    <input type="text"
+           id="display"
+           class="calculator-display"
+           aria-label="Calculator display"
+           readonly
+           autocomplete="off"
+           autocapitalize="off"
+           spellcheck="false">
 
-    <div class="calculator__keys">
+    <!-- Buttons -->
+    <section class="calculator-buttons">
       <!-- Row 1 -->
-      <button type="button" class="key key--function" data-action="clear">C</button>
-      <button type="button" class="key key--function" data-action="backspace">←</button>
-      <button type="button" class="key key--operator" data-action="divide">÷</button>
+      <button type="button" class="calc-button" data-value="7" aria-label="seven">7</button>
+      <button type="button" class="calc-button" data-value="8" aria-label="eight">8</button>
+      <button type="button" class="calc-button" data-value="9" aria-label="nine">9</button>
+      <button type="button" class="calc-button operator" data-value="/" aria-label="divide">÷</button>
 
       <!-- Row 2 -->
-      <button type="button" class="key" data-action="digit" data-value="7">7</button>
-      <button type="button" class="key" data-action="digit" data-value="8">8</button>
-      <button type="button" class="key" data-action="digit" data-value="9">9</button>
-      <button type="button" class="key key--operator" data-action="multiply">×</button>
+      <button type="button" class="calc-button" data-value="4" aria-label="four">4</button>
+      <button type="button" class="calc-button" data-value="5" aria-label="five">5</button>
+      <button type="button" class="calc-button" data-value="6" aria-label="six">6</button>
+      <button type="button" class="calc-button operator" data-value="*" aria-label="multiply">×</button>
 
       <!-- Row 3 -->
-      <button type="button" class="key" data-action="digit" data-value="4">4</button>
-      <button type="button" class="key" data-action="digit" data-value="5">5</button>
-      <button type="button" class="key" data-action="digit" data-value="6">6</button>
-      <button type="button" class="key key--operator" data-action="subtract">−</button>
+      <button type="button" class="calc-button" data-value="1" aria-label="one">1</button>
+      <button type="button" class="calc-button" data-value="2" aria-label="two">2</button>
+      <button type="button" class="calc-button" data-value="3" aria-label="three">3</button>
+      <button type="button" class="calc-button operator" data-value="-" aria-label="subtract">−</button>
 
       <!-- Row 4 -->
-      <button type="button" class="key" data-action="digit" data-value="1">1</button>
-      <button type="button" class="key" data-action="digit" data-value="2">2</button>
-      <button type="button" class="key" data-action="digit" data-value="3">3</button>
-      <button type="button" class="key key--operator" data-action="add">+</button>
+      <button type="button" class="calc-button" data-value="0" aria-label="zero">0</button>
+      <button type="button" class="calc-button" data-value="." aria-label="decimal point">.</button>
+      <button type="button" class="calc-button equals" data-action="equals" aria-label="equals">=</button>
+      <button type="button" class="calc-button operator" data-value="+" aria-label="add">+</button>
 
-      <!-- Row 5 -->
-      <button type="button" class="key key--wide" data-action="digit" data-value="0">0</button>
-      <button type="button" class="key" data-action="decimal">.</button>
-      <button type="button" class="key key--equals" data-action="equals">=</button>
-    </div>
-  </div>
+      <!-- Row 5 (functions) -->
+      <button type="button" class="calc-button function" data-action="clear" aria-label="clear">C</button>
+      <button type="button" class="calc-button function" data-action="backspace" aria-label="backspace">←</button>
+      <button type="button" class="calc-button function" data-value="(" aria-label="open parenthesis">(</button>
+      <button type="button" class="calc-button function" data-value=")" aria-label="close parenthesis">)</button>
+    </section>
+  </main>
 
-  <script type="module" src="src/ui.js"></script>
+  <script defer src="src/js/calculator.js"></script>
+  <script defer src="src/js/ui.js"></script>
 </body>
 </html>
