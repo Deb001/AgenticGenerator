@@ -1,34 +1,46 @@
-Here is the complete implementation of `index.html`:
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculator</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="app.js" defer></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Calculator</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div id="calc-display" aria-live="polite"></div>
-    <div id="calc-history" aria-live="polite"></div>
-    <button data-action="clear">C</button>
-    <button data-action="delete">&#x232b;</button>
-    <button data-action="operator">/</button>
-    <button data-action="operator">*</button>
-    <button data-action="operator">-</button>
-    <button data-action="operator">+</button>
-    <button data-action="digit">7</button>
-    <button data-action="digit">8</button>
-    <button data-action="digit">9</button>
-    <button data-action="digit">4</button>
-    <button data-action="digit">5</button>
-    <button data-action="digit">6</button>
-    <button data-action="digit">1</button>
-    <button data-action="digit">2</button>
-    <button data-action="digit">3</button>
-    <button data-action="digit">0</button>
-    <button data-action="decimal">.</button>
-    <button data-action="equals">=</button>
+  <div class="calculator">
+    <div id="display" class="calculator__display" role="textbox" aria-live="polite"></div>
+
+    <div class="calculator__keys">
+      <!-- Row 1 -->
+      <button type="button" class="key key--function" data-action="clear">C</button>
+      <button type="button" class="key key--function" data-action="backspace">←</button>
+      <button type="button" class="key key--operator" data-action="divide">÷</button>
+
+      <!-- Row 2 -->
+      <button type="button" class="key" data-action="digit" data-value="7">7</button>
+      <button type="button" class="key" data-action="digit" data-value="8">8</button>
+      <button type="button" class="key" data-action="digit" data-value="9">9</button>
+      <button type="button" class="key key--operator" data-action="multiply">×</button>
+
+      <!-- Row 3 -->
+      <button type="button" class="key" data-action="digit" data-value="4">4</button>
+      <button type="button" class="key" data-action="digit" data-value="5">5</button>
+      <button type="button" class="key" data-action="digit" data-value="6">6</button>
+      <button type="button" class="key key--operator" data-action="subtract">−</button>
+
+      <!-- Row 4 -->
+      <button type="button" class="key" data-action="digit" data-value="1">1</button>
+      <button type="button" class="key" data-action="digit" data-value="2">2</button>
+      <button type="button" class="key" data-action="digit" data-value="3">3</button>
+      <button type="button" class="key key--operator" data-action="add">+</button>
+
+      <!-- Row 5 -->
+      <button type="button" class="key key--wide" data-action="digit" data-value="0">0</button>
+      <button type="button" class="key" data-action="decimal">.</button>
+      <button type="button" class="key key--equals" data-action="equals">=</button>
+    </div>
+  </div>
+
+  <script type="module" src="src/ui.js"></script>
 </body>
 </html>
