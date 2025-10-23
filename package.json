@@ -1,17 +1,16 @@
 {
-  "name": "simple-calculator",
+  "name": "minimal-express-sqlite-app",
   "version": "1.0.0",
-  "description": "A minimal web calculator with a JavaScript arithmetic engine and unit tests.",
-  "main": "src/js/calculator.js",
+  "description": "A minimal Express + SQLite CRUD application",
+  "main": "src/server.js",
   "scripts": {
-    "test": "node tests/test_calculator.js"
+    "start": "node src/server.js"
   },
-  "keywords": [
-    "calculator",
-    "javascript",
-    "static",
-    "web"
-  ],
+  "dependencies": {
+    "express": "^4.18.2",
+    "sqlite3": "^5.1.6",
+    "cors": "^2.8.5"
+  },
   "author": "",
   "license": "MIT"
 }
