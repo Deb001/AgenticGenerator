@@ -1,47 +1,39 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Calculator</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculator</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
 </head>
 <body>
-  <section role="application" class="calculator">
-    <input id="display" type="text" readonly aria-label="Calculator display">
-    <div class="button-grid">
-      <!-- Row 1 -->
-      <button class="calc-button" data-action="clear" aria-label="Clear">C</button>
-      <button class="calc-button" data-action="backspace" aria-label="Backspace">&#8592;</button>
-      <button class="calc-button" data-action="operator" data-value="%" aria-label="Percent">%</button>
-      <button class="calc-button" data-action="operator" data-value="/" aria-label="Divide">÷</button>
+    <section id="calculator">
+        <div id="display" aria-live="polite"></div>
+        <div class="buttons">
+            <button id="btn-7" data-key="7" aria-label="seven">7</button>
+            <button id="btn-8" data-key="8" aria-label="eight">8</button>
+            <button id="btn-9" data-key="9" aria-label="nine">9</button>
+            <button id="btn-divide" data-key="/" aria-label="divide">÷</button>
 
-      <!-- Row 2 -->
-      <button class="calc-button" data-action="digit" data-value="7" aria-label="Digit 7">7</button>
-      <button class="calc-button" data-action="digit" data-value="8" aria-label="Digit 8">8</button>
-      <button class="calc-button" data-action="digit" data-value="9" aria-label="Digit 9">9</button>
-      <button class="calc-button" data-action="operator" data-value="*" aria-label="Multiply">×</button>
+            <button id="btn-4" data-key="4" aria-label="four">4</button>
+            <button id="btn-5" data-key="5" aria-label="five">5</button>
+            <button id="btn-6" data-key="6" aria-label="six">6</button>
+            <button id="btn-multiply" data-key="*" aria-label="multiply">×</button>
 
-      <!-- Row 3 -->
-      <button class="calc-button" data-action="digit" data-value="4" aria-label="Digit 4">4</button>
-      <button class="calc-button" data-action="digit" data-value="5" aria-label="Digit 5">5</button>
-      <button class="calc-button" data-action="digit" data-value="6" aria-label="Digit 6">6</button>
-      <button class="calc-button" data-action="operator" data-value="-" aria-label="Subtract">−</button>
+            <button id="btn-1" data-key="1" aria-label="one">1</button>
+            <button id="btn-2" data-key="2" aria-label="two">2</button>
+            <button id="btn-3" data-key="3" aria-label="three">3</button>
+            <button id="btn-subtract" data-key="-" aria-label="subtract">−</button>
 
-      <!-- Row 4 -->
-      <button class="calc-button" data-action="digit" data-value="1" aria-label="Digit 1">1</button>
-      <button class="calc-button" data-action="digit" data-value="2" aria-label="Digit 2">2</button>
-      <button class="calc-button" data-action="digit" data-value="3" aria-label="Digit 3">3</button>
-      <button class="calc-button" data-action="operator" data-value="+" aria-label="Add">+</button>
+            <button id="btn-0" data-key="0" aria-label="zero">0</button>
+            <button id="btn-decimal" data-key="." aria-label="decimal point">.</button>
+            <button id="btn-equals" data-key="=" aria-label="equals">=</button>
+            <button id="btn-add" data-key="+" aria-label="add">+</button>
 
-      <!-- Row 5 -->
-      <button class="calc-button" data-action="negate" aria-label="Negate">±</button>
-      <button class="calc-button" data-action="digit" data-value="0" aria-label="Digit 0">0</button>
-      <button class="calc-button" data-action="decimal" data-value="." aria-label="Decimal point">.</button>
-      <button class="calc-button" data-action="equals" aria-label="Equals">=</button>
-    </div>
-  </section>
-
-  <script src="app.js" defer></script>
+            <button id="btn-clear" data-key="C" aria-label="clear">C</button>
+            <button id="btn-backspace" data-key="←" aria-label="backspace">←</button>
+        </div>
+    </section>
 </body>
 </html>
