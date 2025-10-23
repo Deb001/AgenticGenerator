@@ -1,217 +1,199 @@
-/* app.js - Core calculator logic */
-'use strict';
+/* app.js - Calculator core logic */
 
-let expressionString = '';
-const operatorPrecedence = { '+': 1, '-': 1, '*': 2, '/': 2 };
-let displayElement = null;
+(() => {
+  'use strict';
 
-/* UI Update helpers */
-function updateDisplay(content) {
-    if (displayElement) displayElement.textContent = content;
-}
+  /** State */
+  let expression = '';
+  /** @type {HTMLInputElement} */
+  let displayElement = null;
 
-function showError(message) {
-    updateDisplay(message);
-    expressionString = '';
-}
+  /** Utility: check if character is an operator */
+  function isOperator(char) {
+    return ['+', '-', '*', '/'].includes(char);
+  }
 
-/* Input manipulation */
-function appendDigit(digit) {
-    expressionString += digit;
-    updateDisplay(expressionString);
-}
+  /** Utility: ensure current numeric token has no decimal yet */
+  function hasValidDecimal(expr) {
+    const match = expr.match(/([0-9]*\.?[0-9]*)$/);
+    return !(match && match[0].includes('.'));
+  }
 
-function appendOperator(operator) {
-    if (!expressionString && operator !== '-') return; // prevent leading operators except minus
-    if (/[+\-*/]$/.test(expressionString)) return; // avoid consecutive operators
-    expressionString += operator;
-    updateDisplay(expressionString);
-}
-
-function addDecimal() {
-    const parts = expressionString.split(/[+\-*/]/);
-    const last = parts[parts.length - 1];
-    if (last.includes('.')) return;
-    // If starting a new number with a decimal, prepend a zero
-    if (last === '' && (expressionString === '' || /[+\-*/]$/.test(expressionString))) {
-        expressionString += '0';
+  /** Update the read‑only display */
+  function updateDisplay(value) {
+    if (displayElement) {
+      displayElement.value = value;
     }
-    expressionString += '.';
-    updateDisplay(expressionString);
-}
+  }
 
-function clearAll() {
-    expressionString = '';
+  /** Append a character to the expression after validation */
+  function appendToExpression(char) {
+    const lastChar = expression.slice(-1);
+
+    // Digits
+    if (/[0-9]/.test(char)) {
+      expression += char;
+    }
+    // Decimal point
+    else if (char === '.') {
+      if (hasValidDecimal(expression)) {
+        // Prevent leading '.' without a zero (optional)
+        if (!/[0-9]$/.test(lastChar)) {
+          expression += '0';
+        }
+        expression += '.';
+      }
+    }
+    // Parentheses
+    else if (char === '(') {
+      // Allow '(' after operator or at start
+      if (expression === '' || isOperator(lastChar) || lastChar === '(') {
+        expression += '(';
+      }
+    } else if (char === ')') {
+      // Simple check: allow ')' if there is a matching '(' before
+      const openCount = (expression.match(/\(/g) || []).length;
+      const closeCount = (expression.match(/\)/g) || []).length;
+      if (openCount > closeCount && /[0-9)]$/.test(lastChar)) {
+        expression += ')';
+      }
+    }
+    // Operators
+    else if (isOperator(char)) {
+      if (expression === '' && char !== '-') {
+        // Disallow starting with +, *, /
+        return;
+      }
+      if (isOperator(lastChar)) {
+        // Allow unary minus after another operator
+        if (char === '-' && lastChar !== '-') {
+          expression += char;
+        }
+        // Disallow other consecutive operators
+        return;
+      }
+      // Prevent operator right after '('
+      if (lastChar === '(' && char !== '-') {
+        return;
+      }
+      expression += char;
+    }
+
+    updateDisplay(expression);
+  }
+
+  /** Delete the last character */
+  function deleteLast() {
+    expression = expression.slice(0, -1);
+    updateDisplay(expression);
+  }
+
+  /** Clear the entire expression */
+  function clearExpression() {
+    expression = '';
     updateDisplay('');
-}
+  }
 
-function deleteLast() {
-    expressionString = expressionString.slice(0, -1);
-    updateDisplay(expressionString);
-}
+  /** Remove any characters not in the whitelist */
+  function sanitizeExpression(expr) {
+    return expr.replace(/[^0-9.+\-*/()]/g, '');
+  }
 
-/* Evaluation pipeline */
-function computeResult() {
+  /** Evaluate the current expression safely */
+  function evaluateExpression() {
+    const sanitized = sanitizeExpression(expression);
+    if (sanitized !== expression) {
+      updateDisplay('Error');
+      expression = '';
+      return;
+    }
+
     try {
-        const result = evaluateExpression(expressionString);
-        const resultStr = String(result);
-        expressionString = resultStr;
-        updateDisplay(resultStr);
+      // eslint-disable-next-line no-new-func
+      const result = Function('return ' + sanitized)();
+      if (result === Infinity || result === -Infinity) {
+        throw new Error('Division by zero');
+      }
+      const resultStr = Number.isFinite(result) ? String(result) : 'Error';
+      updateDisplay(resultStr);
+      expression = resultStr === 'Error' ? '' : resultStr;
     } catch (e) {
-        showError('Error');
+      updateDisplay('Error');
+      expression = '';
     }
-}
+  }
 
-function evaluateExpression(expr) {
-    const tokens = tokenize(expr);
-    const rpn = shuntingYard(tokens);
-    return computeRPN(rpn);
-}
+  /** Handle button clicks */
+  function handleButtonClick(event) {
+    const btn = event.target;
+    if (!btn.id) return;
 
-/* Tokenizer */
-function tokenize(expr) {
-    const tokens = [];
-    let numberBuffer = '';
-    for (let i = 0; i < expr.length; i++) {
-        const ch = expr[i];
-        if (/\d/.test(ch) || ch === '.') {
-            numberBuffer += ch;
-        } else if (/[+\-*/]/.test(ch)) {
-            if (numberBuffer) {
-                tokens.push(numberBuffer);
-                numberBuffer = '';
-            }
-            tokens.push(ch);
-        } else if (/\s/.test(ch)) {
-            continue;
-        } else {
-            throw new Error(`Invalid character: ${ch}`);
-        }
+    const id = btn.id;
+
+    // Digits and decimal
+    if (/^btn-[0-9]$/.test(id)) {
+      appendToExpression(id.slice(-1));
+    } else if (id === 'btn-dot') {
+      appendToExpression('.');
+    } else if (id === 'btn-open-paren') {
+      appendToExpression('(');
+    } else if (id === 'btn-close-paren') {
+      appendToExpression(')');
     }
-    if (numberBuffer) tokens.push(numberBuffer);
-    return tokens;
-}
-
-/* Shunting‑Yard algorithm */
-function shuntingYard(tokens) {
-    const output = [];
-    const stack = [];
-    tokens.forEach(token => {
-        if (/[+\-*/]/.test(token)) {
-            while (
-                stack.length &&
-                /[+\-*/]/.test(stack[stack.length - 1]) &&
-                operatorPrecedence[stack[stack.length - 1]] >= operatorPrecedence[token]
-            ) {
-                output.push(stack.pop());
-            }
-            stack.push(token);
-        } else {
-            output.push(token);
-        }
-    });
-    while (stack.length) {
-        const op = stack.pop();
-        if (!/[+\-*/]/.test(op)) {
-            throw new Error('Mismatched operators');
-        }
-        output.push(op);
+    // Operators
+    else if (id === 'btn-plus') {
+      appendToExpression('+');
+    } else if (id === 'btn-minus') {
+      appendToExpression('-');
+    } else if (id === 'btn-multiply') {
+      appendToExpression('*');
+    } else if (id === 'btn-divide') {
+      appendToExpression('/');
     }
-    return output;
-}
-
-/* RPN evaluator */
-function computeRPN(rpnTokens) {
-    const stack = [];
-    rpnTokens.forEach(token => {
-        if (/[+\-*/]/.test(token)) {
-            if (stack.length < 2) throw new Error('Insufficient operands');
-            const b = stack.pop();
-            const a = stack.pop();
-            let res;
-            switch (token) {
-                case '+': res = a + b; break;
-                case '-': res = a - b; break;
-                case '*': res = a * b; break;
-                case '/':
-                    if (b === 0) throw new Error('Division by zero');
-                    res = a / b;
-                    break;
-                default: throw new Error(`Unknown operator: ${token}`);
-            }
-            stack.push(res);
-        } else {
-            const num = parseFloat(token);
-            if (isNaN(num)) throw new Error(`Invalid number: ${token}`);
-            stack.push(num);
-        }
-    });
-    if (stack.length !== 1) throw new Error('Malformed expression');
-    return stack[0];
-}
-
-/* Event handlers */
-function handleButtonClick(event) {
-    const btn = event.target.closest('.btn');
-    if (!btn) return;
-    const action = btn.dataset.action;
-    const label = btn.innerText.trim();
-
-    switch (action) {
-        case 'digit':
-            appendDigit(label);
-            break;
-        case 'operator':
-            const op = label === '×' ? '*' : label === '÷' ? '/' : label;
-            appendOperator(op);
-            break;
-        case 'decimal':
-            addDecimal();
-            break;
-        case 'clear':
-            clearAll();
-            break;
-        case 'delete':
-            deleteLast();
-            break;
-        case 'equals':
-            computeResult();
-            break;
-        default:
-            break;
+    // Control buttons
+    else if (id === 'btn-equals') {
+      evaluateExpression();
+    } else if (id === 'btn-clear') {
+      clearExpression();
+    } else if (id === 'btn-del') {
+      deleteLast();
     }
-}
+  }
 
-function handleKeyPress(event) {
-    const { key } = event;
-    if (/\d/.test(key)) {
-        appendDigit(key);
-        event.preventDefault();
-    } else if (key === '.' ) {
-        addDecimal();
-        event.preventDefault();
+  /** Map keyboard input to calculator actions */
+  function handleKeyboardInput(event) {
+    const key = event.key;
+
+    if (/^[0-9]$/.test(key)) {
+      appendToExpression(key);
+      event.preventDefault();
+    } else if (key === '.' || key === '(' || key === ')') {
+      appendToExpression(key);
+      event.preventDefault();
     } else if (['+', '-', '*', '/'].includes(key)) {
-        appendOperator(key);
-        event.preventDefault();
+      appendToExpression(key);
+      event.preventDefault();
     } else if (key === 'Enter') {
-        computeResult();
-        event.preventDefault();
+      evaluateExpression();
+      event.preventDefault();
     } else if (key === 'Backspace') {
-        deleteLast();
-        event.preventDefault();
+      deleteLast();
+      event.preventDefault();
     } else if (key === 'Escape') {
-        clearAll();
-        event.preventDefault();
+      clearExpression();
+      event.preventDefault();
     }
-}
+  }
 
-/* Initialization */
-function initCalculator() {
+  /** Initialize calculator: cache elements and register listeners */
+  function initCalculator() {
     displayElement = document.getElementById('display');
-    const buttons = document.querySelectorAll('.btn');
-    buttons.forEach(btn => btn.addEventListener('click', handleButtonClick));
-    document.addEventListener('keydown', handleKeyPress);
-    clearAll();
-}
 
-document.addEventListener('DOMContentLoaded', initCalculator);
+    const buttons = document.querySelectorAll('.calc-button');
+    buttons.forEach(btn => btn.addEventListener('click', handleButtonClick));
+
+    document.addEventListener('keydown', handleKeyboardInput);
+  }
+
+  document.addEventListener('DOMContentLoaded', initCalculator);
+})();
