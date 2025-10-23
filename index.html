@@ -2,39 +2,46 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Web Calculator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Calculator</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="calculator">
-    <div id="display" aria-label="calculator display" role="textbox" aria-readonly="true"></div>
-    <div class="buttons">
-      <button type="button" class="calc-button" data-key="C">C</button>
-      <button type="button" class="calc-button" data-key="⌫">⌫</button>
-      <button type="button" class="calc-button" data-key="/">÷</button>
-      <button type="button" class="calc-button" data-key="*">×</button>
+  <section role="application" class="calculator">
+    <input id="display" type="text" readonly aria-label="Calculator display">
+    <div class="button-grid">
+      <!-- Row 1 -->
+      <button class="calc-button" data-action="clear" aria-label="Clear">C</button>
+      <button class="calc-button" data-action="backspace" aria-label="Backspace">&#8592;</button>
+      <button class="calc-button" data-action="operator" data-value="%" aria-label="Percent">%</button>
+      <button class="calc-button" data-action="operator" data-value="/" aria-label="Divide">÷</button>
 
-      <button type="button" class="calc-button" data-key="7">7</button>
-      <button type="button" class="calc-button" data-key="8">8</button>
-      <button type="button" class="calc-button" data-key="9">9</button>
-      <button type="button" class="calc-button" data-key="+">+</button>
+      <!-- Row 2 -->
+      <button class="calc-button" data-action="digit" data-value="7" aria-label="Digit 7">7</button>
+      <button class="calc-button" data-action="digit" data-value="8" aria-label="Digit 8">8</button>
+      <button class="calc-button" data-action="digit" data-value="9" aria-label="Digit 9">9</button>
+      <button class="calc-button" data-action="operator" data-value="*" aria-label="Multiply">×</button>
 
-      <button type="button" class="calc-button" data-key="4">4</button>
-      <button type="button" class="calc-button" data-key="5">5</button>
-      <button type="button" class="calc-button" data-key="6">6</button>
-      <button type="button" class="calc-button" data-key="-">−</button>
+      <!-- Row 3 -->
+      <button class="calc-button" data-action="digit" data-value="4" aria-label="Digit 4">4</button>
+      <button class="calc-button" data-action="digit" data-value="5" aria-label="Digit 5">5</button>
+      <button class="calc-button" data-action="digit" data-value="6" aria-label="Digit 6">6</button>
+      <button class="calc-button" data-action="operator" data-value="-" aria-label="Subtract">−</button>
 
-      <button type="button" class="calc-button" data-key="1">1</button>
-      <button type="button" class="calc-button" data-key="2">2</button>
-      <button type="button" class="calc-button" data-key="3">3</button>
-      <button type="button" class="calc-button" data-key="*">×</button>
+      <!-- Row 4 -->
+      <button class="calc-button" data-action="digit" data-value="1" aria-label="Digit 1">1</button>
+      <button class="calc-button" data-action="digit" data-value="2" aria-label="Digit 2">2</button>
+      <button class="calc-button" data-action="digit" data-value="3" aria-label="Digit 3">3</button>
+      <button class="calc-button" data-action="operator" data-value="+" aria-label="Add">+</button>
 
-      <button type="button" class="calc-button" data-key="0">0</button>
-      <button type="button" class="calc-button" data-key=".">.</button>
-      <button type="button" class="calc-button" data-key="=">=</button>
+      <!-- Row 5 -->
+      <button class="calc-button" data-action="negate" aria-label="Negate">±</button>
+      <button class="calc-button" data-action="digit" data-value="0" aria-label="Digit 0">0</button>
+      <button class="calc-button" data-action="decimal" data-value="." aria-label="Decimal point">.</button>
+      <button class="calc-button" data-action="equals" aria-label="Equals">=</button>
     </div>
-  </div>
+  </section>
+
   <script src="app.js" defer></script>
 </body>
 </html>
