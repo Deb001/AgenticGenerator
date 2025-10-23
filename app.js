@@ -1,202 +1,220 @@
 'use strict';
 
-// -------------------- State --------------------
-const state = {
-  currentValue: '0',          // string shown on display
-  previousValue: null,        // number | null
-  operator: null,             // '+', '-', '*', '/' | null
-  waitingForSecondValue: false
-};
+// Calculator state
+let inputBuffer = '';
+let currentValue = 0;
+let pendingOperator = null; // '+', '-', '*', '/' or null
+let errorState = false;
 
-// -------------------- Core Functions --------------------
-function inputDigit(digit) {
-  if (state.waitingForSecondValue) {
-    state.currentValue = digit;
-    state.waitingForSecondValue = false;
-    return;
-  }
+// Cached DOM elements
+let displayEl = null;
+let buttonNodes = null;
 
-  if (state.currentValue === '0') {
-    // Replace leading zero unless digit is also zero
-    state.currentValue = digit;
-  } else {
-    state.currentValue += digit;
-  }
-}
+/**
+ * Initialize calculator after DOM is ready.
+ */
+function initCalculator() {
+  displayEl = document.getElementById('display');
+  buttonNodes = document.querySelectorAll('.calc-button');
 
-function inputDecimal() {
-  if (state.waitingForSecondValue) {
-    state.currentValue = '0.';
-    state.waitingForSecondValue = false;
-    return;
-  }
+  buttonNodes.forEach(btn => {
+    btn.addEventListener('click', handleButtonClick);
+  });
 
-  if (!state.currentValue.includes('.')) {
-    state.currentValue += '.';
-  }
-}
+  document.addEventListener('keydown', handleKeyPress);
 
-function calculate(firstOperand, secondOperand, operator) {
-  switch (operator) {
-    case '+':
-      return firstOperand + secondOperand;
-    case '-':
-      return firstOperand - secondOperand;
-    case '*':
-      return firstOperand * secondOperand;
-    case '/':
-      return secondOperand === 0 ? 'Error' : firstOperand / secondOperand;
-    default:
-      return secondOperand;
-  }
-}
-
-function handleOperator(nextOperator) {
-  const inputValue = parseFloat(state.currentValue);
-
-  if (state.operator && !state.waitingForSecondValue) {
-    const result = calculate(state.previousValue, inputValue, state.operator);
-    state.currentValue = typeof result === 'number' ? String(result) : result;
-    state.previousValue = typeof result === 'number' ? result : null;
-  } else {
-    state.previousValue = inputValue;
-  }
-
-  state.operator = nextOperator;
-  state.waitingForSecondValue = true;
   updateDisplay();
 }
 
-function handleEquals() {
-  if (!state.operator || state.previousValue === null) {
-    return;
+/**
+ * Click handler for calculator buttons.
+ * @param {MouseEvent} event
+ */
+function handleButtonClick(event) {
+  const btn = event.currentTarget;
+  const key = btn.getAttribute('data-key');
+  if (key) {
+    processInput(key);
+  }
+}
+
+/**
+ * Keyboard handler mapping physical keys to calculator keys.
+ * @param {KeyboardEvent} event
+ */
+function handleKeyPress(event) {
+  const keyMap = {
+    'Enter': '=',
+    'Escape': 'C',
+    'Backspace': '⌫',
+    '/': '/',
+    '*': '*',
+    '+': '+',
+    '-': '-',
+    '.': '.',
+    ',': '.', // allow comma as decimal
+    '0': '0',
+    '1': '1',
+    '2': '2',
+    '3': '3',
+    '4': '4',
+    '5': '5',
+    '6': '6',
+    '7': '7',
+    '8': '8',
+    '9': '9'
+  };
+
+  const mapped = keyMap[event.key];
+  if (mapped) {
+    event.preventDefault();
+    processInput(mapped);
+  }
+}
+
+/**
+ * Central dispatcher for all input keys.
+ * @param {string} key
+ */
+function processInput(key) {
+  if (errorState && key !== 'C') {
+    return; // ignore everything except clear
   }
 
-  const secondOperand = parseFloat(state.currentValue);
-  const result = calculate(state.previousValue, secondOperand, state.operator);
-  state.currentValue = typeof result === 'number' ? String(result) : result;
-  state.previousValue = null;
-  state.operator = null;
-  state.waitingForSecondValue = false;
+  if (/[0-9.]/.test(key)) {
+    appendToBuffer(key);
+  } else if (['+', '-', '*', '/'].includes(key)) {
+    setOperator(key);
+  } else if (key === '=') {
+    computeResult();
+  } else if (key === 'C') {
+    clearAll();
+  } else if (key === '⌫') {
+    backspace();
+  }
+
   updateDisplay();
 }
 
-function resetCalculator() {
-  state.currentValue = '0';
-  state.previousValue = null;
-  state.operator = null;
-  state.waitingForSecondValue = false;
-  updateDisplay();
-}
-
-function updateDisplay() {
-  const display = document.getElementById('calculator-display');
-  if (display) {
-    display.value = state.currentValue;
-  }
-}
-
-// -------------------- Keyboard Handling --------------------
-function handleKeyboard(event) {
-  const { key } = event;
-
-  if (key >= '0' && key <= '9') {
-    inputDigit(key);
-    updateDisplay();
-    event.preventDefault();
-    return;
-  }
-
-  if (key === '.' || key === ',') {
-    inputDecimal();
-    updateDisplay();
-    event.preventDefault();
-    return;
-  }
-
-  if (key === '+' || key === '-' || key === '*' || key === '/' || key === '÷' || key === '×') {
-    const opMap = {
-      '+': '+',
-      '-': '-',
-      '*': '*',
-      '/': '/',
-      '÷': '/',
-      '×': '*'
-    };
-    handleOperator(opMap[key]);
-    event.preventDefault();
-    return;
-  }
-
-  if (key === 'Enter' || key === '=') {
-    handleEquals();
-    event.preventDefault();
-    return;
-  }
-
-  if (key === 'Backspace') {
-    // Delete last digit (simple implementation)
-    if (!state.waitingForSecondValue) {
-      if (state.currentValue.length > 1) {
-        state.currentValue = state.currentValue.slice(0, -1);
-      } else {
-        state.currentValue = '0';
-      }
-      updateDisplay();
+/**
+ * Append a digit or decimal point to the input buffer.
+ * @param {string} char
+ */
+function appendToBuffer(char) {
+  if (char === '.') {
+    if (inputBuffer.includes('.')) return;
+    if (inputBuffer === '' || inputBuffer === '-') {
+      inputBuffer += '0.';
+    } else {
+      inputBuffer += '.';
     }
-    event.preventDefault();
     return;
   }
 
-  if (key === 'Escape') {
-    resetCalculator();
-    event.preventDefault();
-    return;
+  // char is a digit
+  if (inputBuffer === '0') {
+    // Replace leading zero unless it's after a decimal point
+    inputBuffer = char;
+  } else if (inputBuffer === '-0') {
+    // Preserve negative sign
+    inputBuffer = '-' + char;
+  } else {
+    inputBuffer += char;
   }
 }
 
-// -------------------- Event Wiring --------------------
-document.addEventListener('DOMContentLoaded', () => {
-  // Digits
-  document.querySelectorAll('[data-digit]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      inputDigit(btn.dataset.digit);
-      updateDisplay();
-    });
-  });
+/**
+ * Store operator and prepare for next operand.
+ * @param {string} op
+ */
+function setOperator(op) {
+  if (pendingOperator) {
+    computeResult();
+  }
 
-  // Decimal
-  document.querySelectorAll('[data-decimal]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      inputDecimal();
-      updateDisplay();
-    });
-  });
+  // Determine left operand
+  if (inputBuffer !== '' && inputBuffer !== '-') {
+    currentValue = parseFloat(inputBuffer);
+  }
 
-  // Operators
-  document.querySelectorAll('[data-operator]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      handleOperator(btn.dataset.operator);
-    });
-  });
+  pendingOperator = op;
+  inputBuffer = '';
+}
 
-  // Equals
-  document.querySelectorAll('[data-equals]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      handleEquals();
-    });
-  });
+/**
+ * Compute the result using the pending operator.
+ */
+function computeResult() {
+  if (!pendingOperator) return;
 
-  // Clear
-  document.querySelectorAll('[data-clear]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      resetCalculator();
-    });
-  });
+  const rightOperand = inputBuffer !== '' && inputBuffer !== '-' ? parseFloat(inputBuffer) : currentValue;
+  const leftOperand = currentValue;
 
-  // Initial display
-  updateDisplay();
+  let result;
 
-  // Keyboard
-  document.addEventListener('keydown', handleKeyboard);
-});
+  switch (pendingOperator) {
+    case '+':
+      result = leftOperand + rightOperand;
+      break;
+    case '-':
+      result = leftOperand - rightOperand;
+      break;
+    case '*':
+      result = leftOperand * rightOperand;
+      break;
+    case '/':
+      if (rightOperand === 0) {
+        errorState = true;
+        updateDisplay();
+        return;
+      }
+      result = leftOperand / rightOperand;
+      break;
+    default:
+      return;
+  }
+
+  currentValue = result;
+  pendingOperator = null;
+  inputBuffer = '';
+}
+
+/**
+ * Reset calculator to its initial state.
+ */
+function clearAll() {
+  inputBuffer = '';
+  currentValue = 0;
+  pendingOperator = null;
+  errorState = false;
+}
+
+/**
+ * Remove the last character from the input buffer.
+ */
+function backspace() {
+  if (inputBuffer.length > 0) {
+    inputBuffer = inputBuffer.slice(0, -1);
+  }
+}
+
+/**
+ * Refresh the calculator display.
+ */
+function updateDisplay() {
+  if (!displayEl) return;
+
+  if (errorState) {
+    displayEl.textContent = 'Error';
+    return;
+  }
+
+  if (inputBuffer !== '') {
+    displayEl.textContent = inputBuffer;
+  } else {
+    displayEl.textContent = currentValue.toString();
+  }
+}
+
+// Kick off initialization when the DOM is ready
+document.addEventListener('DOMContentLoaded', initCalculator);
