@@ -1,61 +1,40 @@
 # Simple Web Calculator
 
-A minimal, accessible, and responsive calculator built with plain HTML, CSS, and JavaScript.  
-It supports basic arithmetic (`+`, `-`, `×`, `÷`) with decimal numbers, proper operator precedence, and keyboard interaction.
+## Overview
+A lightweight, client‑side calculator built with vanilla HTML, CSS, and JavaScript.  
+The UI is accessible and responsive, while the calculation engine (`js/calc.js`) uses a safe tokeniser and the Shunting‑Yard algorithm to evaluate arithmetic expressions without invoking `eval()`.
 
-## 📂 Project Structure
+## Features
+- **Basic arithmetic**: addition, subtraction, multiplication, division.
+- **Decimal support** with validation to prevent multiple decimal points in a single number.
+- **Parentheses** (optional) for grouping expressions.
+- **Keyboard shortcuts**: digits, `.` `+` `-` `*` `/`, `Enter` (=), `Backspace` (delete), `Esc`/`C` (clear).
+- **Error handling**: division by zero, malformed expressions, and invalid input display an `Error` state that can be cleared.
+- **Responsive layout**: works on desktop, tablet, and mobile browsers.
+- **No external dependencies** – runs entirely offline.
 
-/ (root)
-├─ index.html   # UI markup, ARIA‑enhanced buttons, display area
-├─ styles.css   # Responsive grid layout, high‑contrast styling
-├─ app.js       # Tokenizer, shunting‑yard parser, RPN evaluator, UI & keyboard wiring
-└─ README.md    # This documentation
+## File Structure
+/ (project root)
+├─ index.html          # Main page – loads CSS & JS, defines UI markup
+├─ css/
+│   └─ style.css       # Layout, grid, and focus/hover styling
+├─ js/
+│   ├─ calc.js         # Pure calculation engine (tokeniser + shunting‑yard)
+│   └─ app.js          # UI controller – DOM events, keyboard handling, state
+└─ README.md           # Documentation (this file)
 
-## 🚀 How to Run
+## Running the Calculator
+1. **Open** `index.html` in any modern web browser (Chrome, Firefox, Edge, Safari).  
+   No server or build step is required; the app runs completely client‑side.
+2. **Interact** using the on‑screen buttons or the keyboard shortcuts listed above.
+3. **Clear** the display with the `C` button or `Esc` key if an error occurs or you wish to start a new calculation.
 
-1. **Clone / download** the repository.  
-2. Open **`index.html`** in any modern browser (Chrome, Firefox, Edge, Safari).  
-   No build step, server, or package manager is required.
+## Notes on Safety
+- The calculator **does not use `eval()`** or any other dynamic code execution; all parsing and evaluation are performed manually, eliminating injection risks.
+- Input is strictly limited to numeric characters, decimal points, arithmetic operators, and parentheses. Any other characters are ignored.
+- Division by zero is caught and reported as `Error` rather than returning `Infinity` or throwing an exception.
+- The application runs locally; no network requests are made, ensuring privacy of user input.
 
-## 🖥️ Usage
+---  
 
-- **Click** the on‑screen buttons or use the **keyboard**:
-  - Digits `0‑9` and decimal point `.` → input numbers.
-  - Operators `+`, `-`, `*` (or `×`), `/` (or `÷`) → arithmetic operations.
-  - `Enter` → evaluate (`=` button).
-  - `Backspace` → delete the last character.
-  - `C` (or `Escape`) → clear the display.
-
-- The display is **read‑only**; it updates automatically as you type or click.
-
-- Errors (e.g., division by zero, malformed expression) are shown as **`Error`** and the calculator can be cleared with `C`.
-
-## ✅ Manual Test Checklist
-
-| Test | Steps | Expected Result |
-|------|-------|-----------------|
-| **Basic addition** | `2 + 3 =` | `5` |
-| **Subtraction** | `7 - 4 =` | `3` |
-| **Multiplication** | `6 × 5 =` (or `6 * 5 =`) | `30` |
-| **Division** | `8 ÷ 2 =` (or `8 / 2 =`) | `4` |
-| **Operator precedence** | `2 + 3 × 4 =` | `14` |
-| **Decimal arithmetic** | `3.5 + 2.1 =` | `5.6` |
-| **Multiple decimals** | `1.2 . 3` (attempt) | Input prevented – only one decimal per number |
-| **Consecutive operators** | `5 ++ 2 =` (attempt) | Input prevented – no two operators in a row |
-| **Divide‑by‑zero** | `9 ÷ 0 =` | `Error` displayed |
-| **Keyboard entry** | Type `7`, `*`, `8`, `Enter` | `56` |
-| **Clear** | Press `C` or `Escape` at any time | Display resets to `0` |
-| **Backspace** | Type `12`, press `Backspace` | Display shows `1` |
-
-## 📌 Future Enhancements (Deferred)
-
-- **History panel** – scrollable list of previous calculations.  
-- **Scientific functions** – trigonometry, exponentiation, parentheses, etc.  
-- **Theming** – dark mode and user‑selectable color schemes.  
-- **Persisted state** – store the last expression in `localStorage`.  
-
-These features are intentionally omitted to keep the core implementation lightweight and focused on reliable basic arithmetic.
-
----
-
-*Happy calculating!* 🎉
+*Happy calculating!*
