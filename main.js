@@ -1,197 +1,133 @@
-// main.js – UI controller for the calculator
+// main.js - Calculator logic
 
-let currentExpression = ''; // holds the raw expression string as the user types
-let displayElement = null;
+(() => {
+    'use strict';
 
-/**
- * Initializes the calculator UI: caches DOM elements, registers listeners,
- * and sets the initial display.
- */
-function init() {
-  displayElement = document.getElementById('display');
-  const buttons = document.querySelectorAll('.button');
+    /** @type {HTMLInputElement} */
+    let displayElement;
+    /** @type {NodeListOf<HTMLButtonElement>} */
+    let buttonElements;
 
-  buttons.forEach(btn => btn.addEventListener('click', handleButtonClick));
-  document.addEventListener('keydown', handleKeyPress);
+    const MAX_DISPLAY_LENGTH = 30;
 
-  updateDisplay('0');
-}
+    /** Initialize the calculator once DOM is ready */
+    function init() {
+        displayElement = /** @type {HTMLInputElement} */ (document.getElementById('display'));
+        buttonElements = /** @type {NodeListOf<HTMLButtonElement>} */ (document.querySelectorAll('button[data-value]'));
 
-/**
- * Handles click events on calculator buttons.
- * @param {MouseEvent} event
- */
-function handleButtonClick(event) {
-  const value = event.currentTarget.dataset.value;
-  if (value !== undefined) {
-    processInput(value);
-  }
-}
+        buttonElements.forEach(btn => btn.addEventListener('click', handleButtonClick));
+        document.addEventListener('keydown', handleKeyboard);
+    }
 
-/**
- * Handles keyboard input and maps keys to calculator actions.
- * @param {KeyboardEvent} event
- */
-function handleKeyPress(event) {
-  const key = event.key;
-  let mapped = null;
+    /** Click handler for calculator buttons */
+    function handleButtonClick(event) {
+        const btn = /** @type {HTMLButtonElement} */ (event.currentTarget);
+        const value = btn.dataset.value;
 
-  if (key >= '0' && key <= '9') {
-    mapped = key;
-  } else if (key === '.') {
-    mapped = '.';
-  } else if (key === '+' || key === '-' || key === '*' || key === '/' || key === '×' || key === '÷') {
-    mapped = key === '×' || key === '*' ? '*' : key === '÷' ? '/' : key;
-  } else if (key === 'Enter' || key === '=') {
-    mapped = '=';
-  } else if (key === 'Backspace') {
-    mapped = 'Backspace';
-  } else if (key === 'Escape') {
-    mapped = 'C';
-  }
+        if (value === 'C') {
+            clearDisplay();
+        } else if (value === '=') {
+            evaluateExpression();
+        } else {
+            appendToDisplay(value);
+        }
+    }
 
-  if (mapped !== null) {
-    event.preventDefault(); // stop default actions like navigation on Backspace
-    processInput(mapped);
-  }
-}
+    /** Append a character/value to the display, respecting length limit */
+    function appendToDisplay(value) {
+        if (displayElement.value.length + value.length > MAX_DISPLAY_LENGTH) return;
+        displayElement.value += value;
+    }
 
-/**
- * Central dispatcher for all calculator inputs.
- * @param {string} value
- */
-function processInput(value) {
-  if (value >= '0' && value <= '9') {
-    appendDigit(value);
-  } else if (value === '.') {
-    appendDecimal();
-  } else if (['+', '-', '*', '/'].includes(value)) {
-    appendOperator(value);
-  } else if (value === '=') {
-    computeResult();
-  } else if (value === 'C') {
-    clearDisplay();
-  } else if (value === 'Backspace') {
-    handleBackspace();
-  }
-}
+    /** Reset the display to an empty string */
+    function clearDisplay() {
+        displayElement.value = '';
+    }
 
-/**
- * Adds a digit to the current expression respecting length and leading zero rules.
- * @param {string} digit
- */
-function appendDigit(digit) {
-  if (currentExpression.length >= 12) return;
+    /** Evaluate the arithmetic expression shown in the display */
+    function evaluateExpression() {
+        const expr = displayElement.value.trim();
 
-  const displayValue = currentExpression || '0';
+        if (!isValidExpression(expr)) {
+            showError();
+            return;
+        }
 
-  if (displayValue === '0') {
-    if (digit === '0') return; // keep single leading zero
-    currentExpression = digit;
-  } else {
-    currentExpression += digit;
-  }
+        try {
+            const result = safeEval(expr);
+            if (typeof result === 'number' && isFinite(result)) {
+                displayElement.value = String(result);
+            } else {
+                showError();
+            }
+        } catch (_) {
+            showError();
+        }
+    }
 
-  updateDisplay(currentExpression);
-}
+    /** Validate that the expression contains only allowed characters and balanced parentheses */
+    function isValidExpression(expr) {
+        const allowedPattern = /^[0-9+\-*/().\s]+$/;
+        if (!allowedPattern.test(expr)) return false;
 
-/**
- * Adds an operator to the expression after validation.
- * @param {string} operator
- */
-function appendOperator(operator) {
-  if (!validateOperatorSequence(operator)) return;
-  if (currentExpression === '') return; // cannot start with an operator
+        let balance = 0;
+        for (const ch of expr) {
+            if (ch === '(') balance++;
+            else if (ch === ')') {
+                balance--;
+                if (balance < 0) return false;
+            }
+        }
+        return balance === 0;
+    }
 
-  currentExpression += operator;
-  updateDisplay(currentExpression);
-}
+    /** Safely evaluate a validated arithmetic expression */
+    function safeEval(expr) {
+        // The expression has already passed validation
+        // Using Function constructor to avoid eval's scope leakage
+        return (new Function('return ' + expr))();
+    }
 
-/**
- * Adds a decimal point if the current number segment does not already contain one.
- */
-function appendDecimal() {
-  if (currentExpression.length >= 12) return;
+    /** Show an error message on the display */
+    function showError(message = 'Error') {
+        displayElement.value = message;
+    }
 
-  // Determine the current numeric token
-  const lastOpIdx = Math.max(
-    currentExpression.lastIndexOf('+'),
-    currentExpression.lastIndexOf('-'),
-    currentExpression.lastIndexOf('*'),
-    currentExpression.lastIndexOf('/')
-  );
-  const token = currentExpression.slice(lastOpIdx + 1);
+    /** Keyboard event handler mapping keys to calculator actions */
+    function handleKeyboard(event) {
+        const key = event.key;
 
-  if (token.includes('.')) return; // already has a decimal
+        // Digits, decimal point, parentheses, and operators
+        if (/^[0-9]$/.test(key) || ['.', '+', '-', '*', '/', '(', ')'].includes(key)) {
+            appendToDisplay(key);
+            event.preventDefault();
+            return;
+        }
 
-  if (token === '' || token === undefined) {
-    // Starting a new number with a decimal
-    currentExpression += '0.';
-  } else {
-    currentExpression += '.';
-  }
+        // Enter or '=' triggers evaluation
+        if (key === 'Enter' || key === '=') {
+            evaluateExpression();
+            event.preventDefault();
+            return;
+        }
 
-  updateDisplay(currentExpression);
-}
+        // Escape or 'c'/'C' clears the display
+        if (key === 'Escape' || key.toLowerCase() === 'c') {
+            clearDisplay();
+            event.preventDefault();
+            return;
+        }
 
-/**
- * Resets the expression and display to the initial state.
- */
-function clearDisplay() {
-  currentExpression = '';
-  updateDisplay('0');
-}
+        // Backspace deletes the last character
+        if (key === 'Backspace') {
+            displayElement.value = displayElement.value.slice(0, -1);
+            event.preventDefault();
+            return;
+        }
 
-/**
- * Evaluates the current expression using Calculator.evaluate.
- * Handles errors and display length constraints.
- */
-function computeResult() {
-  if (currentExpression === '') return;
+        // Ignore all other keys
+    }
 
-  const result = window.Calculator.evaluate(currentExpression);
-
-  if (result === 'Error' || String(result).length > 12) {
-    updateDisplay('Error');
-    currentExpression = '';
-  } else {
-    const resultStr = String(result);
-    updateDisplay(resultStr);
-    currentExpression = resultStr;
-  }
-}
-
-/**
- * Updates the calculator display element.
- * @param {string} value
- */
-function updateDisplay(value) {
-  if (displayElement) {
-    displayElement.innerText = value;
-  }
-}
-
-/**
- * Validates that adding the next operator does not create an invalid sequence.
- * @param {string} nextChar
- * @returns {boolean}
- */
-function validateOperatorSequence(nextChar) {
-  if (currentExpression === '') return false;
-  const operators = '+-*/';
-  const lastChar = currentExpression.slice(-1);
-  return !(operators.includes(lastChar) && operators.includes(nextChar));
-}
-
-/**
- * Handles backspace: removes the last character from the expression.
- */
-function handleBackspace() {
-  if (currentExpression.length === 0) return;
-
-  currentExpression = currentExpression.slice(0, -1);
-  updateDisplay(currentExpression || '0');
-}
-
-// Initialize when the DOM is ready
-document.addEventListener('DOMContentLoaded', init);
+    // Attach init to DOMContentLoaded
+    document.addEventListener('DOMContentLoaded', init);
+})();
