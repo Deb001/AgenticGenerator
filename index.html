@@ -3,49 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculator</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Simple Calculator</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <main class="calculator" role="application" aria-label="Simple calculator">
-        <input type="text"
-               id="display"
-               class="calc-display"
-               readonly
-               aria-live="polite"
-               aria-label="Calculator display"
-               autocomplete="off"
-               spellcheck="false">
-        <section class="calc-keypad">
+    <main class="calculator">
+        <!-- Display -->
+        <input type="text" id="calc-display" class="calc-display" readonly aria-label="Calculator display">
+
+        <!-- Buttons -->
+        <section class="calc-buttons">
             <!-- Row 1 -->
-            <button id="btn-clear" class="calc-button" aria-label="Clear">C</button>
-            <button id="btn-del" class="calc-button" aria-label="Delete">DEL</button>
-            <button id="btn-open-paren" class="calc-button" aria-label="Open parenthesis">(</button>
-            <button id="btn-close-paren" class="calc-button" aria-label="Close parenthesis">)</button>
+            <button type="button" class="calc-button" data-action="clear">C</button>
+            <button type="button" class="calc-button" data-action="operator" data-value="/">÷</button>
+            <button type="button" class="calc-button" data-action="operator" data-value="*">×</button>
+            <button type="button" class="calc-button" data-action="operator" data-value="-">−</button>
 
             <!-- Row 2 -->
-            <button id="btn-7" class="calc-button" aria-label="Seven">7</button>
-            <button id="btn-8" class="calc-button" aria-label="Eight">8</button>
-            <button id="btn-9" class="calc-button" aria-label="Nine">9</button>
-            <button id="btn-divide" class="calc-button" aria-label="Divide">÷</button>
+            <button type="button" class="calc-button" data-action="digit" data-value="7">7</button>
+            <button type="button" class="calc-button" data-action="digit" data-value="8">8</button>
+            <button type="button" class="calc-button" data-action="digit" data-value="9">9</button>
+            <button type="button" class="calc-button" data-action="operator" data-value="+">+</button>
 
             <!-- Row 3 -->
-            <button id="btn-4" class="calc-button" aria-label="Four">4</button>
-            <button id="btn-5" class="calc-button" aria-label="Five">5</button>
-            <button id="btn-6" class="calc-button" aria-label="Six">6</button>
-            <button id="btn-multiply" class="calc-button" aria-label="Multiply">×</button>
+            <button type="button" class="calc-button" data-action="digit" data-value="4">4</button>
+            <button type="button" class="calc-button" data-action="digit" data-value="5">5</button>
+            <button type="button" class="calc-button" data-action="digit" data-value="6">6</button>
+            <button type="button" class="calc-button" data-action="equals">=</button>
 
             <!-- Row 4 -->
-            <button id="btn-1" class="calc-button" aria-label="One">1</button>
-            <button id="btn-2" class="calc-button" aria-label="Two">2</button>
-            <button id="btn-3" class="calc-button" aria-label="Three">3</button>
-            <button id="btn-minus" class="calc-button" aria-label="Minus">−</button>
+            <button type="button" class="calc-button" data-action="digit" data-value="1">1</button>
+            <button type="button" class="calc-button" data-action="digit" data-value="2">2</button>
+            <button type="button" class="calc-button" data-action="digit" data-value="3">3</button>
+            <button type="button" class="calc-button" data-action="decimal" data-value=".">.</button>
 
             <!-- Row 5 -->
-            <button id="btn-0" class="calc-button" aria-label="Zero">0</button>
-            <button id="btn-decimal" class="calc-button" aria-label="Decimal point">.</button>
-            <button id="btn-equals" class="calc-button" aria-label="Equals">=</button>
-            <button id="btn-plus" class="calc-button" aria-label="Plus">+</button>
+            <button type="button" class="calc-button calc-zero" data-action="digit" data-value="0">0</button>
         </section>
     </main>
 
