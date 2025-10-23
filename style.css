@@ -1,49 +1,84 @@
-/* Root font size and universal box-sizing */
+/* Root settings */
 :root {
     font-size: 16px;
+    --button-bg: #e0e0e0;
+    --button-bg-hover: #d5d5d5;
+    --button-bg-active: #c0c0c0;
+    --button-radius: 0.4rem;
+    --button-font-size: 1.5rem;
+    --display-font-size: 2rem;
+    --max-width: 400px;
 }
 
+/* Global box-sizing */
 *, *::before, *::after {
     box-sizing: border-box;
 }
 
-/* Calculator grid layout */
-.calculator-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.5rem;
-    max-width: 400px;
-    margin: auto;
-}
-
-/* Display area spanning full width */
-.display {
-    grid-column: 1 / -1;
-    height: 2.5rem;
-    font-size: 1.5rem;
-    text-align: right;
-    padding: 0.5rem;
-}
-
-/* Calculator buttons */
-.calc-button {
-    font-size: 1.2rem;
-    padding: 1rem;
+/* Body layout */
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
     background: #f0f0f0;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Display (readonly input) */
+#display {
+    width: 100%;
+    max-width: var(--max-width);
+    font-size: var(--display-font-size);
+    padding: 0.5rem 0.75rem;
+    text-align: right;
     border: none;
-    border-radius: 4px;
+    border-radius: 0.5rem;
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    pointer-events: none; /* make it effectively readonly */
+}
+
+/* Button grid */
+.button-grid {
+    display: grid;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    width: 100%;
+    max-width: var(--max-width);
+    grid-template-columns: repeat(auto-fit, minmax(4rem, 1fr));
+}
+
+/* Individual calculator buttons */
+.calc-button {
+    width: 100%;
+    padding: 0.75rem;
+    font-size: var(--button-font-size);
+    background: var(--button-bg);
+    border: none;
+    border-radius: var(--button-radius);
     cursor: pointer;
+    transition: background 0.1s ease, transform 0.05s ease;
 }
 
-/* Active button state */
+.calc-button:hover {
+    background: var(--button-bg-hover);
+}
+
 .calc-button:active {
-    background: #d0d0d0;
+    background: var(--button-bg-active);
+    transform: scale(0.98);
 }
 
-/* Responsive adjustments for small screens */
-@media (max-width: 600px) {
-    .calc-button {
-        padding: 1.5rem;
-        font-size: 1.5rem;
+/* Error state */
+.error {
+    color: red;
+}
+
+/* Responsive adjustments */
+@media (max-width: 350px) {
+    :root {
+        font-size: 14px;
     }
 }
