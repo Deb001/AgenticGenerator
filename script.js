@@ -1,188 +1,139 @@
-'use strict';
+/* script.js - Calculator core logic */
+(() => {
+  'use strict';
 
-// Calculator class encapsulating all state and operations
-class Calculator {
-  constructor() {
-    this.currentOperand = '';
-    this.previousOperand = '';
-    this.operator = null;
-    this.error = null;
-  }
+  /** Module-level state */
+  let expressionString = '';
+  /** @type {HTMLElement|null} */
+  let displayElement = null;
 
-  // Append a digit or decimal point
-  appendNumber(digit) {
-    if (this.error) return; // ignore input when in error state
-    if (digit === '.' && this.currentOperand.includes('.')) return;
-    this.currentOperand = `${this.currentOperand}${digit}`;
-  }
+  /** Allowed characters for building the expression */
+  const VALID_CHAR_REGEX = /^[0-9.+\-*/()\s]$/;
+  /** Sanitization regex for full expression before evaluation */
+  const SANITIZE_REGEX = /^[0-9.+\-*/()\s]+$/;
+  /** Division‑by‑zero detection regex */
+  const DIV_ZERO_REGEX = /\/\s*0+(\.0+)?/;
 
-  // Choose an operator (+, -, *, /)
-  chooseOperator(op) {
-    if (this.error) return;
-    if (this.currentOperand === '' && this.previousOperand === '') {
-      // No operand to operate on
+  /** Initialize calculator once DOM is ready */
+  function initCalculator() {
+    displayElement = document.getElementById('display');
+    if (!displayElement) {
+      console.error('Calculator display element not found.');
       return;
     }
-    if (this.currentOperand === '' && this.previousOperand !== '') {
-      // Change operator before entering next number
-      this.operator = op;
-      return;
-    }
-    if (this.previousOperand !== '') {
-      // Compute intermediate result
-      const result = this.compute();
-      if (typeof result === 'string') {
-        // Error occurred
-        return;
-      }
-      this.previousOperand = result.toString();
-    } else {
-      this.previousOperand = this.currentOperand;
-    }
-    this.operator = op;
-    this.currentOperand = '';
+
+    const buttons = document.querySelectorAll('.calc-button');
+    buttons.forEach(btn => btn.addEventListener('click', handleButtonClick));
+
+    document.addEventListener('keydown', handleKeyPress);
+    clearDisplay();
   }
 
-  // Perform computation based on stored operator
-  compute() {
-    if (this.error) return this.error;
-    if (this.operator === null || this.currentOperand === '' || this.previousOperand === '') {
-      return this.currentOperand || this.previousOperand;
+  /** Click handler for calculator buttons */
+  function handleButtonClick(event) {
+    const target = /** @type {HTMLElement} */ (event.currentTarget);
+    const value = target.dataset.value;
+    if (typeof value === 'string') {
+      processInput(value);
     }
+  }
 
-    const prev = parseFloat(this.previousOperand);
-    const curr = parseFloat(this.currentOperand);
-    let computation;
+  /** Keyboard handler for allowed keys */
+  function handleKeyPress(event) {
+    const key = event.key;
+    let mapped = null;
 
-    switch (this.operator) {
-      case '+':
-        computation = prev + curr;
+    if (key >= '0' && key <= '9') mapped = key;
+    else if (key === '.' || key === '+' || key === '-' || key === '*' || key === '/' ||
+             key === '(' || key === ')') mapped = key;
+    else if (key === 'Enter') mapped = '=';
+    else if (key === 'Escape') mapped = 'C';
+    else return; // unsupported key
+
+    event.preventDefault();
+    processInput(mapped);
+  }
+
+  /** Routes raw input to appropriate action */
+  function processInput(value) {
+    switch (value) {
+      case 'C':
+        clearDisplay();
         break;
-      case '-':
-        computation = prev - curr;
-        break;
-      case '*':
-        computation = prev * curr;
-        break;
-      case '/':
-        if (curr === 0) {
-          this.error = 'Error: Division by zero';
-          this.clearOperands();
-          return this.error;
-        }
-        computation = prev / curr;
+      case '=':
+        evaluateExpression();
         break;
       default:
-        return;
+        appendToExpression(value);
+        break;
+    }
+  }
+
+  /** Append a validated character to the expression */
+  function appendToExpression(char) {
+    if (!VALID_CHAR_REGEX.test(char)) {
+      // ignore invalid characters silently
+      return;
+    }
+    expressionString += char;
+    updateDisplay(expressionString);
+  }
+
+  /** Evaluate the current expression safely */
+  function evaluateExpression() {
+    const raw = expressionString.trim();
+
+    if (!SANITIZE_REGEX.test(raw)) {
+      showError('Error');
+      return;
     }
 
-    // Reset state with result
-    this.previousOperand = computation.toString();
-    this.currentOperand = '';
-    this.operator = null;
-    this.error = null;
-    return computation;
+    if (DIV_ZERO_REGEX.test(raw)) {
+      showError('÷ by 0');
+      return;
+    }
+
+    try {
+      // eslint-disable-next-line no-new-func
+      const result = Function('"use strict";return (' + raw + ')')();
+      const formatted = Number.isFinite(result) ? String(result) : 'Error';
+      if (formatted === 'Error') {
+        showError('Error');
+        return;
+      }
+      expressionString = formatted;
+      updateDisplay(formatted);
+    } catch (e) {
+      showError('Error');
+    }
   }
 
-  // Clear all state
-  clear() {
-    this.currentOperand = '';
-    this.previousOperand = '';
-    this.operator = null;
-    this.error = null;
+  /** Reset calculator state */
+  function clearDisplay() {
+    expressionString = '';
+    updateDisplay('0');
   }
 
-  // Remove last character from current operand
-  backspace() {
-    if (this.error) return;
-    this.currentOperand = this.currentOperand.slice(0, -1);
+  /** Show an error message with temporary styling */
+  function showError(message) {
+    updateDisplay(message);
+    if (displayElement) {
+      displayElement.classList.add('error');
+      setTimeout(() => {
+        displayElement.classList.remove('error');
+      }, 800);
+    }
+    // Reset expression to allow fresh start
+    expressionString = '';
   }
 
-  // Get value to display
-  getDisplayValue() {
-    if (this.currentOperand !== '') return this.currentOperand;
-    if (this.previousOperand !== '') return this.previousOperand;
-    return '0';
+  /** Update the calculator display */
+  function updateDisplay(content) {
+    if (displayElement) {
+      displayElement.innerText = content;
+    }
   }
 
-  // Helper to clear operands after an error
-  clearOperands() {
-    this.currentOperand = '';
-    this.previousOperand = '';
-    this.operator = null;
-  }
-}
-
-// Singleton calculator instance
-let calculator = null;
-
-// Update the calculator display
-function updateDisplay() {
-  const display = document.getElementById('display');
-  if (!display) return;
-  if (calculator.error) {
-    display.textContent = calculator.error;
-  } else {
-    display.textContent = calculator.getDisplayValue();
-  }
-}
-
-// Handle button clicks
-function handleButtonClick(event) {
-  const button = event.target.closest('.calc-btn');
-  if (!button) return;
-  const key = button.dataset.key;
-
-  if (!key) return;
-
-  if (/[0-9]/.test(key) || key === '.') {
-    calculator.appendNumber(key);
-  } else if (['+', '-', '*', '/'].includes(key)) {
-    calculator.chooseOperator(key);
-  } else if (key === '=') {
-    calculator.compute();
-  } else if (key === 'C') {
-    calculator.clear();
-  } else if (key === '←') {
-    calculator.backspace();
-  }
-
-  updateDisplay();
-}
-
-// Handle keyboard input
-function handleKeyboard(event) {
-  const { key } = event;
-
-  if (/[0-9]/.test(key) || key === '.') {
-    calculator.appendNumber(key);
-  } else if (['+', '-', '*', '/'].includes(key)) {
-    calculator.chooseOperator(key);
-  } else if (key === 'Enter') {
-    calculator.compute();
-  } else if (key === 'Backspace') {
-    calculator.backspace();
-  } else if (key === 'Escape') {
-    calculator.clear();
-  } else {
-    // Unmapped key; ignore
-    return;
-  }
-
-  updateDisplay();
-}
-
-// Initialize the calculator application
-function init() {
-  calculator = new Calculator();
-
-  const buttons = document.querySelectorAll('.calc-btn');
-  buttons.forEach(btn => btn.addEventListener('click', handleButtonClick));
-
-  document.addEventListener('keydown', handleKeyboard);
-
-  updateDisplay();
-}
-
-// Run init when DOM is ready
-window.addEventListener('DOMContentLoaded', init);
+  // Register init on DOM ready
+  document.addEventListener('DOMContentLoaded', initCalculator);
+})();
