@@ -1,68 +1,31 @@
 # Simple Web Calculator
 
-A lightweight, responsive calculator built with plain HTML, CSS, and JavaScript.  
-It supports basic arithmetic, decimal numbers, clear, backspace, and keyboard input.
+## Project Overview
+This project implements a lightweight, responsive calculator using only vanilla HTML, CSS, and JavaScript.  
+- **`index.html`** – Defines the calculator UI: a read‑only display and a grid of buttons (digits, operators, decimal point, Clear, and Equals).  
+- **`styles.css`** – Provides a clean, mobile‑friendly layout with uniform button styling and visual feedback on press.  
+- **`app.js`** – Handles all UI interactions: button clicks, keyboard input, expression building, validation, evaluation, and error handling.
 
-## Project Structure
+The three files work together as follows:
+1. The browser loads `index.html`, which links to `styles.css` for styling and `app.js` for behavior.  
+2. `app.js` attaches event listeners to each button and to relevant keyboard events, updating the display element in real time.  
+3. When the user presses **=** (or Enter), the script sanitizes the expression, safely evaluates it, and shows the result or an **Error** message (e.g., division by zero).  
+4. The **C** (Clear) button resets the display to an empty state.
 
-/ (project root)
-├─ index.html   # UI markup, entry point
-├─ style.css    # Layout, styling, responsive design
-├─ script.js    # Calculator logic, state management, event handling
-└─ README.md    # This documentation
+## Manual Test Cases
+1. `2+2` → **4**  
+2. `5/0` → **Error**  
+3. `3.5*2` → **7**  
+4. `7-3` → **4**  
+5. `12..3` (invalid) → ignored, display unchanged  
+6. `8++2` (consecutive operators) → ignored, display unchanged  
+7. `.5+0.2` → **0.7**  
+8. `Clear (C)` resets display to empty.
 
-## Getting Started
+## Running the Calculator
+1. Clone or download the repository.  
+2. Open `index.html` in any modern web browser (desktop or mobile).  
+3. Use the on‑screen buttons or the keyboard (digits, `+ - * / .`, **Enter** for `=`, **Esc** for Clear) to perform calculations.
 
-1. **Open the application**  
-   Open `index.html` in any modern browser (Chrome, Firefox, Edge, Safari).
-
-2. **No build steps required** – the app runs entirely client‑side.
-
-## Usage
-
-- **Mouse / Touch**: Click the on‑screen buttons to enter numbers, operators, and commands.  
-- **Keyboard**:  
-  - Digits `0–9` and `.` (decimal) input numbers.  
-  - `+`, `-`, `*`, `/` (or `×`, `÷`) select operators.  
-  - `Enter` or `=` computes the result.  
-  - `Backspace` deletes the last digit (same as the ⟵ button).  
-  - `Escape` or `C` clears the calculator.
-
-The display shows the current operand and, after pressing `=`, the computed result. Errors (e.g., division by zero) are shown as clear messages.
-
-## Features
-
-- **Basic arithmetic**: addition, subtraction, multiplication, division.  
-- **Decimal support** – unlimited precision within JavaScript’s number limits.  
-- **Clear (C)** – resets the entire calculation state.  
-- **Backspace (⟵)** – removes the last entered character.  
-- **Responsive layout** – grid adapts to narrow screens.  
-- **Accessible focus & hover states** for keyboard navigation.  
-- **Graceful error handling** – displays `"Error"` for invalid operations (e.g., divide by zero).
-
-## Manual QA Checklist
-
-| # | Test Description | Expected Result |
-|---|------------------|-----------------|
-| 1 | Open `index.html` in a browser. | Calculator UI loads without errors. |
-| 2 | Click digits `1`, `2`, `3` sequentially. | Display shows `123`. |
-| 3 | Press `.` then `4`, `5`. | Display shows `123.45`. |
-| 4 | Click `+`, then digits `6`, `7`. | Display shows `67` and the previous operand `123.45` is stored. |
-| 5 | Click `=`. | Display shows `190.45` (123.45 + 67). |
-| 6 | Perform subtraction: `9`, `-`, `4`, `=`. | Display shows `5`. |
-| 7 | Perform multiplication: `5`, `×`, `6`, `=`. | Display shows `30`. |
-| 8 | Perform division: `8`, `÷`, `2`, `=`. | Display shows `4`. |
-| 9 | Chain operations without clearing: `5`, `+`, `5`, `=`, `×`, `2`, `=`. | Display shows `20` ( (5 + 5) × 2 ). |
-|10| Click `C` (clear). | All displays reset to `0` and internal state is cleared. |
-|11| Enter `123`, click backspace (`⟵`) twice. | Display shows `1`. |
-|12| Attempt divide‑by‑zero: `7`, `÷`, `0`, `=`. | Display shows `Error`. |
-|13| Use keyboard: type `4`, `*`, `5`, `Enter`. | Display shows `20`. |
-|14| Use keyboard backspace to delete a digit. | Digit is removed from the display. |
-|15| Resize the browser window to a narrow width (< 400 px). | Buttons reflow into a compact layout, still fully usable. |
-|16| Tab through buttons and activate with `Space`/`Enter`. | Each button responds, and focus styles are visible. |
-
-All tests should pass without console errors. If any step fails, review `script.js` for logic errors or `style.css` for layout issues.
-
----
-
-**Enjoy calculating!** 🚀
+## License
+This project is released under the MIT License. Feel free to modify and reuse the code.
