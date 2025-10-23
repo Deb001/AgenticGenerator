@@ -1,199 +1,180 @@
-/* app.js - Calculator core logic */
+/* app.js – Calculator core logic (ES2023) */
 
 (() => {
-  'use strict';
-
-  /** State */
+  /** Holds the arithmetic expression being built */
   let expression = '';
-  /** @type {HTMLInputElement} */
-  let displayElement = null;
 
-  /** Utility: check if character is an operator */
-  function isOperator(char) {
-    return ['+', '-', '*', '/'].includes(char);
+  /** Cached reference to the readonly display input */
+  let displayEl = null;
+
+  /** Utility: check if a character is an operator */
+  const isOperator = (ch) => /[+\-*/]/.test(ch);
+
+  /** Utility: get the current numeric segment (after the last operator) */
+  const currentNumberSegment = (expr) => {
+    const parts = expr.split(/[+\-*/]/);
+    return parts[parts.length - 1];
+  };
+
+  /** Validate whether adding `newChar` to `currentExpr` keeps a legal expression */
+  function isValidSequence(currentExpr, newChar) {
+    // Disallow any characters outside the allowed set
+    if (!/[0-9.+\-*/]/.test(newChar)) return false;
+
+    // Length guard (prevent excessively long expressions)
+    if (currentExpr.length >= 30) return false;
+
+    const lastChar = currentExpr.slice(-1);
+
+    // Leading operator: only allow '-' as the first character
+    if (currentExpr === '' && isOperator(newChar) && newChar !== '-') {
+      return false;
+    }
+
+    // Prevent two operators in a row
+    if (isOperator(lastChar) && isOperator(newChar)) {
+      return false;
+    }
+
+    // Decimal point rules
+    if (newChar === '.') {
+      // No multiple decimals in the same number segment
+      const segment = currentNumberSegment(currentExpr);
+      if (segment.includes('.')) return false;
+      // Prevent a decimal as the very first character (e.g., ".5" → allow by prefixing 0)
+      if (segment === '' && (lastChar === '' || isOperator(lastChar))) {
+        // Allow, will become "0."
+        return true;
+      }
+    }
+
+    // Prevent a number segment starting with multiple zeros (e.g., "00")
+    if (newChar === '0') {
+      const segment = currentNumberSegment(currentExpr);
+      if (segment === '0') return false; // already a leading zero without decimal
+    }
+
+    return true;
   }
 
-  /** Utility: ensure current numeric token has no decimal yet */
-  function hasValidDecimal(expr) {
-    const match = expr.match(/([0-9]*\.?[0-9]*)$/);
-    return !(match && match[0].includes('.'));
-  }
-
-  /** Update the read‑only display */
+  /** Update the readonly display element */
   function updateDisplay(value) {
-    if (displayElement) {
-      displayElement.value = value;
-    }
+    if (displayEl) displayEl.value = value;
   }
 
-  /** Append a character to the expression after validation */
-  function appendToExpression(char) {
-    const lastChar = expression.slice(-1);
-
-    // Digits
-    if (/[0-9]/.test(char)) {
-      expression += char;
-    }
-    // Decimal point
-    else if (char === '.') {
-      if (hasValidDecimal(expression)) {
-        // Prevent leading '.' without a zero (optional)
-        if (!/[0-9]$/.test(lastChar)) {
-          expression += '0';
-        }
-        expression += '.';
-      }
-    }
-    // Parentheses
-    else if (char === '(') {
-      // Allow '(' after operator or at start
-      if (expression === '' || isOperator(lastChar) || lastChar === '(') {
-        expression += '(';
-      }
-    } else if (char === ')') {
-      // Simple check: allow ')' if there is a matching '(' before
-      const openCount = (expression.match(/\(/g) || []).length;
-      const closeCount = (expression.match(/\)/g) || []).length;
-      if (openCount > closeCount && /[0-9)]$/.test(lastChar)) {
-        expression += ')';
-      }
-    }
-    // Operators
-    else if (isOperator(char)) {
-      if (expression === '' && char !== '-') {
-        // Disallow starting with +, *, /
-        return;
-      }
-      if (isOperator(lastChar)) {
-        // Allow unary minus after another operator
-        if (char === '-' && lastChar !== '-') {
-          expression += char;
-        }
-        // Disallow other consecutive operators
-        return;
-      }
-      // Prevent operator right after '('
-      if (lastChar === '(' && char !== '-') {
-        return;
-      }
-      expression += char;
-    }
-
-    updateDisplay(expression);
-  }
-
-  /** Delete the last character */
-  function deleteLast() {
-    expression = expression.slice(0, -1);
-    updateDisplay(expression);
-  }
-
-  /** Clear the entire expression */
-  function clearExpression() {
+  /** Reset the calculator state */
+  function clearDisplay() {
     expression = '';
     updateDisplay('');
   }
 
-  /** Remove any characters not in the whitelist */
-  function sanitizeExpression(expr) {
-    return expr.replace(/[^0-9.+\-*/()]/g, '');
+  /** Safely evaluate the current expression */
+  function evaluateExpression() {
+    try {
+      // Using Function constructor for evaluation; expression is strictly built from allowed chars
+      const result = Function(`'use strict'; return (${expression})`)();
+
+      // Guard against non‑numeric results
+      if (typeof result !== 'number' || !isFinite(result) || Number.isNaN(result)) {
+        return 'Error';
+      }
+      // Trim unnecessary decimal zeros
+      return Number.isInteger(result) ? result.toString() : result.toFixed(10).replace(/\.?0+$/, '');
+    } catch (e) {
+      return 'Error';
+    }
   }
 
-  /** Evaluate the current expression safely */
-  function evaluateExpression() {
-    const sanitized = sanitizeExpression(expression);
-    if (sanitized !== expression) {
-      updateDisplay('Error');
-      expression = '';
+  /** Core input processor */
+  function processInput(inputChar) {
+    if (inputChar === 'C') {
+      clearDisplay();
       return;
     }
 
-    try {
-      // eslint-disable-next-line no-new-func
-      const result = Function('return ' + sanitized)();
-      if (result === Infinity || result === -Infinity) {
-        throw new Error('Division by zero');
+    if (inputChar === '=') {
+      if (expression === '') {
+        updateDisplay('');
+        return;
       }
-      const resultStr = Number.isFinite(result) ? String(result) : 'Error';
-      updateDisplay(resultStr);
-      expression = resultStr === 'Error' ? '' : resultStr;
-    } catch (e) {
-      updateDisplay('Error');
-      expression = '';
+      const result = evaluateExpression();
+      updateDisplay(result);
+      // Preserve result as the new expression unless it's an error
+      expression = result === 'Error' ? '' : result;
+      return;
+    }
+
+    // Normal character (digit, operator, decimal)
+    if (isValidSequence(expression, inputChar)) {
+      // Auto‑prepend 0 for leading decimal point
+      if (inputChar === '.' && (expression === '' || isOperator(expression.slice(-1)))) {
+        expression += '0';
+      }
+      expression += inputChar;
+      updateDisplay(expression);
     }
   }
 
-  /** Handle button clicks */
+  /** Click handler for calculator buttons */
   function handleButtonClick(event) {
-    const btn = event.target;
-    if (!btn.id) return;
+    const btn = event.target.closest('.calc-button');
+    if (!btn) return;
 
-    const id = btn.id;
+    const action = btn.dataset.action;
+    if (!action) return;
 
-    // Digits and decimal
-    if (/^btn-[0-9]$/.test(id)) {
-      appendToExpression(id.slice(-1));
-    } else if (id === 'btn-dot') {
-      appendToExpression('.');
-    } else if (id === 'btn-open-paren') {
-      appendToExpression('(');
-    } else if (id === 'btn-close-paren') {
-      appendToExpression(')');
+    // Map data-action to the character understood by processInput
+    let char = '';
+    if (action.startsWith('digit-')) {
+      char = action.split('-')[1];
+    } else if (action.startsWith('operator-')) {
+      char = action.split('-')[1];
+    } else if (action === 'equals') {
+      char = '=';
+    } else if (action === 'clear') {
+      char = 'C';
     }
-    // Operators
-    else if (id === 'btn-plus') {
-      appendToExpression('+');
-    } else if (id === 'btn-minus') {
-      appendToExpression('-');
-    } else if (id === 'btn-multiply') {
-      appendToExpression('*');
-    } else if (id === 'btn-divide') {
-      appendToExpression('/');
-    }
-    // Control buttons
-    else if (id === 'btn-equals') {
-      evaluateExpression();
-    } else if (id === 'btn-clear') {
-      clearExpression();
-    } else if (id === 'btn-del') {
-      deleteLast();
-    }
+
+    if (char) processInput(char);
   }
 
-  /** Map keyboard input to calculator actions */
-  function handleKeyboardInput(event) {
+  /** Keyboard handler */
+  function handleKeyPress(event) {
+    // Ignore modifier keys (Ctrl, Alt, Meta, Shift for non‑character keys)
+    if (event.ctrlKey || event.altKey || event.metaKey) return;
+
     const key = event.key;
 
-    if (/^[0-9]$/.test(key)) {
-      appendToExpression(key);
-      event.preventDefault();
-    } else if (key === '.' || key === '(' || key === ')') {
-      appendToExpression(key);
-      event.preventDefault();
-    } else if (['+', '-', '*', '/'].includes(key)) {
-      appendToExpression(key);
-      event.preventDefault();
-    } else if (key === 'Enter') {
-      evaluateExpression();
-      event.preventDefault();
-    } else if (key === 'Backspace') {
-      deleteLast();
-      event.preventDefault();
-    } else if (key === 'Escape') {
-      clearExpression();
-      event.preventDefault();
+    // Map keys to calculator characters
+    const keyMap = {
+      '0': '0', '1': '1', '2': '2', '3': '3', '4': '4',
+      '5': '5', '6': '6', '7': '7', '8': '8', '9': '9',
+      '.': '.', '+': '+', '-': '-', '*': '*', '/': '/',
+      'Enter': '=', '=': '=', // Enter or = key
+      'Escape': 'C', 'c': 'C', 'C': 'C' // Clear
+    };
+
+    if (keyMap.hasOwnProperty(key)) {
+      event.preventDefault(); // Prevent form submissions or unwanted scrolling
+      processInput(keyMap[key]);
     }
   }
 
-  /** Initialize calculator: cache elements and register listeners */
+  /** Initialization – runs after DOM is ready */
   function initCalculator() {
-    displayElement = document.getElementById('display');
+    displayEl = document.getElementById('display');
+    if (!displayEl) {
+      console.error('Calculator error: #display element not found.');
+      return;
+    }
 
-    const buttons = document.querySelectorAll('.calc-button');
-    buttons.forEach(btn => btn.addEventListener('click', handleButtonClick));
+    // Delegate button clicks
+    document.addEventListener('click', handleButtonClick);
 
-    document.addEventListener('keydown', handleKeyboardInput);
+    // Global keyboard support
+    document.addEventListener('keydown', handleKeyPress);
   }
 
+  // Public entry point
   document.addEventListener('DOMContentLoaded', initCalculator);
 })();
