@@ -1,225 +1,157 @@
 'use strict';
 
-/* ==================== Calculator Class ==================== */
-class Calculator {
-  constructor() {
-    this.expression = '';
-  }
-
-  /**
-   * Append a character to the expression after validation.
-   * @param {string} char
-   */
-  append(char) {
-    if (!char || typeof char !== 'string') return;
-
-    const operators = '+-*/';
-    const lastChar = this.expression.slice(-1);
-
-    // Operator validation: no consecutive operators
-    if (operators.includes(char)) {
-      if (this.expression === '' && char !== '-') {
-        // Allow leading minus for negative numbers
-        return;
-      }
-      if (operators.includes(lastChar)) {
-        return;
-      }
-    }
-
-    // Decimal validation: only one per numeric token
-    if (char === '.') {
-      const tokens = this.expression.split(/[+\-*/]/);
-      const currentToken = tokens[tokens.length - 1];
-      if (currentToken.includes('.')) {
-        return;
-      }
-      // Prevent starting a token with a decimal without a leading zero
-      if (currentToken === '' && (lastChar === '' || operators.includes(lastChar))) {
-        this.expression += '0';
-      }
-    }
-
-    this.expression += char;
-  }
-
-  /** Remove the last character from the expression. */
-  backspace() {
-    this.expression = this.expression.slice(0, -1);
-  }
-
-  /** Clear the entire expression. */
-  clear() {
-    this.expression = '';
-  }
-
-  /**
-   * Safely evaluate the current expression.
-   * @returns {string} Result of evaluation.
-   * @throws {Error} If evaluation fails or division by zero occurs.
-   */
-  evaluate() {
-    const sanitized = sanitizeExpression(this.expression);
-    if (sanitized.length === 0) {
-      throw new Error('Empty expression');
-    }
-
-    let result;
-    try {
-      // Using Function constructor for safe evaluation of arithmetic only
-      result = new Function(`return ${sanitized}`)();
-    } catch (e) {
-      throw new Error('Invalid expression');
-    }
-
-    if (typeof result !== 'number' || !isFinite(result)) {
-      throw new Error('Division by zero');
-    }
-
-    // Trim unnecessary decimal zeros
-    return Number.isInteger(result) ? result.toString() : result.toString();
-  }
-}
-
-/* ==================== DOM & Global Variables ==================== */
-let calculator = null;
-let displayElement = null;
-
-/* ==================== Utility Functions ==================== */
+// Cache DOM elements
+const displayEl = document.getElementById('display');
+const buttonEls = document.querySelectorAll('.calc-button');
+const operatorSet = new Set(['+', '-', '*', '/']);
 
 /**
- * Update the calculator display.
- * @param {string} value
+ * Initialize calculator: bind click and keyboard events.
  */
-function updateDisplay(value) {
-  if (displayElement) {
-    displayElement.value = value;
-  }
+function initCalculator() {
+  buttonEls.forEach(btn => btn.addEventListener('click', handleButtonClick));
+  document.addEventListener('keydown', handleKeyPress);
 }
 
 /**
- * Sanitize expression: replace Unicode operators and strip invalid chars.
- * @param {string} expr
- * @returns {string}
- * @throws {Error} If disallowed characters are present.
- */
-function sanitizeExpression(expr) {
-  const replaced = expr
-    .replace(/×/g, '*')
-    .replace(/÷/g, '/');
-
-  const allowedPattern = /^[0-9.+\-*/]*$/;
-  if (!allowedPattern.test(replaced)) {
-    throw new Error('Invalid characters in expression');
-  }
-  return replaced;
-}
-
-/* ==================== Event Handlers ==================== */
-
-/**
- * Handle button clicks.
+ * Click handler for calculator buttons.
  * @param {MouseEvent} event
  */
 function handleButtonClick(event) {
-  const button = event.target.closest('.calc-button');
-  if (!button) return;
+  const btn = event.currentTarget;
+  const value = btn.getAttribute('data-value');
 
-  const action = button.dataset.action;
-  const value = button.dataset.value;
-
-  try {
-    switch (action) {
-      case 'digit':
-      case 'decimal':
-      case 'operator':
-        calculator.append(value);
-        updateDisplay(calculator.expression);
-        break;
-      case 'equals':
-        const result = calculator.evaluate();
-        calculator.expression = result;
-        updateDisplay(result);
-        break;
-      case 'clear':
-        calculator.clear();
-        updateDisplay('');
-        break;
-      case 'backspace':
-        calculator.backspace();
-        updateDisplay(calculator.expression);
-        break;
-      default:
-        // No action needed for unknown actions
-        break;
-    }
-  } catch (err) {
-    updateDisplay(`Error: ${err.message}`);
-    calculator.clear();
+  switch (value) {
+    case 'C':
+      clearDisplay();
+      break;
+    case '=':
+      evaluateExpression();
+      break;
+    default:
+      appendToDisplay(value);
   }
 }
 
 /**
- * Handle keyboard input.
+ * Append a character to the display after validation.
+ * @param {string} value
+ */
+function appendToDisplay(value) {
+  const current = displayEl.value;
+  const lastChar = current.slice(-1);
+
+  // Disallow starting with an operator (except minus for negative numbers)
+  if (!current && operatorSet.has(value) && value !== '-') {
+    return;
+  }
+
+  // Prevent two operators in a row
+  if (operatorSet.has(lastChar) && operatorSet.has(value)) {
+    return;
+  }
+
+  // Decimal point handling
+  if (value === '.') {
+    // Find the current numeric segment (after the last operator)
+    const segments = current.split(/[\+\-\*\/]/);
+    const lastSegment = segments[segments.length - 1];
+    if (lastSegment.includes('.')) {
+      return; // already has a decimal point
+    }
+    // Prevent leading decimal without a preceding digit (optional, allow ".5")
+    if (!lastSegment) {
+      // allow "."
+    }
+  }
+
+  displayEl.value = current + value;
+}
+
+/**
+ * Clear the calculator display.
+ */
+function clearDisplay() {
+  displayEl.value = '';
+}
+
+/**
+ * Evaluate the expression shown on the display.
+ */
+function evaluateExpression() {
+  const rawExpr = displayEl.value;
+  const sanitized = sanitizeExpression(rawExpr);
+
+  try {
+    // Using Function constructor for controlled evaluation
+    const result = Function('return ' + sanitized)();
+
+    if (typeof result !== 'number' || !isFinite(result) || isNaN(result)) {
+      throw new Error('Invalid result');
+    }
+
+    displayEl.value = result;
+  } catch (e) {
+    displayEl.value = 'Error';
+  }
+}
+
+/**
+ * Remove any characters not allowed in a mathematical expression.
+ * @param {string} expr
+ * @returns {string}
+ */
+function sanitizeExpression(expr) {
+  const whitelist = /^[0-9+\-*/().\s]+$/;
+  const filtered = expr.split('').filter(ch => whitelist.test(ch)).join('');
+  return filtered.trim();
+}
+
+/**
+ * Keyboard support: map keys to calculator actions.
  * @param {KeyboardEvent} event
  */
 function handleKeyPress(event) {
   const key = event.key;
-  const operators = {
+
+  const keyMap = {
+    '0': '0',
+    '1': '1',
+    '2': '2',
+    '3': '3',
+    '4': '4',
+    '5': '5',
+    '6': '6',
+    '7': '7',
+    '8': '8',
+    '9': '9',
+    '.': '.',
     '+': '+',
     '-': '-',
     '*': '*',
     '/': '/',
-    '×': '*',
-    '÷': '/'
+    'Enter': '=',
+    '=': '=', // some keyboards send '=' on Enter
+    'Escape': 'C',
+    'c': 'C',
+    'C': 'C'
   };
 
-  // Map keys to actions
-  if (/^[0-9]$/.test(key)) {
+  if (key in keyMap) {
     event.preventDefault();
-    calculator.append(key);
-    updateDisplay(calculator.expression);
-  } else if (key === '.' || key === ',') {
-    event.preventDefault();
-    calculator.append('.');
-    updateDisplay(calculator.expression);
-  } else if (operators[key]) {
-    event.preventDefault();
-    calculator.append(operators[key]);
-    updateDisplay(calculator.expression);
-  } else if (key === 'Enter' || key === '=') {
-    event.preventDefault();
-    try {
-      const result = calculator.evaluate();
-      calculator.expression = result;
-      updateDisplay(result);
-    } catch (err) {
-      updateDisplay(`Error: ${err.message}`);
-      calculator.clear();
+    const mapped = keyMap[key];
+    switch (mapped) {
+      case 'C':
+        clearDisplay();
+        break;
+      case '=':
+        evaluateExpression();
+        break;
+      default:
+        appendToDisplay(mapped);
     }
-  } else if (key === 'Backspace') {
-    event.preventDefault();
-    calculator.backspace();
-    updateDisplay(calculator.expression);
-  } else if (key === 'Escape') {
-    event.preventDefault();
-    calculator.clear();
-    updateDisplay('');
   }
 }
 
-/* ==================== Initialization ==================== */
-
-/**
- * Initialize the calculator app.
- */
-function init() {
-  displayElement = document.getElementById('display');
-  calculator = new Calculator();
-
-  document.addEventListener('click', handleButtonClick);
-  document.addEventListener('keydown', handleKeyPress);
-}
-
-/* ==================== Start ==================== */
-document.addEventListener('DOMContentLoaded', init);
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', initCalculator);
