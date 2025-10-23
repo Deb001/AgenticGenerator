@@ -7,40 +7,32 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="calculator">
-    <input type="text" id="calculator-display" readonly>
-
+  <div id="calculator">
+    <input id="display" type="text" readonly>
     <div class="buttons">
-      <!-- Clear -->
-      <button type="button" data-clear>AC</button>
+      <button class="btn" data-value="C">C</button>
+      <button class="btn" data-value="/">/</button>
 
-      <!-- Operators -->
-      <button type="button" data-operator data-value="÷">÷</button>
-      <button type="button" data-operator data-value="×">×</button>
-      <button type="button" data-operator data-value="-">−</button>
-      <button type="button" data-operator data-value="+">+</button>
+      <button class="btn" data-value="7">7</button>
+      <button class="btn" data-value="8">8</button>
+      <button class="btn" data-value="9">9</button>
+      <button class="btn" data-value="*">*</button>
 
-      <!-- Digits -->
-      <button type="button" data-digit data-value="7">7</button>
-      <button type="button" data-digit data-value="8">8</button>
-      <button type="button" data-digit data-value="9">9</button>
+      <button class="btn" data-value="4">4</button>
+      <button class="btn" data-value="5">5</button>
+      <button class="btn" data-value="6">6</button>
+      <button class="btn" data-value="-">-</button>
 
-      <button type="button" data-digit data-value="4">4</button>
-      <button type="button" data-digit data-value="5">5</button>
-      <button type="button" data-digit data-value="6">6</button>
+      <button class="btn" data-value="1">1</button>
+      <button class="btn" data-value="2">2</button>
+      <button class="btn" data-value="3">3</button>
+      <button class="btn" data-value="+">+</button>
 
-      <button type="button" data-digit data-value="1">1</button>
-      <button type="button" data-digit data-value="2">2</button>
-      <button type="button" data-digit data-value="3">3</button>
-
-      <button type="button" data-digit data-value="0">0</button>
-      <button type="button" data-decimal>. </button>
-
-      <!-- Equals -->
-      <button type="button" data-equals>=</button>
+      <button class="btn" data-value="0">0</button>
+      <button class="btn" data-value=".">.</button>
+      <button class="btn" data-value="=">=</button>
     </div>
   </div>
-
-  <script src="app.js" defer></script>
+  <script src="main.js" defer></script>
 </body>
 </html>
