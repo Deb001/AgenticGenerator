@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Item Manager</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="container">
+    <h1>Items</h1>
+
+    <div id="message" role="alert" aria-live="polite"></div>
+
+    <ul id="items-list"></ul>
+
+    <form id="item-form" novalidate>
+      <input type="hidden" id="item-id" name="id">
+
+      <div class="form-group">
+        <label for="item-title">Title</label>
+        <input type="text" id="item-title" name="title" required>
+      </div>
+
+      <div class="form-group">
+        <label for="item-body">Body</label>
+        <textarea id="item-body" name="body" rows="4" required></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" id="submit-btn">Save</button>
+        <button type="button" id="cancel-btn">Cancel</button>
+      </div>
+    </form>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
