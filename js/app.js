@@ -1,153 +1,153 @@
-/* js/app.js - Calculator UI logic */
+// js/app.js
+import { calculate } from './calc.js';
+
 'use strict';
 
-let currentExpression = '';
+let expression = ''; // current infix expression built from user input
 
 /**
- * Writes content to the #display element and ensures aria-live updates.
- * @param {string} content - Text to show in the display.
+ * Writes the provided string to the #display element.
+ * @param {string} value
  */
-function updateDisplay(content) {
-    const display = document.getElementById('display');
-    if (!display) return;
-    display.textContent = content;
-    display.setAttribute('aria-live', 'polite');
+function updateDisplay(value) {
+  const display = document.getElementById('display');
+  if (display) {
+    display.textContent = value;
+  }
 }
 
 /**
- * Resets the calculator state and clears the display.
+ * Resets the internal expression string and updates the display to '0'.
  */
 function clearAll() {
-    currentExpression = '';
-    updateDisplay('0');
-    const display = document.getElementById('display');
-    if (display) display.classList.remove('error');
+  expression = '';
+  updateDisplay('0');
 }
 
 /**
- * Removes the last character from the current expression and updates the display.
- */
-function backspace() {
-    if (currentExpression.length === 0) return;
-    currentExpression = currentExpression.slice(0, -1);
-    updateDisplay(currentExpression || '0');
-}
-
-/**
- * Calls the evaluator module, handles errors, and shows the result.
+ * Evaluates the current expression using the imported calculate function.
+ * On success, shows the result and stores it as the new expression.
+ * On error, shows 'Error' and clears the expression.
  */
 function evaluateExpression() {
-    const display = document.getElementById('display');
-    try {
-        const result = window.evaluator.evaluate(currentExpression);
-        currentExpression = String(result);
-        updateDisplay(currentExpression);
-        if (display) display.classList.remove('error');
-    } catch (err) {
-        updateDisplay(err.message || 'Error');
-        if (display) display.classList.add('error');
+  try {
+    const result = calculate(expression);
+    // Ensure result is a finite number
+    if (typeof result !== 'number' || !isFinite(result)) {
+      throw new Error('Invalid result');
     }
+    expression = String(result);
+    updateDisplay(expression);
+  } catch (e) {
+    expression = '';
+    updateDisplay('Error');
+  }
 }
 
 /**
- * Handles clicks on calculator buttons.
+ * Handles a button click event.
+ * Reads the data-key attribute and performs the appropriate action.
  * @param {MouseEvent} event
  */
 function handleButtonClick(event) {
-    const btn = event.currentTarget;
-    const raw = btn.dataset.value;
-    if (!raw) return;
+  const btn = event.target.closest('.calc-key');
+  if (!btn) return;
 
-    // Map visual symbols to evaluator-friendly tokens
-    const map = { '×': '*', '÷': '/', '←': 'BACK', 'C': 'CLEAR', '=': 'EVAL' };
-    const value = map[raw] !== undefined ? map[raw] : raw;
-
-    switch (value) {
-        case 'EVAL':
-            evaluateExpression();
-            break;
-        case 'CLEAR':
-            clearAll();
-            break;
-        case 'BACK':
-            backspace();
-            break;
-        default:
-            currentExpression += value;
-            updateDisplay(currentExpression);
-    }
+  const key = btn.dataset.key;
+  processKey(key);
 }
 
 /**
- * Handles keyboard input, mirroring button behaviour.
- * @param {KeyboardEvent} e
+ * Handles a keyboard keydown event.
+ * Maps supported keys to calculator actions.
+ * @param {KeyboardEvent} event
  */
-function handleKeyPress(e) {
-    const key = e.key;
+function handleKeyPress(event) {
+  const { key } = event;
+  let mappedKey = null;
 
-    // Digits, decimal point, parentheses
-    if (/^[0-9.]$/.test(key) || key === '(' || key === ')') {
-        currentExpression += key;
-        updateDisplay(currentExpression);
-        e.preventDefault();
-        return;
-    }
+  if (/^[0-9]$/.test(key)) {
+    mappedKey = key;
+  } else if (key === '.' || key === '+' || key === '-' || key === '*' || key === '/') {
+    mappedKey = key;
+  } else if (key === 'Enter') {
+    mappedKey = '=';
+  } else if (key === 'Backspace') {
+    mappedKey = 'Backspace';
+  } else if (key === 'Escape' || key.toLowerCase() === 'c') {
+    mappedKey = 'C';
+  }
 
-    // Operators
-    if (key === '+' || key === '-') {
-        currentExpression += key;
-        updateDisplay(currentExpression);
-        e.preventDefault();
-        return;
-    }
-    if (key === '*' || key.toLowerCase() === 'x') {
-        currentExpression += '*';
-        updateDisplay(currentExpression);
-        e.preventDefault();
-        return;
-    }
-    if (key === '/' || key === '÷') {
-        currentExpression += '/';
-        updateDisplay(currentExpression);
-        e.preventDefault();
-        return;
-    }
-
-    // Evaluation
-    if (key === 'Enter' || key === '=') {
-        evaluateExpression();
-        e.preventDefault();
-        return;
-    }
-
-    // Backspace / Clear
-    if (key === 'Backspace') {
-        if (e.ctrlKey) {
-            clearAll();
-        } else {
-            backspace();
-        }
-        e.preventDefault();
-        return;
-    }
-
-    // Clear via Escape or 'c'/'C'
-    if (key === 'Escape' || key.toLowerCase() === 'c') {
-        clearAll();
-        e.preventDefault();
-    }
+  if (mappedKey !== null) {
+    event.preventDefault();
+    processKey(mappedKey);
+  }
 }
 
 /**
- * Sets up event listeners and initial UI state.
+ * Core logic to process a calculator key (from button or keyboard).
+ * @param {string} key
  */
-function initCalculator() {
-    document.querySelectorAll('.calc-button')
-        .forEach(btn => btn.addEventListener('click', handleButtonClick));
-
-    document.addEventListener('keydown', handleKeyPress);
-    updateDisplay('0');
+function processKey(key) {
+  switch (key) {
+    case 'C':
+    case 'Escape':
+      clearAll();
+      break;
+    case '=':
+      evaluateExpression();
+      break;
+    case 'Backspace':
+      if (expression.length > 0) {
+        expression = expression.slice(0, -1);
+        updateDisplay(expression || '0');
+      }
+      break;
+    default:
+      // Append digits, operators, or decimal point
+      if (isValidAppend(key)) {
+        expression += key;
+        updateDisplay(expression);
+      }
+      break;
+  }
 }
 
-// Initialise when the DOM is ready
-document.addEventListener('DOMContentLoaded', initCalculator);
+/**
+ * Determines whether appending the given key to the current expression is valid.
+ * Prevents multiple '.' in the same numeric token.
+ * @param {string} key
+ * @returns {boolean}
+ */
+function isValidAppend(key) {
+  // Allow digits and operators unconditionally
+  if (/^[0-9+\-*/]$/.test(key)) return true;
+
+  // Handle decimal point
+  if (key === '.') {
+    // Find the last numeric token (characters after the most recent operator)
+    const lastToken = expression.split(/[+\-*/]/).pop() || '';
+    // Disallow if token already contains a decimal point
+    return !lastToken.includes('.');
+  }
+
+  return false;
+}
+
+/**
+ * Sets up event listeners and initializes the display.
+ */
+function init() {
+  // Attach click listeners to calculator keys
+  const buttons = document.querySelectorAll('.calc-key');
+  buttons.forEach(btn => btn.addEventListener('click', handleButtonClick));
+
+  // Attach keyboard listener
+  document.addEventListener('keydown', handleKeyPress);
+
+  // Initial display
+  updateDisplay('0');
+}
+
+// Start the application
+init();
