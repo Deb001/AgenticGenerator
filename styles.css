@@ -1,67 +1,80 @@
-html, body {
-  height: 100%;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #fafafa;
-  font-family: Arial, Helvetica, sans-serif;
+/* Root settings for consistency */
+:root {
+  font-size: 16px;
+  --bg-color: #f9f9f9;
+  --button-bg: #e0e0e0;
+  --button-bg-active: #c0c0c0;
+  --button-border: #b0b0b0;
+  --display-bg: #fff;
+  --display-color: #000;
+}
+
+/* Global box-sizing */
+*, *::before, *::after {
   box-sizing: border-box;
 }
 
-*, *::before, *::after {
-  box-sizing: inherit;
-}
-
-.calculator {
-  max-width: 400px;
+/* Display area */
+#display {
   width: 100%;
-  padding: 1rem;
-  background: #fff;
-  border-radius: .5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, .1);
-  margin: auto;
-}
-
-.display {
-  width: 100%;
+  padding: 0.75rem 1rem;
   font-size: 2rem;
-  padding: .5rem;
   text-align: right;
-  border: 1px solid #ccc;
-  border-radius: .3rem;
-  background: #f9f9f9;
+  background: var(--display-bg);
+  color: var(--display-color);
+  border: 2px solid var(--button-border);
+  border-radius: 0.5rem;
+  user-select: none;
+  pointer-events: none;
 }
 
-.buttons {
+/* Button grid layout */
+.button-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: .5rem;
+  gap: 0.5rem;
   margin-top: 1rem;
 }
 
-.calc-btn {
+/* Individual calculator buttons */
+.calc-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3rem;
   font-size: 1.5rem;
-  padding: 1rem;
-  min-height: 60px;
-  border: none;
-  background: #f0f0f0;
-  border-radius: .3rem;
+  background: var(--button-bg);
+  color: #000;
+  border: 2px solid var(--button-border);
+  border-radius: 0.4rem;
   cursor: pointer;
-  transition: background .2s;
+  user-select: none;
+  transition: background 0.1s ease, transform 0.05s ease;
 }
 
-.calc-btn:active {
-  background: #d0d0d0;
+.calc-button:active {
+  background: var(--button-bg-active);
+  transform: scale(0.96);
 }
 
-.calc-btn:focus {
-  outline: 2px solid #007bff;
-  outline-offset: 2px;
+/* Remove focus outline for mouse users */
+.calc-button:focus {
+  outline: none;
 }
 
+/* Responsive adjustments for mobile */
 @media (max-width: 600px) {
-  .calc-btn {
+  #display {
+    font-size: 2.5rem;
+    padding: 1rem 1.2rem;
+  }
+
+  .calc-button {
+    min-height: 4rem;
     font-size: 2rem;
+  }
+
+  .button-grid {
+    gap: 0.75rem;
   }
 }
