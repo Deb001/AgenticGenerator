@@ -1,68 +1,31 @@
-# Simple Web Calculator
+# Simple Calculator
 
-A lightweight, responsive calculator built with HTML, CSS, and vanilla JavaScript.  
-It runs entirely in the browser—no build tools, servers, or external dependencies required.
-
-## Project Structure
-
-/ (project root)
-│
-├─ index.html   # UI markup, loads styles.css and app.js
-├─ styles.css   # Responsive layout and visual styling
-├─ app.js       # Calculator logic, input handling, evaluation, error handling
-└─ README.md    # This documentation
-
-## Getting Started
-
-1. **Clone or download** the repository.
-2. Open `index.html` in any modern web browser (desktop or mobile).
-3. The calculator UI will load automatically—no additional setup needed.
+## Overview
+A lightweight web‑based calculator built with HTML, CSS, and vanilla JavaScript. Open `index.html` in any modern browser. The UI works with mouse/touch and supports keyboard input.
 
 ## Usage
-
-- **Click** the on‑screen buttons or use the keyboard:
-  - Digits `0–9` and decimal point `.` – enter numbers.
-  - Operators `+`, `-`, `×` (or `*`), `÷` (or `/`) – perform addition, subtraction, multiplication, division.
-  - `Enter` or `=` – evaluate the current expression.
-  - `Backspace` – delete the last character.
-  - `C` – clear the entire expression.
-- The display is read‑only; results and error messages appear here.
-- Division by zero shows **“Error: Division by zero”** and locks further input until cleared.
-
-## Keyboard Shortcuts
-
-| Key          | Action                     |
-|--------------|----------------------------|
-| `0–9`        | Input digit                |
-| `.`          | Decimal point              |
-| `+` `-` `*` `/` | Operators (`×` and `÷` map to `*` and `/`) |
-| `Enter` `=`  | Evaluate expression        |
-| `Backspace`  | Delete last character      |
-| `c` / `C`    | Clear display              |
-
-## Accessibility
-
-- All buttons have `role="button"` and appropriate `aria-label` attributes.
-- The calculator can be fully operated via keyboard.
-- The display uses `aria-live="polite"` to announce results and errors to screen readers.
+- **Display** – shows the current entry or result (read‑only).  
+- **Buttons** – click or tap digits `0‑9`, decimal `.`, operators `+ – × ÷`, `=` to compute, `AC` to clear.  
+- **Keyboard shortcuts**  
+  - Numbers `0‑9` and `.` → same as button press  
+  - `+`, `-`, `*`, `/` → operators  
+  - `Enter` or `=` → evaluate  
+  - `Backspace` → delete last digit (if implemented) – otherwise ignored  
+  - `Escape` → clear (`AC`)
 
 ## Manual Test Checklist
+- [ ] **Digit entry** – pressing any digit button (or key) updates the display correctly.  
+- [ ] **Decimal handling** – a single decimal point can be entered per number; additional decimals are ignored.  
+- [ ] **Basic operations** – each operator (`+`, `−`, `×`, `÷`) produces the correct result for simple two‑operand calculations.  
+- [ ] **Operator chaining** – entering a sequence like `2 + 3 × 4 =` computes intermediate results correctly (e.g., `2 + 3 = 5`, then `5 × 4 = 20`).  
+- [ ] **Equals (`=`) behavior** – pressing `=` after an operator yields the expected result; repeated `=` repeats the last operation.  
+- [ ] **Division by zero** – `÷ 0` displays `Error` and blocks further calculations until `AC` is pressed.  
+- [ ] **Clear (`AC`)** – resets all state and clears the display.  
+- [ ] **Keyboard input** – all mapped keys perform the same actions as their button counterparts.  
+- [ ] **Responsive layout** – buttons are large enough to tap comfortably on both desktop and mobile viewports.  
+- [ ] **Stability** – entering unsupported sequences (e.g., multiple operators in a row) does not cause crashes or inconsistent state.
 
-- [ ] **Basic arithmetic**: `2 + 3 =` → displays `5`.
-- [ ] **Subtraction**: `9 - 4 =` → displays `5`.
-- [ ] **Multiplication**: `6 × 7 =` → displays `42`.
-- [ ] **Division**: `8 ÷ 2 =` → displays `4`.
-- [ ] **Decimal handling**: `3.5 + 2.1 =` → displays `5.6`.
-- [ ] **Operator chaining**: `5 + 6 × 2 =` → respects precedence → displays `17`.
-- [ ] **Consecutive operators**: Prevent entry of `++` or `*‑` etc.
-- [ ] **Leading decimal**: `.5 + .5 =` → displays `1`.
-- [ ] **Divide‑by‑zero**: `7 ÷ 0 =` → displays error message and locks input.
-- [ ] **Clear function**: Press `C` after any operation → display resets.
-- [ ] **Backspace**: Delete last character and continue editing.
-- [ ] **Keyboard input**: All keys above work as described.
-- [ ] **Responsive layout**: UI adapts to mobile screen widths.
-- [ ] **Screen‑reader announcement**: Results and errors are announced.
-
-## License
-
-This project is released into the public domain. Use it freely for any purpose.
+## Development Notes
+- Core calculator logic is in `app.js`.  
+- Styling resides in `style.css`.  
+- No external libraries; the project works offline.
