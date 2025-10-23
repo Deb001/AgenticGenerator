@@ -1,157 +1,177 @@
-'use strict';
-
-// Cache DOM elements
-const displayEl = document.getElementById('display');
-const buttonEls = document.querySelectorAll('.calc-button');
-const operatorSet = new Set(['+', '-', '*', '/']);
+// ---------- Calculator Core ----------
+let displayElement = null;
 
 /**
- * Initialize calculator: bind click and keyboard events.
+ * Removes any characters not in the whitelist.
+ * Whitelist: digits, whitespace, parentheses, decimal point, +, -, *, /
+ * @param {string} expr
+ * @returns {string} sanitized expression (whitespace removed)
+ * @throws {Error} if disallowed characters are present
  */
-function initCalculator() {
-  buttonEls.forEach(btn => btn.addEventListener('click', handleButtonClick));
-  document.addEventListener('keydown', handleKeyPress);
+function sanitizeExpression(expr) {
+    const whitelist = /^[0-9\s\+\-\*\/\.\(\)]+$/;
+    if (!whitelist.test(expr)) {
+        throw new Error('Invalid characters');
+    }
+    // Remove whitespace for evaluation convenience
+    return expr.replace(/\s+/g, '');
 }
 
 /**
- * Click handler for calculator buttons.
+ * Safely evaluates a mathematical expression.
+ * Detects division by zero and throws a specific error.
+ * @param {string} expr
+ * @returns {number}
+ * @throws {Error} on invalid characters, division by zero, or evaluation failure
+ */
+function evaluateExpression(expr) {
+    const sanitized = sanitizeExpression(expr);
+
+    // Detect division by zero (e.g., /0, /0., /0 )
+    if (/\/\s*0(?!\d)/.test(sanitized)) {
+        throw new Error('Division by zero');
+    }
+
+    try {
+        // Using Function constructor after strict sanitization
+        const fn = new Function('return ' + sanitized);
+        const result = fn();
+        if (typeof result !== 'number' || !isFinite(result)) {
+            throw new Error('Invalid expression');
+        }
+        return result;
+    } catch (e) {
+        throw new Error('Invalid expression');
+    }
+}
+
+/**
+ * Updates the calculator display.
+ * @param {string} value
+ */
+function updateDisplay(value) {
+    if (displayElement) {
+        displayElement.value = value;
+        displayElement.classList.remove('error');
+    }
+}
+
+/**
+ * Clears the display.
+ */
+function clearDisplay() {
+    updateDisplay('');
+}
+
+/**
+ * Deletes the last character from the display.
+ */
+function deleteLastChar() {
+    if (!displayElement) return;
+    if (displayElement.classList.contains('error')) {
+        clearDisplay();
+        return;
+    }
+    const current = displayElement.value;
+    updateDisplay(current.slice(0, -1));
+}
+
+/**
+ * Shows an error message in the display and adds visual cue.
+ * @param {string} message
+ */
+function showError(message) {
+    if (displayElement) {
+        displayElement.value = message;
+        displayElement.classList.add('error');
+    }
+}
+
+/**
+ * Handles evaluation flow, updating display or showing errors.
+ */
+function evaluateAndDisplay() {
+    if (!displayElement) return;
+    try {
+        const expr = displayElement.value;
+        const result = evaluateExpression(expr);
+        updateDisplay(String(result));
+    } catch (e) {
+        showError(e.message);
+    }
+}
+
+/**
+ * Handles button click events.
  * @param {MouseEvent} event
  */
 function handleButtonClick(event) {
-  const btn = event.currentTarget;
-  const value = btn.getAttribute('data-value');
+    const btn = event.currentTarget;
+    if (!btn) return;
 
-  switch (value) {
-    case 'C':
-      clearDisplay();
-      break;
-    case '=':
-      evaluateExpression();
-      break;
-    default:
-      appendToDisplay(value);
-  }
-}
-
-/**
- * Append a character to the display after validation.
- * @param {string} value
- */
-function appendToDisplay(value) {
-  const current = displayEl.value;
-  const lastChar = current.slice(-1);
-
-  // Disallow starting with an operator (except minus for negative numbers)
-  if (!current && operatorSet.has(value) && value !== '-') {
-    return;
-  }
-
-  // Prevent two operators in a row
-  if (operatorSet.has(lastChar) && operatorSet.has(value)) {
-    return;
-  }
-
-  // Decimal point handling
-  if (value === '.') {
-    // Find the current numeric segment (after the last operator)
-    const segments = current.split(/[\+\-\*\/]/);
-    const lastSegment = segments[segments.length - 1];
-    if (lastSegment.includes('.')) {
-      return; // already has a decimal point
+    // Special button IDs
+    if (btn.id === 'clear') {
+        clearDisplay();
+        return;
     }
-    // Prevent leading decimal without a preceding digit (optional, allow ".5")
-    if (!lastSegment) {
-      // allow "."
+    if (btn.id === 'delete') {
+        deleteLastChar();
+        return;
     }
-  }
-
-  displayEl.value = current + value;
-}
-
-/**
- * Clear the calculator display.
- */
-function clearDisplay() {
-  displayEl.value = '';
-}
-
-/**
- * Evaluate the expression shown on the display.
- */
-function evaluateExpression() {
-  const rawExpr = displayEl.value;
-  const sanitized = sanitizeExpression(rawExpr);
-
-  try {
-    // Using Function constructor for controlled evaluation
-    const result = Function('return ' + sanitized)();
-
-    if (typeof result !== 'number' || !isFinite(result) || isNaN(result)) {
-      throw new Error('Invalid result');
+    if (btn.id === 'equals') {
+        evaluateAndDisplay();
+        return;
     }
 
-    displayEl.value = result;
-  } catch (e) {
-    displayEl.value = 'Error';
-  }
+    // Regular calculator button
+    const key = btn.dataset.key;
+    if (typeof key !== 'string') return;
+
+    if (displayElement.classList.contains('error')) {
+        clearDisplay();
+    }
+    updateDisplay(displayElement.value + key);
 }
 
 /**
- * Remove any characters not allowed in a mathematical expression.
- * @param {string} expr
- * @returns {string}
- */
-function sanitizeExpression(expr) {
-  const whitelist = /^[0-9+\-*/().\s]+$/;
-  const filtered = expr.split('').filter(ch => whitelist.test(ch)).join('');
-  return filtered.trim();
-}
-
-/**
- * Keyboard support: map keys to calculator actions.
+ * Handles keyboard input, mapping keys to calculator actions.
  * @param {KeyboardEvent} event
  */
 function handleKeyPress(event) {
-  const key = event.key;
+    const key = event.key;
 
-  const keyMap = {
-    '0': '0',
-    '1': '1',
-    '2': '2',
-    '3': '3',
-    '4': '4',
-    '5': '5',
-    '6': '6',
-    '7': '7',
-    '8': '8',
-    '9': '9',
-    '.': '.',
-    '+': '+',
-    '-': '-',
-    '*': '*',
-    '/': '/',
-    'Enter': '=',
-    '=': '=', // some keyboards send '=' on Enter
-    'Escape': 'C',
-    'c': 'C',
-    'C': 'C'
-  };
-
-  if (key in keyMap) {
-    event.preventDefault();
-    const mapped = keyMap[key];
-    switch (mapped) {
-      case 'C':
-        clearDisplay();
-        break;
-      case '=':
-        evaluateExpression();
-        break;
-      default:
-        appendToDisplay(mapped);
+    // Map special keys
+    if (key === 'Enter' || key === '=') {
+        event.preventDefault();
+        evaluateAndDisplay();
+        return;
     }
-  }
+    if (key === 'Backspace') {
+        event.preventDefault();
+        deleteLastChar();
+        return;
+    }
+    if (key === 'Escape') {
+        event.preventDefault();
+        clearDisplay();
+        return;
+    }
+
+    // Allow digits, operators, parentheses, decimal point, and whitespace
+    if (/^[0-9\+\-\*\/\(\)\.\s]$/.test(key)) {
+        event.preventDefault();
+        if (displayElement.classList.contains('error')) {
+            clearDisplay();
+        }
+        updateDisplay(displayElement.value + key);
+    }
 }
 
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', initCalculator);
+// ---------- Initialization ----------
+document.addEventListener('DOMContentLoaded', () => {
+    displayElement = document.getElementById('display');
+    const buttons = document.querySelectorAll('.calc-button');
+
+    buttons.forEach(btn => btn.addEventListener('click', handleButtonClick));
+    document.addEventListener('keydown', handleKeyPress);
+});
