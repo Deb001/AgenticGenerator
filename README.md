@@ -1,61 +1,36 @@
-# Simple Web Calculator
+# Simple Calculator Project
 
-A lightweight, client‑side calculator built with plain HTML, CSS, and JavaScript.  
-Open `index.html` in any modern browser and start calculating.
+This is a simple calculator project that allows basic arithmetic operations and supports keyboard input for convenience. The calculator ensures safe evaluation of expressions and prevents common vulnerabilities like injection attacks.
 
-## Files Overview
+## Features
+- **Non-editable Display:** Displays the current input and result.
+- **Button Grid:** Includes digits (0-9), decimal point, operators (+, -, *, /), equals (=) to compute results, and a clear (C) button to reset the display.
+- **Keyboard Support:** Allows numeric keys, operator keys (+, -, *, /, .), Enter (evaluate), Backspace (delete last character), and Escape (clear).
+- **Safe Evaluation:** Uses a safe approach to evaluate expressions, preventing injection attacks.
 
-| File | Purpose |
-|------|---------|
-| `index.html` | Calculator UI – display and buttons. |
-| `app.js` | Expression sanitization, safe evaluation, UI wiring, keyboard support, and error handling. |
-| `style.css` | Responsive grid layout and basic styling for the calculator. |
-| `README.md` | This documentation. |
+## Installation & Usage
+1. Clone the repository or download the files: `index.html`, `script.js`, `style.css`, and `README.md`.
+2. Open `index.html` in any modern web browser.
+3. Use the calculator by clicking the buttons or using your keyboard as per the instructions above.
 
-## Getting Started
+## Manual Tests
+To ensure the calculator works correctly, perform the following tests:
+1. **Simple Arithmetic:** Enter expressions like "2+2" and "3*4-1". The result should be displayed accurately.
+2. **Division by Zero:** Try dividing a number by zero (e.g., 5/0). The calculator should handle this gracefully, displaying an error message or preventing the operation.
+3. **Decimal Calculations:** Perform calculations involving decimals (e.g., 1.1 + 2.2). Ensure the result is accurate and displayed correctly.
+4. **Invalid Character Rejection:** Attempt to enter invalid characters like special symbols or alphabetic letters. The calculator should reject these inputs without breaking.
+5. **Clear/Backspace Behavior:** Use the clear (C) button to reset the display and the backspace key to remove the last character. Verify that both actions work as expected.
+6. **Keyboard Operation Verification:** Test if all keyboard shortcuts for digits, operators, Enter, Backspace, and Escape are functional and correctly update the display according to the input validation rules.
 
-1. **Open the calculator**  
-   Double‑click `index.html` or open it via `File → Open` in your browser.
+## Dependencies
+- `index.html` links to `style.css` and `script.js`.
+- `script.js` depends on DOM elements with specific ids/classes defined in `index.html`.
 
-2. **Use the UI**  
-   - Click the buttons to build an expression.  
-   - `=` evaluates the expression.  
-   - `C` clears the entire display.  
-   - `DEL` removes the last character (backspace).
+## File Structure
+The project consists of four files:
+- **index.html:** The main HTML file containing the calculator interface.
+- **script.js:** The JavaScript file handling user interactions and calculations.
+- **style.css:** CSS for styling the calculator buttons and display.
+- **README.md:** This documentation providing instructions on usage, testing, and dependencies.
 
-3. **Keyboard shortcuts**  
-
-| Key | Action |
-|-----|--------|
-| `0‑9`, `.`, `+`, `-`, `*`, `/`, `(`, `)` | Append the character to the display |
-| `Enter` or `=` | Evaluate |
-| `Backspace` | Delete last character |
-| `Esc` | Clear display |
-
-## Supported Operations
-
-- Addition `+`
-- Subtraction `-`
-- Multiplication `*`
-- Division `/` (division by zero is caught and reported as an error)
-- Decimal numbers
-- Parentheses for grouping (e.g., `(2+3)*4`)
-
-## Safety & Error Handling
-
-- **Input sanitization** – before evaluation the expression is checked to contain only digits, whitespace, decimal points, parentheses, and the four basic operators.
-- **Safe evaluation** – the sanitized string is evaluated using `Function('return ' + expr)()`. No `eval` is used on raw user input.
-- **Error feedback** – any syntax error, illegal characters, or division by zero results in the display showing `Error` (or `Error: Division by zero`). The next key press clears the error state.
-
-## Customisation
-
-- **Styling** – modify `style.css` to change colors, fonts, or layout. The CSS uses a simple CSS Grid, so you can adjust `grid-template-columns` or button sizes as needed.
-- **Logic** – `app.js` is modular; the `evaluateExpression` function can be replaced with a more sophisticated parser if desired.
-
-## License
-
-This project is released into the public domain. Feel free to copy, modify, and distribute it without restriction.
-
---- 
-
-Enjoy your calculator! 🚀
+This project is designed to be simple, functional, and secure, suitable for basic arithmetic operations without compromising safety.
