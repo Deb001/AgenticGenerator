@@ -1,84 +1,44 @@
-/* Root settings */
-:root {
-    font-size: 16px;
-    --button-bg: #e0e0e0;
-    --button-bg-hover: #d5d5d5;
-    --button-bg-active: #c0c0c0;
-    --button-radius: 0.4rem;
-    --button-font-size: 1.5rem;
-    --display-font-size: 2rem;
-    --max-width: 400px;
-}
-
-/* Global box-sizing */
-*, *::before, *::after {
-    box-sizing: border-box;
-}
-
-/* Body layout */
+/* style.css */
 body {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
+    height: 100vh;
     margin: 0;
-    background: #f0f0f0;
-    font-family: Arial, Helvetica, sans-serif;
+    background-color: #f4f4f9;
 }
 
-/* Display (readonly input) */
 #display {
-    width: 100%;
-    max-width: var(--max-width);
-    font-size: var(--display-font-size);
-    padding: 0.5rem 0.75rem;
+    width: 80%;
+    padding: 20px;
+    font-size: 2em;
+    border: none;
+    outline: none;
     text-align: right;
-    border: none;
-    border-radius: 0.5rem;
-    background: #fff;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    pointer-events: none; /* make it effectively readonly */
+    background-color: #fff;
+    box-shadow: inset 0px 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Button grid */
-.button-grid {
-    display: grid;
-    gap: 0.5rem;
-    margin-top: 1rem;
-    width: 100%;
-    max-width: var(--max-width);
-    grid-template-columns: repeat(auto-fit, minmax(4rem, 1fr));
-}
-
-/* Individual calculator buttons */
-.calc-button {
-    width: 100%;
-    padding: 0.75rem;
-    font-size: var(--button-font-size);
-    background: var(--button-bg);
+button {
+    width: 20%;
+    padding: 20px;
+    font-size: 1em;
     border: none;
-    border-radius: var(--button-radius);
+    outline: none;
+    background-color: #e0e0e7;
     cursor: pointer;
-    transition: background 0.1s ease, transform 0.05s ease;
+    transition: background-color 0.3s ease;
 }
 
-.calc-button:hover {
-    background: var(--button-bg-hover);
+button:hover {
+    background-color: #d1d1dd;
 }
 
-.calc-button:active {
-    background: var(--button-bg-active);
-    transform: scale(0.98);
+.operator, .equal {
+    background-color: #ff9500;
+    color: white;
 }
 
-/* Error state */
-.error {
-    color: red;
-}
-
-/* Responsive adjustments */
-@media (max-width: 350px) {
-    :root {
-        font-size: 14px;
-    }
+.operator:hover, .equal:hover {
+    background-color: #e08900;
 }
