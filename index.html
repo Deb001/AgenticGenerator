@@ -1,41 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Calculator</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="main.js" defer></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculator</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="calculator">
-        <input type="text" id="display" readonly>
-        <div id="button-grid">
-            <button class="calc-btn" data-value="7">7</button>
-            <button class="calc-btn" data-value="8">8</button>
-            <button class="calc-btn" data-value="9">9</button>
-            <button class="calc-btn" data-value="÷">÷</button>
+  <section role="region" aria-label="Calculator display">
+    <input type="text" id="calc-display" readonly aria-live="polite">
+  </section>
 
-            <button class="calc-btn" data-value="4">4</button>
-            <button class="calc-btn" data-value="5">5</button>
-            <button class="calc-btn" data-value="6">6</button>
-            <button class="calc-btn" data-value="×">×</button>
+  <section role="grid" aria-label="Calculator keypad">
+    <button class="calc-button" data-token="C" aria-label="Clear">C</button>
+    <button class="calc-button" data-token="%" aria-label="Percent">%</button>
+    <button class="calc-button" data-token="/" aria-label="Divide">÷</button>
+    <button class="calc-button" data-token="*" aria-label="Multiply">×</button>
 
-            <button class="calc-btn" data-value="1">1</button>
-            <button class="calc-btn" data-value="2">2</button>
-            <button class="calc-btn" data-value="3">3</button>
-            <button class="calc-btn" data-value="-">-</button>
+    <button class="calc-button" data-token="7" aria-label="Seven">7</button>
+    <button class="calc-button" data-token="8" aria-label="Eight">8</button>
+    <button class="calc-button" data-token="9" aria-label="Nine">9</button>
+    <button class="calc-button" data-token="-" aria-label="Subtract">−</button>
 
-            <button class="calc-btn" data-value="0">0</button>
-            <button class="calc-btn" data-value=".">.</button>
-            <button class="calc-btn" data-value="=">=</button>
-            <button class="calc-btn" data-value="+">+</button>
+    <button class="calc-button" data-token="4" aria-label="Four">4</button>
+    <button class="calc-button" data-token="5" aria-label="Five">5</button>
+    <button class="calc-button" data-token="6" aria-label="Six">6</button>
+    <button class="calc-button" data-token="+" aria-label="Add">+</button>
 
-            <button class="calc-btn" data-value="C">C</button>
-            <button class="calc-btn" data-value="←">←</button>
-            <button class="calc-btn" data-value="(">(</button>
-            <button class="calc-btn" data-value=")">)</button>
-        </div>
-    </div>
+    <button class="calc-button" data-token="1" aria-label="One">1</button>
+    <button class="calc-button" data-token="2" aria-label="Two">2</button>
+    <button class="calc-button" data-token="3" aria-label="Three">3</button>
+    <button class="calc-button" data-token="=" aria-label="Equals">=</button>
+
+    <button class="calc-button" data-token="0" aria-label="Zero">0</button>
+    <button class="calc-button" data-token="." aria-label="Decimal point">.</button>
+    <button class="calc-button" data-token="±" aria-label="Toggle sign">±</button>
+    <button class="calc-button" data-token="Backspace" aria-label="Backspace">←</button>
+  </section>
+
+  <script src="app.js" defer></script>
 </body>
 </html>
