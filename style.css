@@ -1,44 +1,118 @@
-/* style.css */
+:root {
+  /* Base font size for easy rem scaling */
+  font-size: 62.5%; /* 1rem = 10px */
+  --bg-color: #f9f9f9;
+  --container-bg: #ffffff;
+  --display-bg: #eaeaea;
+  --button-bg: #e0e0e0;
+  --button-hover-bg: #d4d4d4;
+  --button-active-bg: #c8c8c8;
+  --button-color: #222222;
+  --display-color: #111111;
+  --border-radius: 0.4rem;
+  --gap: 1rem;
+}
+
+/* Global reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Page layout */
 body {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    margin: 0;
-    background-color: #f4f4f9;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  background-color: var(--bg-color);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  padding: 2rem;
 }
 
+/* Calculator container */
+#calculator {
+  width: 100%;
+  max-width: 40rem;
+  background-color: var(--container-bg);
+  border-radius: var(--border-radius);
+  box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+}
+
+/* Display */
 #display {
-    width: 80%;
-    padding: 20px;
-    font-size: 2em;
-    border: none;
-    outline: none;
-    text-align: right;
-    background-color: #fff;
-    box-shadow: inset 0px 4px 8px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  background-color: var(--display-bg);
+  color: var(--display-color);
+  font-size: 2.8rem;
+  text-align: right;
+  padding: 1.2rem 1rem;
+  border: none;
+  border-radius: var(--border-radius);
+  margin-bottom: var(--gap);
+  pointer-events: none;
+  user-select: none;
 }
 
-button {
-    width: 20%;
-    padding: 20px;
-    font-size: 1em;
-    border: none;
-    outline: none;
-    background-color: #e0e0e7;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
+/* Button grid */
+.button-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--gap);
 }
 
-button:hover {
-    background-color: #d1d1dd;
+/* Button base style */
+button[data-action],
+button[data-value] {
+  width: 100%;
+  padding: 1.2rem;
+  font-size: 1.8rem;
+  font-weight: 500;
+  color: var(--button-color);
+  background-color: var(--button-bg);
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
 }
 
-.operator, .equal {
-    background-color: #ff9500;
-    color: white;
+/* Hover & active states */
+button[data-action]:hover,
+button[data-value]:hover {
+  background-color: var(--button-hover-bg);
 }
 
-.operator:hover, .equal:hover {
-    background-color: #e08900;
+button[data-action]:active,
+button[data-value]:active {
+  background-color: var(--button-active-bg);
+  transform: translateY(0.1rem);
+}
+
+/* Responsive: switch to 2 columns on narrower screens */
+@media (max-width: 600px) {
+  .button-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Small devices: reduce font size and gap */
+@media (max-width: 400px) {
+  :root {
+    --gap: 0.5rem;
+  }
+
+  button[data-action],
+  button[data-value] {
+    font-size: 1.4rem;
+    padding: 0.9rem;
+  }
+
+  #display {
+    font-size: 2.2rem;
+    padding: 0.9rem 0.8rem;
+  }
 }
