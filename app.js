@@ -1,212 +1,195 @@
 'use strict';
 
-// Calculator state object
+// Calculator state
 const calculatorState = {
-  currentValue: '',
-  nextValue: '',
-  pendingOperator: null,
-  error: false,
+    operand1: '',
+    operator: '',
+    operand2: '',
+    resultShown: false
 };
 
-// Reference to the display element (initialized in initCalculator)
 let displayElement = null;
+let buttonElements = [];
 
-/**
- * Entry point executed on DOMContentLoaded.
- * Selects DOM elements, attaches listeners, and initializes state.
- */
-function initCalculator() {
-  displayElement = document.getElementById('calc-display');
-  if (!displayElement) {
-    console.error('Calculator display element not found.');
-    return;
-  }
+// Initialize on DOMContentLoaded
+function init() {
+    displayElement = document.getElementById('display');
+    buttonElements = document.querySelectorAll('.calc-button');
 
-  const buttons = document.querySelectorAll('.calc-button');
-  buttons.forEach((btn) => {
-    btn.addEventListener('click', handleButtonClick);
-  });
+    buttonElements.forEach(btn => {
+        btn.addEventListener('click', handleButtonClick);
+    });
 
-  document.addEventListener('keydown', handleKeyPress);
-
-  clearAll(); // Ensure display starts at 0
+    document.addEventListener('keydown', handleKeydown);
 }
 
-/**
- * Click handler for calculator buttons.
- * Extracts the data-token attribute and forwards it.
- * @param {MouseEvent} event
- */
+// Click handler for calculator buttons
 function handleButtonClick(event) {
-  const token = event.currentTarget.dataset.token;
-  if (typeof token === 'string') {
-    processToken(token);
-  }
+    const key = event.currentTarget.dataset.key;
+    if (!key) return;
+
+    if (key.startsWith('digit-')) {
+        const digit = key.split('-')[1];
+        inputDigit(digit);
+    } else if (key === 'decimal') {
+        inputDecimal();
+    } else if (key.startsWith('operator-')) {
+        const op = key.split('-')[1];
+        setOperator(op);
+    } else if (key === 'equals') {
+        calculateResult();
+    } else if (key === 'clear') {
+        clearAll();
+    } else if (key === 'delete') {
+        deleteLastChar();
+    }
 }
 
-/**
- * Keyboard handler that maps keys to calculator tokens.
- * @param {KeyboardEvent} event
- */
-function handleKeyPress(event) {
-  const key = event.key;
-  let token = null;
+// Keyboard handler
+function handleKeydown(event) {
+    const { key } = event;
 
-  if (/^[0-9]$/.test(key)) {
-    token = key;
-  } else if (key === '.' || key === ',') {
-    token = '.';
-  } else if (key === '+' || key === '-' || key === '/' || key === '*' || key === 'x' || key === 'X') {
-    token = key === 'x' || key === 'X' ? '*' : key;
-  } else if (key === 'Enter' || key === '=') {
-    token = '=';
-  } else if (key === 'Backspace') {
-    token = 'C';
-  }
-
-  if (token) {
-    event.preventDefault();
-    processToken(token);
-  }
+    if (key >= '0' && key <= '9') {
+        inputDigit(key);
+        event.preventDefault();
+    } else if (key === '.' || key === ',') {
+        inputDecimal();
+        event.preventDefault();
+    } else if (key === '+' || key === '-' || key === '*' || key === '/' || key === 'x' || key === 'X') {
+        const opMap = { '*': '*', 'x': '*', 'X': '*', '/': '/', '+': '+', '-': '-' };
+        setOperator(opMap[key]);
+        event.preventDefault();
+    } else if (key === 'Enter' || key === '=') {
+        calculateResult();
+        event.preventDefault();
+    } else if (key === 'Backspace') {
+        deleteLastChar();
+        event.preventDefault();
+    } else if (key === 'Escape') {
+        clearAll();
+        event.preventDefault();
+    }
 }
 
-/**
- * Central dispatcher that routes tokens to appropriate handlers.
- * @param {string} token
- */
-function processToken(token) {
-  if (calculatorState.error && token !== 'C') {
-    return;
-  }
-
-  if (/^[0-9]$/.test(token)) {
-    inputDigit(token);
-  } else if (token === '.') {
-    inputDecimal();
-  } else if (['+', '-', '*', '/'].includes(token)) {
-    inputOperator(token);
-  } else if (token === '=') {
-    computeResult();
-  } else if (token === 'C') {
-    clearAll();
-  }
-}
-
-/**
- * Appends a digit to the nextValue and updates the display.
- * @param {string} digit
- */
+// Append a digit to the active operand
 function inputDigit(digit) {
-  calculatorState.nextValue += digit;
-  updateDisplay(calculatorState.nextValue);
-}
+    if (calculatorState.resultShown && calculatorState.operator === '') {
+        clearAll();
+    }
 
-/**
- * Adds a decimal point to nextValue if not already present.
- */
-function inputDecimal() {
-  if (!calculatorState.nextValue.includes('.')) {
-    if (calculatorState.nextValue === '') {
-      calculatorState.nextValue = '0.';
+    if (calculatorState.operator === '') {
+        calculatorState.operand1 += digit;
+        updateDisplay(calculatorState.operand1);
     } else {
-      calculatorState.nextValue += '.';
+        calculatorState.operand2 += digit;
+        updateDisplay(calculatorState.operand2);
     }
-    updateDisplay(calculatorState.nextValue);
-  }
 }
 
-/**
- * Handles operator input, performing any pending calculation.
- * @param {string} op
- */
-function inputOperator(op) {
-  const { currentValue, nextValue, pendingOperator } = calculatorState;
-
-  if (pendingOperator && nextValue !== '') {
-    const result = performOperation(currentValue, nextValue, pendingOperator);
-    if (result === 'Error') {
-      calculatorState.error = true;
-      updateDisplay('Error');
-      return;
+// Add a decimal point to the active operand
+function inputDecimal() {
+    if (calculatorState.resultShown && calculatorState.operator === '') {
+        clearAll();
     }
-    calculatorState.currentValue = String(result);
-  } else if (nextValue !== '') {
-    calculatorState.currentValue = nextValue;
-  }
 
-  calculatorState.pendingOperator = op;
-  calculatorState.nextValue = '';
-  updateDisplay(calculatorState.currentValue);
+    if (calculatorState.operator === '') {
+        if (!calculatorState.operand1.includes('.')) {
+            calculatorState.operand1 = calculatorState.operand1 || '0';
+            calculatorState.operand1 += '.';
+            updateDisplay(calculatorState.operand1);
+        }
+    } else {
+        if (!calculatorState.operand2.includes('.')) {
+            calculatorState.operand2 = calculatorState.operand2 || '0';
+            calculatorState.operand2 += '.';
+            updateDisplay(calculatorState.operand2);
+        }
+    }
 }
 
-/**
- * Computes the result of the pending operation.
- */
-function computeResult() {
-  const { currentValue, nextValue, pendingOperator } = calculatorState;
-
-  if (pendingOperator && nextValue !== '') {
-    const result = performOperation(currentValue, nextValue, pendingOperator);
-    if (result === 'Error') {
-      calculatorState.error = true;
-      updateDisplay('Error');
-      return;
+// Store the selected operator
+function setOperator(op) {
+    if (calculatorState.resultShown) {
+        calculatorState.resultShown = false;
     }
-    calculatorState.currentValue = String(result);
-    calculatorState.pendingOperator = null;
-    calculatorState.nextValue = '';
-    updateDisplay(calculatorState.currentValue);
-  }
+
+    if (calculatorState.operator && calculatorState.operand2) {
+        // Chain calculation: compute intermediate result first
+        calculateResult();
+    }
+
+    if (!calculatorState.operand1) {
+        calculatorState.operand1 = displayElement.value || '0';
+    }
+
+    calculatorState.operator = op;
 }
 
-/**
- * Resets the calculator to its initial state.
- */
+// Perform the calculation
+function calculateResult() {
+    const a = parseFloat(calculatorState.operand1) || 0;
+    const b = parseFloat(calculatorState.operand2) || 0;
+    let result;
+
+    switch (calculatorState.operator) {
+        case '+':
+            result = a + b;
+            break;
+        case '-':
+            result = a - b;
+            break;
+        case '*':
+            result = a * b;
+            break;
+        case '/':
+            if (b === 0) {
+                updateDisplay('Error');
+                setTimeout(clearAll, 1500);
+                return;
+            }
+            result = a / b;
+            break;
+        default:
+            // No operator; just show the current operand
+            result = a;
+    }
+
+    // Trim unnecessary trailing zeros
+    const resultStr = Number.isInteger(result) ? result.toString() : result.toFixed(10).replace(/\.?0+$/, '');
+
+    updateDisplay(resultStr);
+    calculatorState.operand1 = resultStr;
+    calculatorState.operator = '';
+    calculatorState.operand2 = '';
+    calculatorState.resultShown = true;
+}
+
+// Reset calculator
 function clearAll() {
-  calculatorState.currentValue = '';
-  calculatorState.nextValue = '';
-  calculatorState.pendingOperator = null;
-  calculatorState.error = false;
-  updateDisplay('0');
+    calculatorState.operand1 = '';
+    calculatorState.operator = '';
+    calculatorState.operand2 = '';
+    calculatorState.resultShown = false;
+    updateDisplay('');
 }
 
-/**
- * Executes a basic arithmetic operation safely.
- * @param {string} a - numeric string
- * @param {string} b - numeric string
- * @param {string} op - '+', '-', '*', '/'
- * @returns {number|string} - numeric result or 'Error' on failure
- */
-function performOperation(a, b, op) {
-  const numA = Number(a);
-  const numB = Number(b);
-  if (Number.isNaN(numA) || Number.isNaN(numB)) {
-    return 'Error';
-  }
-
-  switch (op) {
-    case '+':
-      return numA + numB;
-    case '-':
-      return numA - numB;
-    case '*':
-      return numA * numB;
-    case '/':
-      return numB === 0 ? 'Error' : numA / numB;
-    default:
-      return 'Error';
-  }
+// Delete last character from active operand
+function deleteLastChar() {
+    if (calculatorState.operator === '') {
+        calculatorState.operand1 = calculatorState.operand1.slice(0, -1);
+        updateDisplay(calculatorState.operand1);
+    } else {
+        calculatorState.operand2 = calculatorState.operand2.slice(0, -1);
+        updateDisplay(calculatorState.operand2);
+    }
 }
 
-/**
- * Updates the calculator display.
- * @param {string} value
- */
+// Update the calculator display
 function updateDisplay(value) {
-  if (displayElement) {
-    displayElement.value = value;
-  }
+    if (displayElement) {
+        displayElement.value = value;
+    }
 }
 
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', initCalculator);
+// Register init on DOMContentLoaded
+document.addEventListener('DOMContentLoaded', init);
