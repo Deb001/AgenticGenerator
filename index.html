@@ -1,195 +1,36 @@
-<!--
-Simple Calculator
-Usage: Click buttons or use keyboard (0-9, ., +, -, *, /, Enter for '=', Escape for clear).
-Limitations: No parentheses, no advanced functions. Handles basic arithmetic with left-to-right precedence via JavaScript engine.
--->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Simple Calculator</title>
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    margin: 0;
-    background: #f0f0f0;
-  }
-  .calculator {
-    background: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  }
-  #display {
-    background: #222;
-    color: #0f0;
-    font-size: 2rem;
-    text-align: right;
-    padding: 10px;
-    border-radius: 4px;
-    min-width: 240px;
-    min-height: 40px;
-    margin-bottom: 10px;
-    overflow-x: auto;
-  }
-  .buttons {
-    display: grid;
-    grid-template-columns: repeat(4, 60px);
-    grid-gap: 10px;
-  }
-  button {
-    font-size: 1.5rem;
-    padding: 10px;
-    border: none;
-    border-radius: 4px;
-    background: #e0e0e0;
-    cursor: pointer;
-  }
-  button:active {
-    background: #d0d0d0;
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculator</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
 </head>
 <body>
-<div class="calculator" role="application" aria-label="Simple calculator">
-  <div id="display" aria-live="polite">0</div>
-  <div class="buttons">
-    <button data-value="7" aria-label="Seven">7</button>
-    <button data-value="8" aria-label="Eight">8</button>
-    <button data-value="9" aria-label="Nine">9</button>
-    <button data-value="/" aria-label="Divide">/</button>
+  <div id="calculator">
+    <input id="display" type="text" readonly aria-label="Calculator display">
+    <div class="button-grid">
+      <button class="calc-button" data-key="digit-7" aria-label="seven">7</button>
+      <button class="calc-button" data-key="digit-8" aria-label="eight">8</button>
+      <button class="calc-button" data-key="digit-9" aria-label="nine">9</button>
+      <button class="calc-button" data-key="operator-divide" aria-label="divide">÷</button>
 
-    <button data-value="4" aria-label="Four">4</button>
-    <button data-value="5" aria-label="Five">5</button>
-    <button data-value="6" aria-label="Six">6</button>
-    <button data-value="*" aria-label="Multiply">*</button>
+      <button class="calc-button" data-key="digit-4" aria-label="four">4</button>
+      <button class="calc-button" data-key="digit-5" aria-label="five">5</button>
+      <button class="calc-button" data-key="digit-6" aria-label="six">6</button>
+      <button class="calc-button" data-key="operator-multiply" aria-label="multiply">×</button>
 
-    <button data-value="1" aria-label="One">1</button>
-    <button data-value="2" aria-label="Two">2</button>
-    <button data-value="3" aria-label="Three">3</button>
-    <button data-value="-" aria-label="Subtract">-</button>
+      <button class="calc-button" data-key="digit-1" aria-label="one">1</button>
+      <button class="calc-button" data-key="digit-2" aria-label="two">2</button>
+      <button class="calc-button" data-key="digit-3" aria-label="three">3</button>
+      <button class="calc-button" data-key="operator-subtract" aria-label="subtract">−</button>
 
-    <button data-value="0" aria-label="Zero">0</button>
-    <button data-value="." aria-label="Decimal point">.</button>
-    <button data-value="=" aria-label="Equals">=</button>
-    <button data-value="+" aria-label="Add">+</button>
-
-    <button data-value="C" aria-label="Clear">C</button>
+      <button class="calc-button" data-key="digit-0" aria-label="zero">0</button>
+      <button class="calc-button" data-key="decimal-point" aria-label="decimal point">.</button>
+      <button class="calc-button" data-key="equals" aria-label="equals">=</button>
+      <button class="calc-button" data-key="operator-add" aria-label="add">+</button>
+    </div>
   </div>
-</div>
-<script>
-'use strict';
-let expression = '';
-let displayElement = null;
-
-function initCalculator() {
-  displayElement = document.getElementById('display');
-  const buttons = document.querySelectorAll('button[data-value]');
-  buttons.forEach(btn => btn.addEventListener('click', handleButtonClick));
-  document.addEventListener('keydown', handleKeyPress);
-}
-
-function handleButtonClick(event) {
-  const value = event.currentTarget.getAttribute('data-value');
-  if (!value) return;
-  if (value === 'C') {
-    clearDisplay();
-  } else if (value === '=') {
-    evaluateExpression();
-  } else {
-    appendToExpression(value);
-  }
-}
-
-function appendToExpression(char) {
-  const operators = '+-*/';
-  const lastChar = expression.slice(-1);
-  if (/[0-9]/.test(char)) {
-    expression += char;
-  } else if (char === '.') {
-    const parts = expression.split(/[+\-*/]/);
-    const currentNumber = parts[parts.length - 1];
-    if (!currentNumber.includes('.')) {
-      expression += char;
-    }
-  } else if (operators.includes(char)) {
-    if (expression === '' && char !== '-') {
-      return;
-    }
-    if (operators.includes(lastChar)) {
-      expression = expression.slice(0, -1) + char;
-    } else {
-      expression += char;
-    }
-  }
-  updateDisplay(expression || '0');
-}
-
-function evaluateExpression() {
-  if (expression === '' || /[+\-*/]$/.test(expression)) {
-    displayError();
-    return;
-  }
-  const sanitized = sanitizeExpression(expression);
-  try {
-    const result = Function('return ' + sanitized)();
-    if (!isFinite(result) || isNaN(result)) {
-      displayError();
-    } else {
-      expression = String(result);
-      updateDisplay(expression);
-    }
-  } catch (e) {
-    displayError();
-  }
-}
-
-function clearDisplay() {
-  expression = '';
-  updateDisplay('0');
-}
-
-function handleKeyPress(event) {
-  const key = event.key;
-  if (key >= '0' && key <= '9') {
-    appendToExpression(key);
-  } else if (key === '.') {
-    appendToExpression('.');
-  } else if (['+', '-', '*', '/'].includes(key)) {
-    appendToExpression(key);
-  } else if (key === 'Enter') {
-    event.preventDefault();
-    evaluateExpression();
-  } else if (key === 'Escape') {
-    clearDisplay();
-  }
-}
-
-function sanitizeExpression(expr) {
-  const whitelist = /[0-9.+\-*/]/g;
-  const filtered = expr.match(whitelist);
-  if (!filtered) return '';
-  let sanitized = filtered.join('');
-  sanitized = sanitized.replace(/([+\-*/]){2,}/g, (m) => m.slice(-1));
-  return sanitized;
-}
-
-function updateDisplay(text) {
-  if (displayElement) {
-    displayElement.textContent = text;
-  }
-}
-
-function displayError() {
-  expression = '';
-  updateDisplay('Error');
-}
-
-document.addEventListener('DOMContentLoaded', initCalculator);
-</script>
 </body>
 </html>
