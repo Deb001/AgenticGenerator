@@ -1,232 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Calculator</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-  body {
-    margin: 0;
-    font-family: Arial, Helvetica, sans-serif;
-    background: #f4f4f4;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-  }
-  .calculator {
-    background: #222;
-    border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0,0,0,.3);
-    width: 320px;
-    max-width: 100%;
-    padding: 20px;
-    box-sizing: border-box;
-  }
-  .display {
-    background: #111;
-    color: #0f0;
-    font-size: 2rem;
-    text-align: right;
-    padding: 10px;
-    border-radius: 5px;
-    min-height: 50px;
-    word-wrap: break-word;
-    overflow-x: auto;
-  }
-  .button-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-    margin-top: 20px;
-  }
-  .button {
-    background: #333;
-    color: #fff;
-    border: none;
-    font-size: 1.5rem;
-    padding: 15px;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background .2s;
-  }
-  .button:active {
-    background: #555;
-  }
-  .button[data-action="clear"] {
-    background: #b33;
-  }
-  .button[data-action="evaluate"] {
-    background: #3b3;
-    grid-column: span 2;
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculator</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="calculator">
-  <div class="display" id="calc-display">0</div>
-  <div class="button-grid" id="calc-buttons"></div>
-</div>
+  <div id="calculator" class="calculator">
+    <input id="display" class="display" type="text" readonly>
+    <div class="button-grid">
+      <button class="btn" data-action="clear" data-value="C">C</button>
+      <button class="btn" data-action="operator" data-value="("> ( </button>
+      <button class="btn" data-action="operator" data-value=")"> ) </button>
+      <button class="btn" data-action="backspace" data-value="←">&#x232B;</button>
 
-<script>
-(() => {
-  // Global state
-  let expression = '';
-  let displayElement = null;
-  let buttonContainer = null;
+      <button class="btn" data-action="digit" data-value="7">7</button>
+      <button class="btn" data-action="digit" data-value="8">8</button>
+      <button class="btn" data-action="digit" data-value="9">9</button>
+      <button class="btn" data-action="operator" data-value="÷">÷</button>
 
-  // Utility to update the display
-  function updateDisplay(value) {
-    displayElement.textContent = value;
-  }
+      <button class="btn" data-action="digit" data-value="4">4</button>
+      <button class="btn" data-action="digit" data-value="5">5</button>
+      <button class="btn" data-action="digit" data-value="6">6</button>
+      <button class="btn" data-action="operator" data-value="×">×</button>
 
-  // Sanitize expression before evaluation
-  function sanitizeExpression(expr) {
-    const cleaned = expr.replace(/[^0-9+\-*/().\s]/g, '').trim();
-    return cleaned;
-  }
+      <button class="btn" data-action="digit" data-value="1">1</button>
+      <button class="btn" data-action="digit" data-value="2">2</button>
+      <button class="btn" data-action="digit" data-value="3">3</button>
+      <button class="btn" data-action="operator" data-value="-">-</button>
 
-  // Append character to the expression with validation
-  function appendToExpression(char) {
-    const operators = '+-*/';
-    const isOperator = operators.includes(char);
-    const isDecimal = char === '.';
-    const lastChar = expression.slice(-1);
-
-    // Prevent multiple consecutive operators
-    if (isOperator && operators.includes(lastChar)) {
-      return;
-    }
-
-    // Prevent multiple decimals in the same number token
-    if (isDecimal) {
-      // Find the token after the last operator or '('
-      const tokenMatch = expression.split(/[+\-*/()]/).pop();
-      if (tokenMatch && tokenMatch.includes('.')) {
-        return;
-      }
-    }
-
-    // Append character
-    expression += char;
-    updateDisplay(expression);
-  }
-
-  // Clear the current expression
-  function clearExpression() {
-    expression = '';
-    updateDisplay('0');
-  }
-
-  // Evaluate the current expression safely
-  function evaluateExpression() {
-    const sanitized = sanitizeExpression(expression);
-    if (!sanitized) {
-      clearExpression();
-      return;
-    }
-    try {
-      // eslint-disable-next-line no-new-func
-      const result = Function('return ' + sanitized)();
-      if (typeof result !== 'number' || !isFinite(result) || isNaN(result)) {
-        throw new Error('Invalid result');
-      }
-      const formatted = Number.isInteger(result)
-        ? result.toString()
-        : parseFloat(result.toFixed(10)).toString();
-      updateDisplay(formatted);
-      expression = formatted;
-    } catch (e) {
-      updateDisplay('Error');
-      expression = '';
-    }
-  }
-
-  // Central click dispatcher
-  function handleButtonClick(event) {
-    const target = event.target;
-    if (!target.dataset || !target.dataset.action) return;
-
-    const action = target.dataset.action;
-    const value = target.dataset.value;
-
-    switch (action) {
-      case 'append':
-        appendToExpression(value);
-        break;
-      case 'clear':
-        clearExpression();
-        break;
-      case 'evaluate':
-        evaluateExpression();
-        break;
-      default:
-        break;
-    }
-  }
-
-  // Initialize calculator UI and logic
-  function initCalculator() {
-    displayElement = document.getElementById('calc-display');
-    buttonContainer = document.getElementById('calc-buttons');
-
-    const layout = [
-      // row 1
-      [
-        { label: 'C', action: 'clear' },
-        { label: '(', action: 'append', value: '(' },
-        { label: ')', action: 'append', value: ')' },
-        { label: '/', action: 'append', value: '/' }
-      ],
-      // row 2
-      [
-        { label: '7', action: 'append', value: '7' },
-        { label: '8', action: 'append', value: '8' },
-        { label: '9', action: 'append', value: '9' },
-        { label: '*', action: 'append', value: '*' }
-      ],
-      // row 3
-      [
-        { label: '4', action: 'append', value: '4' },
-        { label: '5', action: 'append', value: '5' },
-        { label: '6', action: 'append', value: '6' },
-        { label: '-', action: 'append', value: '-' }
-      ],
-      // row 4
-      [
-        { label: '1', action: 'append', value: '1' },
-        { label: '2', action: 'append', value: '2' },
-        { label: '3', action: 'append', value: '3' },
-        { label: '+', action: 'append', value: '+' }
-      ],
-      // row 5
-      [
-        { label: '0', action: 'append', value: '0' },
-        { label: '.', action: 'append', value: '.' },
-        { label: '=', action: 'evaluate' }
-      ]
-    ];
-
-    // Generate buttons
-    layout.forEach(row => {
-      row.forEach(btn => {
-        const button = document.createElement('button');
-        button.className = 'button';
-        button.textContent = btn.label;
-        button.dataset.action = btn.action;
-        if (btn.value !== undefined) {
-          button.dataset.value = btn.value;
-        }
-        buttonContainer.appendChild(button);
-      });
-    });
-
-    // Event delegation for button clicks
-    buttonContainer.addEventListener('click', handleButtonClick);
-  }
-
-  document.addEventListener('DOMContentLoaded', initCalculator);
-})();
-</script>
+      <button class="btn" data-action="digit" data-value="0">0</button>
+      <button class="btn" data-action="decimal" data-value=".">.</button>
+      <button class="btn" data-action="evaluate" data-value="=">=</button>
+      <button class="btn" data-action="operator" data-value="+">+</button>
+    </div>
+  </div>
+  <script src="main.js" defer></script>
 </body>
 </html>
