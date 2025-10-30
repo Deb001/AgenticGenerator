@@ -1,70 +1,63 @@
-// src/server.js
-
-const express = require('express');
-const cors = require('cors');
-const path = require('path');
-const db = require('./db.js');
-const itemsRouter = require('./routes/items.js');
+import express from 'express';
+import cors from 'cors';
+import db from './config/db.js';
+import auth from './middleware/auth.js';
+import ScheduleController from './controllers/ScheduleController.js';
 
 /**
- * Initializes the Express application.
- * - Ensures the database is ready.
- * - Applies JSON body parsing and CORS middleware.
- * - Serves static assets from the root /public directory.
- * - Mounts the items router at /api/items.
- * - Adds a generic error‑handling middleware that returns JSON.
- *
- * @returns {import('express').Express} Configured Express app instance.
+ * Creates and configures the Express application.
+ * @returns {import('express').Express}
  */
-function createServer() {
-  // Initialise the database if the module provides an explicit method.
-  if (typeof db.initialize === 'function') {
-    db.initialize();
-  } else if (typeof db.connect === 'function') {
-    db.connect();
-  }
-
+export function createApp() {
   const app = express();
 
-  // Core middleware
+  // Core middlewares
   app.use(cors());
   app.use(express.json());
 
-  // Static files
-  const publicDir = path.resolve(__dirname, '..', 'public');
-  app.use(express.static(publicDir));
+  // Authentication applied globally
+  app.use(auth);
 
-  // API routes
-  app.use('/api/items', itemsRouter);
+  // Route mounting
+  app.use('/api/schedules', ScheduleController.router);
 
-  // Generic error handler – returns JSON { error: message }
-  // This will catch errors passed via next(err) from any route.
-  app.use((err, _req, res, _next) => {
+  // Global error‑handling middleware
+  // eslint-disable-next-line no-unused-vars
+  app.use((err, req, res, next) => {
     console.error(err);
-    const status = err.status || 500;
-    res.status(status).json({ error: err.message || 'Internal Server Error' });
+    res.status(500).json({ message: 'Internal server error' });
   });
 
   return app;
 }
 
 /**
- * Starts the HTTP server on the given port.
- *
- * @param {number|string} port - Port number on which the server should listen.
+ * Starts the HTTP server after DB connection and sync.
+ * @param {number} port - Port number to listen on.
  */
-function startServer(port) {
-  app.listen(port, () => {
-    console.log(`Server listening on http://localhost:${port}`);
-  });
+export async function startServer(port) {
+  try {
+    await db.authenticate();
+    await db.sync();
+    const app = createApp();
+
+    app.listen(port, () => {
+      console.log(`Server listening on port ${port}`);
+    });
+  } catch (err) {
+    console.error('Failed to start server:', err);
+    process.exit(1);
+  }
 }
 
-// ---------------------------------------------------------------------------
-// Application bootstrap
-// ---------------------------------------------------------------------------
-const app = createServer();
-const PORT = process.env.PORT || 3000;
-startServer(PORT);
+// Catch unhandled promise rejections globally
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  // Optional: graceful shutdown
+});
 
-// Export for external usage / testing
-module.exports = { createServer, startServer, app };
+// If executed directly, start the server
+if (require.main === module) {
+  const PORT = Number(process.env.PORT) || 3000;
+  startServer(PORT);
+}
