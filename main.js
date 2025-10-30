@@ -1,151 +1,217 @@
-// main.js - Calculator logic
+'use strict';
 
-let expression = ""; // holds the raw user input string
-let displayElement = null;
+// Cache DOM elements
+const display = document.getElementById('display');
+const buttons = document.querySelectorAll('.btn');
 
-/**
- * Initializes the calculator after DOM is ready.
- * Caches DOM references, attaches click listeners, and sets initial display.
- */
-function initCalculator() {
-    displayElement = document.getElementById('display');
-    if (!displayElement) {
-        console.error('Display element not found');
-        return;
-    }
+// Internal state
+let expression = '';
+let errorState = false;
 
-    const buttons = document.querySelectorAll('button.calc-btn');
-    buttons.forEach(btn => btn.addEventListener('click', handleButtonClick));
+// Utility helpers
+const isOperator = ch => '+-*/'.includes(ch);
+const isDigit = ch => /\d/.test(ch);
 
-    updateDisplay('0');
+// Update the calculator display
+function updateDisplay(value) {
+    display.value = value;
 }
 
-/**
- * Handles click events from calculator buttons.
- * Routes the action based on the button's data-value attribute.
- * @param {MouseEvent} event
- */
-function handleButtonClick(event) {
-    const btn = event.currentTarget;
-    const value = btn.dataset.value;
-
-    switch (value) {
-        case 'C':
-            clearExpression();
-            break;
-        case '←':
-            backspaceExpression();
-            break;
-        case '=':
-            evaluateExpression();
-            break;
-        default:
-            appendToExpression(value);
-            break;
-    }
+// Enable or disable all buttons except Clear when in error state
+function setErrorState(flag) {
+    errorState = flag;
+    buttons.forEach(btn => {
+        if (flag && btn.dataset.action !== 'clear') {
+            btn.classList.add('disabled');
+            btn.disabled = true;
+        } else {
+            btn.classList.remove('disabled');
+            btn.disabled = false;
+        }
+    });
 }
 
-/**
- * Appends a character to the current expression after validation.
- * Prevents invalid consecutive operators and leading operators.
- * @param {string} char
- */
-function appendToExpression(char) {
-    const operators = '+-*/';
-    const isOperator = operators.includes(char);
+// Clear the display and reset internal state
+function clearDisplay() {
+    expression = '';
+    updateDisplay('');
+    setErrorState(false);
+}
 
-    if (expression.length === 0 && isOperator) {
-        // ignore leading operator
-        return;
-    }
-
-    const lastChar = expression.slice(-1);
-    const lastIsOperator = operators.includes(lastChar);
-
-    if (lastIsOperator && isOperator) {
-        // replace the last operator with the new one
-        expression = expression.slice(0, -1) + char;
-    } else {
-        expression += char;
-    }
-
+// Remove the last character from the expression
+function backspace() {
+    if (errorState) return;
+    expression = expression.slice(0, -1);
     updateDisplay(expression);
 }
 
-/**
- * Clears the current expression and resets the display.
- */
-function clearExpression() {
-    expression = "";
-    updateDisplay('0');
+// Validate character before appending to the expression
+function validateAppend(char) {
+    const last = expression.slice(-1);
+
+    // Decimal point
+    if (char === '.') {
+        // Disallow multiple decimals in the current number segment
+        const rev = expression.split('').reverse();
+        for (let i = 0; i < rev.length; i++) {
+            const c = rev[i];
+            if (isOperator(c) || c === '(') break;
+            if (c === '.') return false;
+        }
+        return true;
+    }
+
+    // Digits are always allowed
+    if (isDigit(char)) return true;
+
+    // Operators
+    if (isOperator(char)) {
+        // Expression may start with '-' (unary minus) only
+        if (expression === '' && char !== '-') return false;
+        // Prevent two operators in a row
+        if (isOperator(last)) return false;
+        return true;
+    }
+
+    // Opening parenthesis
+    if (char === '(') {
+        // Disallow '(' directly after a digit or ')'
+        if (isDigit(last) || last === ')') return false;
+        return true;
+    }
+
+    // Closing parenthesis
+    if (char === ')') {
+        const openCount = (expression.match(/\(/g) || []).length;
+        const closeCount = (expression.match(/\)/g) || []).length;
+        // Must have a matching '('
+        if (openCount <= closeCount) return false;
+        // Disallow ')' after an operator or another '('
+        if (isOperator(last) || last === '(') return false;
+        return true;
+    }
+
+    // Anything else is rejected
+    return false;
 }
 
-/**
- * Removes the last character from the expression and updates the display.
- */
-function backspaceExpression() {
-    expression = expression.slice(0, -1);
-    updateDisplay(expression || '0');
+// Append a validated character to the expression
+function appendCharacter(char) {
+    if (errorState) return;
+    if (!validateAppend(char)) return;
+    expression += char;
+    updateDisplay(expression);
 }
 
-/**
- * Evaluates the current expression safely.
- * Handles sanitization, division‑by‑zero detection, and runtime errors.
- */
+// Evaluate the current expression safely
 function evaluateExpression() {
-    const sanitized = sanitizeExpression(expression);
+    if (errorState) return;
 
-    // Detect direct division by zero (e.g., /0, /0+)
-    if (/\/0(?![\.0-9])/.test(sanitized)) {
-        updateDisplay('Error: Division by zero');
+    // Replace Unicode multiplication/division symbols
+    let sanitized = expression.replace(/×/g, '*').replace(/÷/g, '/');
+
+    // Whitelist validation
+    const whitelist = /^[0-9+\-*/().\s]+$/;
+    if (!whitelist.test(sanitized)) {
+        updateDisplay('Error');
+        setErrorState(true);
         return;
     }
 
+    // Attempt evaluation
+    let result;
     try {
-        // Use Function constructor with strict mode to evaluate
-        const result = Function('"use strict";return (' + sanitized + ')')();
-
-        if (typeof result === 'number' && isFinite(result)) {
-            expression = result.toString();
-            updateDisplay(expression);
-        } else {
-            updateDisplay('Error');
-        }
+        // Using Function constructor for isolated evaluation
+        result = new Function('return ' + sanitized)();
     } catch (e) {
         updateDisplay('Error');
+        setErrorState(true);
+        return;
+    }
+
+    // Handle non-finite results
+    if (typeof result !== 'number' || !isFinite(result) || isNaN(result)) {
+        updateDisplay('Error');
+        setErrorState(true);
+        return;
+    }
+
+    // Display result and allow chaining
+    expression = result.toString();
+    updateDisplay(expression);
+    setErrorState(false);
+}
+
+// Click handler for calculator buttons
+function handleButtonClick(event) {
+    const btn = event.currentTarget;
+    const action = btn.dataset.action;
+    const value = btn.dataset.value;
+
+    switch (action) {
+        case 'digit':
+        case 'operator':
+        case 'decimal':
+        case 'parenthesis':
+            appendCharacter(value);
+            break;
+        case 'clear':
+            clearDisplay();
+            break;
+        case 'backspace':
+            backspace();
+            break;
+        case 'evaluate':
+            evaluateExpression();
+            break;
+        default:
+            break;
     }
 }
 
-/**
- * Sanitizes the expression:
- * - Replaces visual operators (×, ÷) with JavaScript equivalents.
- * - Removes any characters outside the whitelist.
- * - Collapses consecutive operators into the last one.
- * @param {string} expr
- * @returns {string}
- */
-function sanitizeExpression(expr) {
-    // Replace visual multiplication/division symbols
-    let sanitized = expr.replace(/[×÷]/g, m => (m === '×' ? '*' : '/'));
+// Keyboard handler for calculator shortcuts
+function handleKeyPress(event) {
+    const key = event.key;
 
-    // Keep only allowed characters
-    sanitized = sanitized.replace(/[^0-9.+\-*/()]/g, '');
+    // Map common keys to actions
+    if (key >= '0' && key <= '9') {
+        appendCharacter(key);
+        return;
+    }
 
-    // Collapse multiple consecutive operators into the last one
-    sanitized = sanitized.replace(/([+\-*/]){2,}/g, match => match[match.length - 1]);
+    if (key === '.' ) {
+        appendCharacter('.');
+        return;
+    }
 
-    return sanitized;
-}
+    if (key === '+' || key === '-' || key === '*' || key === '/' ) {
+        appendCharacter(key);
+        return;
+    }
 
-/**
- * Updates the calculator display.
- * @param {string} value
- */
-function updateDisplay(value) {
-    if (displayElement) {
-        displayElement.value = value;
+    if (key === '(' || key === ')') {
+        appendCharacter(key);
+        return;
+    }
+
+    if (key === 'Enter') {
+        event.preventDefault();
+        evaluateExpression();
+        return;
+    }
+
+    if (key === 'Backspace') {
+        event.preventDefault();
+        backspace();
+        return;
+    }
+
+    if (key === 'Escape') {
+        clearDisplay();
+        return;
     }
 }
 
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', initCalculator);
+// Attach event listeners
+buttons.forEach(btn => btn.addEventListener('click', handleButtonClick));
+document.addEventListener('keydown', handleKeyPress);
