@@ -1,246 +1,107 @@
-# Shift Scheduler Platform
+# Simple Web Calculator
 
-A full‑stack solution for managing retail store shift schedules.  
-The backend is a Node.js/Express API powered by PostgreSQL and Sequelize.  
-The frontend is a React application. An edge function (Bolt) processes batched SMS notifications.
+A lightweight, pure‑HTML/JavaScript/CSS calculator that runs entirely in the browser. No build step, no dependencies—just open **`index.html`** and start calculating.
 
 ---
 
 ## Table of Contents
 
-- [Architecture Overview](#architecture-overview)
-- [Prerequisites](#prerequisites)
-- [Setup & Installation](#setup--installation)
-  - [Backend](#backend)
-  - [Database](#database)
-  - [Edge Function](#edge-function)
-  - [Frontend (Client)](#frontend-client)
-- [Running the Application](#running-the-application)
-- [API Reference](#api-reference)
-- [Authentication & Authorization](#authentication--authorization)
-- [Scheduling Rules](#scheduling-rules)
-- [Testing](#testing)
-- [Continuous Integration](#continuous-integration)
-- [Contributing](#contributing)
+- [Features](#features)
+- [Installation / Usage](#installation--usage)
+- [File Overview](#file-overview)
+- [Keyboard Shortcuts](#keyboard-shortcuts)
+- [Testing Guide](#testing-guide)
+- [Known Limitations](#known-limitations)
 - [License](#license)
 
 ---
 
-## Architecture Overview
+## Features
 
-root
-├─ src
-│  ├─ config          # DB connection (Sequelize)
-│  ├─ models          # Store, Employee, Shift
-│  ├─ repositories    # Data‑access layer for each model
-│  ├─ services        # SchedulingService (core algorithms)
-│  ├─ controllers     # ScheduleController (REST endpoints)
-│  ├─ middleware      # JWT auth & role‑based ACL
-│  ├─ utils           # shiftValidator, notificationQueue
-│  ├─ edgeFunctions   # smsNotifier (Bolt edge function)
-│  └─ server.js       # Express entry point
-├─ migrations          # Sequelize migration files
-├─ seeds               # Seed data for stores & employees
-├─ client
-│  └─ src
-│     ├─ index.jsx               # React bootstrap
-│     ├─ api/api.js              # Axios wrapper with auth
-│     └─ components
-│        ├─ ManagerDashboard.jsx
-│        └─ EmployeeSchedule.jsx
-└─ README.md
+- Basic arithmetic: addition, subtraction, multiplication, division
+- Decimal numbers and chained operations
+- Clear (`C`) button and error handling (`Error` display)
+- Responsive layout – works on desktop and mobile browsers
+- Full keyboard support (digits, operators, `Enter`, `Esc`/`C`)
 
 ---
 
-## Prerequisites
+## Installation / Usage
 
-- **Node.js** >= 18.x
-- **npm** >= 9.x
-- **PostgreSQL** >= 13
-- **Bolt** CLI (for edge function deployment) – optional for local testing
-- **Git** (for version control)
+1. **Download / clone** the repository containing the four files:
+   - `index.html`
+   - `main.js`
+   - `style.css`
+   - `README.md`
 
----
+2. **Open** `index.html` in any modern browser (Chrome, Firefox, Edge, Safari).  
+   No server or additional tooling is required.
 
-## Setup & Installation
-
-### 1. Clone the Repository
-
-git clone https://github.com/your-org/shift-scheduler.git
-cd shift-scheduler
-
-### 2. Backend
-
-cd src
-npm ci
-
-#### Environment Variables
-
-Create a `.env` file in `src/` (or copy `.env.example` if provided):
-
-# Server
-PORT=3000
-
-# JWT
-JWT_SECRET=your-very-secret-key
-JWT_EXPIRES_IN=1d
-
-# PostgreSQL
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=shift_scheduler
-DB_USER=postgres
-DB_PASSWORD=your_db_password
-
-### 3. Database
-
-Ensure PostgreSQL is running and a database named `shift_scheduler` exists (or change `DB_NAME`).
-
-#### Run Migrations
-
-npx sequelize-cli db:migrate
-
-#### Seed Initial Data
-
-npx sequelize-cli db:seed:all
-
-### 4. Edge Function (SMS Notifier)
-
-The edge function lives in `src/edgeFunctions/smsNotifier.js`.  
-To test locally:
-
-cd src/edgeFunctions
-npm ci   # installs bolt edge runtime dependencies
-npm run dev   # starts a local edge function server (if a script is defined)
-
-For production deployment, use the Bolt CLI:
-
-bolt deploy src/edgeFunctions/smsNotifier.js --name sms-notifier
-
-### 5. Frontend (Client)
-
-cd ../../client
-npm ci
-
-Create a `.env` file in `client/` (React expects `REACT_APP_API_URL`):
-
-REACT_APP_API_URL=http://localhost:3000/api
+3. **Interact** with the calculator using the on‑screen buttons or the keyboard shortcuts listed below.
 
 ---
 
-## Running the Application
+## File Overview
 
-### Backend (API Server)
-
-# From the src directory
-npm run dev   # starts server with nodemon on PORT (default 3000)
-
-The API will be reachable at `http://localhost:3000/api`.
-
-### Frontend (React)
-
-# From the client directory
-npm start
-
-Open `http://localhost:3001` (or the port shown in the console) to view the UI.
-
-### Edge Function (SMS Notifier)
-
-Deploy as described above, or run locally with the provided script. The notification queue (`src/utils/notificationQueue.js`) automatically pushes messages; the edge function consumes them on a timed batch.
+| File | Purpose | Key Points |
+|------|---------|------------|
+| `index.html` | Defines the UI and loads the CSS/JS assets. | The display is a read‑only `<input>` with `id="display"`. Buttons use `data-value` attributes for easy wiring. |
+| `main.js` | Handles button clicks, keyboard events, expression building, validation, and evaluation. | - Sanitizes input to allow only digits, `.` and the four operators.<br>- Prevents consecutive operators and multiple decimals in a single number.<br>- Uses a whitelist regex before calling `Function` for safe evaluation.<br>- Shows `"Error"` for invalid expressions or division‑by‑zero. |
+| `style.css` | Provides a clean, responsive layout and visual feedback for button states. | Uses CSS Grid for the button matrix, ensures sufficient contrast, and adds a subtle hover/active effect. |
+| `README.md` | This documentation. | Explains usage, testing, and known limitations. |
 
 ---
 
-## API Reference
+## Keyboard Shortcuts
 
-All endpoints are prefixed with `/api`.
-
-| Method | Path | Role | Description |
-|--------|------|------|-------------|
-| `POST` | `/stores` | Manager | Create a new store |
-| `GET`  | `/stores` | Manager/Employee | List stores |
-| `POST` | `/employees` | Manager | Add an employee |
-| `GET`  | `/employees` | Manager/Employee | List employees |
-| `POST` | `/shifts` | Manager | Create a shift (validated by `shiftValidator`) |
-| `GET`  | `/shifts?storeId=&date=` | Manager/Employee | Retrieve shifts (filterable) |
-| `DELETE`| `/shifts/:id` | Manager | Remove a shift |
-| `POST` | `/auth/login` | — | Returns JWT (use `Authorization: Bearer <token>` header) |
-
-All request bodies and responses follow JSON format. Validation errors return `400` with an `errors` array.
+| Key | Action |
+|-----|--------|
+| `0` – `9` | Append digit |
+| `.` | Append decimal point |
+| `+` `-` `*` `/` | Append operator |
+| `Enter` or `=` | Evaluate expression |
+| `Esc` or `c` / `C` | Clear display |
+| *All other keys* | Ignored |
 
 ---
 
-## Authentication & Authorization
+## Testing Guide
 
-- **Authentication**: Header‑based JWT (`Authorization: Bearer <token>`). Tokens are issued by `/auth/login`.
-- **Authorization**: Middleware `src/middleware/auth.js` checks the `role` claim (`manager` or `associate`).  
-  - Managers can create, edit, and delete stores, employees, and shifts.  
-  - Associates can only read their own schedule (`GET /shifts?employeeId=`).
+Open the calculator in a browser and try the following cases. The **Display** column shows the expected result after pressing `=` (or `Enter`).
 
----
+| Test # | Input Sequence | Expected Display |
+|--------|----------------|------------------|
+| 1 | `2` `+` `3` `=` | `5` |
+| 2 | `7` `*` `8` `=` | `56` |
+| 3 | `9` `/` `3` `=` | `3` |
+| 4 | `5` `-` `2` `=` | `3` |
+| 5 | `1` `+` `2` `*` `3` `=` | `7` (standard left‑to‑right evaluation via JavaScript `eval` rules) |
+| 6 | `0` `.` `5` `+` `0` `.` `25` `=` | `0.75` |
+| 7 | `5` `/` `0` `=` | `Error` (division by zero) |
+| 8 | `+` `5` `=` | `Error` (invalid leading operator) |
+| 9 | `3` `.` `.` `1` `=` | `Error` (multiple decimals) |
+| 10 | `C` (or `Esc`) after any entry | Display cleared to empty |
 
-## Scheduling Rules
+**How to test:**
 
-Implemented in `src/utils/shiftValidator.js` and enforced by `SchedulingService`:
-
-1. **Maximum Shifts per Week** – Configurable (default 5).  
-2. **No Overlapping Shifts** – Start/End times must not intersect.  
-3. **No Consecutive Days** – Employees must have at least one day off between shifts.  
-
-Violations result in a `400` response with a descriptive error message.
-
----
-
-## Testing
-
-### Backend Tests
-
-cd src
-npm test
-
-Tests cover:
-
-- Model definitions & associations
-- Repository CRUD operations
-- SchedulingService logic
-- ShiftValidator edge cases
-- Auth middleware role enforcement
-- Controller route integration (using supertest)
-
-### Frontend Tests
-
-cd ../../client
-npm test
-
-React components are tested with Jest & React Testing Library.
+1. Click the buttons **or** use the keyboard shortcuts.
+2. Verify that the display matches the **Expected Display** column.
+3. For error cases, the display should show exactly the word `Error`.
 
 ---
 
-## Continuous Integration
+## Known Limitations
 
-A GitHub Actions workflow (`.github/workflows/ci.yml`) runs on every push:
-
-1. **Lint** – `npm run lint` (ESLint + Prettier).  
-2. **Unit Tests** – Backend and client.  
-3. **Build** – Creates production bundles (`npm run build`).  
-4. **Docker** – Builds a multi‑stage Docker image for deployment.
-
-The workflow fails on linting errors, failing tests, or build issues, ensuring only production‑ready code is merged.
-
----
-
-## Contributing
-
-1. Fork the repository.  
-2. Create a feature branch (`git checkout -b feat/your-feature`).  
-3. Write code following the existing style (ES6 modules, async/await, strict mode).  
-4. Add/extend tests for new functionality.  
-5. Run the full CI locally (`npm run ci`).  
-6. Submit a Pull Request with a clear description and reference to the related issue (e.g., `AI-5`).
-
-Please adhere to the **Code of Conduct** located in `CODE_OF_CONDUCT.md`.
+- The evaluator uses JavaScript's `Function` constructor with a strict whitelist; it does **not** support parentheses or advanced functions (e.g., `Math.sin`).
+- Operator precedence follows JavaScript's native rules (multiplication/division before addition/subtraction). Parentheses are intentionally omitted to keep the implementation simple.
+- The calculator does not retain history; each evaluation replaces the current expression.
 
 ---
 
 ## License
 
-This project is licensed under the **MIT License** – see the `LICENSE` file for details.
+This project is released under the **MIT License**. Feel free to copy, modify, and distribute it as you wish.
+
+--- 
+
+*Enjoy the calculator!*
