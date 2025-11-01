@@ -1,94 +1,70 @@
-/* Root settings */
-:root {
-    font-size: 16px;
-}
-
-/* Global box-sizing */
-*, *::before, *::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
-
-/* Body layout */
-body {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    background: #f0f0f0;
-    font-family: Arial, Helvetica, sans-serif;
+/* Root font size for responsive scaling */
+html {
+    font-size: 100%; /* 16px default, scales with user settings */
 }
 
 /* Calculator container */
-.calculator {
-    width: 100%;
+#calculator {
     max-width: 400px;
-    background: #ffffff;
+    margin: 0 auto;
     padding: 1rem;
-    border-radius: 0.5rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
 }
 
-/* Display */
+/* Display area */
 #display {
     width: 100%;
-    font-size: 2rem;
+    height: 3rem;
+    font-size: 1.5rem;
     text-align: right;
-    padding: 0.5rem;
-    border: 1px solid #ccc;
-    border-radius: 0.25rem;
-    background: #eaeaea;
     margin-bottom: 0.5rem;
+    padding: 0.5rem;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #fff;
     overflow-x: auto;
 }
 
-/* Button grid */
+/* Button grid layout */
 .button-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 0.5rem;
 }
 
-/* Individual buttons */
-.btn {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 3rem;
-    font-size: 1.25rem;
-    background: #e0e0e0;
+/* Default button styling */
+.button-grid button {
+    font-size: 1.2rem;
+    padding: 1rem;
     border: none;
-    border-radius: 0.25rem;
+    border-radius: 4px;
+    background-color: #f0f0f0;
     cursor: pointer;
-    transition: background 0.2s ease, transform 0.1s ease;
+    transition: background-color 0.1s ease;
 }
 
-.btn:hover {
-    background: #d5d5d5;
+/* Button active state */
+.button-grid button:active {
+    background-color: #d0d0d0;
 }
 
-.btn:active {
-    background: #c0c0c0;
-    transform: scale(0.95);
+/* Clear button */
+.button-grid button[data-action="clear"] {
+    background-color: #ff6666;
+    color: #fff;
 }
 
-/* Disabled state */
-.btn.disabled {
-    background: #bbb;
-    color: #777;
-    cursor: not-allowed;
-    pointer-events: none;
+/* Evaluate (=) button */
+.button-grid button[data-action="evaluate"] {
+    background-color: #66cc66;
+    color: #fff;
 }
 
-/* Responsive adjustments for small screens */
-@media (max-width: 399px) {
-    .button-grid {
-        gap: 0.25rem;
-    }
-
-    .btn {
-        height: 2.5rem;
+/* Responsive adjustments for smaller screens */
+@media (max-width: 600px) {
+    .button-grid button {
+        padding: 0.8rem;
         font-size: 1rem;
     }
 }
