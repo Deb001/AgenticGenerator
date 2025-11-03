@@ -1,215 +1,287 @@
 // main.js - Calculator logic
 
-let currentExpression = "";
-let displayElement = null;
+(() => {
+  'use strict';
 
-/**
- * Initialize calculator: cache DOM elements and register listeners.
- */
-function initCalculator() {
-  document.addEventListener("DOMContentLoaded", () => {
-    displayElement = document.getElementById("display");
-    const buttonContainer = document.querySelector(".button-grid");
-    if (buttonContainer) {
-      buttonContainer.addEventListener("click", handleButtonClick);
-    }
-    document.addEventListener("keydown", handleKeyPress);
-  });
-}
+  /** @type {string} Holds the current arithmetic expression */
+  let expressionBuffer = '';
 
-/**
- * Handle click events from calculator buttons using event delegation.
- * @param {MouseEvent} event
- */
-function handleButtonClick(event) {
-  const btn = event.target.closest("button");
-  if (!btn) return;
+  /** @type {HTMLInputElement|null} Cached reference to the display */
+  let displayEl = null;
 
-  const value = btn.dataset.value;
-  const action = btn.dataset.action;
+  /** Initialize the calculator once DOM is ready */
+  function init() {
+    displayEl = document.querySelector('#display');
+    if (!displayEl) return;
 
-  if (value !== undefined) {
-    appendToExpression(value);
-  } else if (action) {
-    if (action === "clear") {
-      clearDisplay();
-    } else if (action === "evaluate") {
-      evaluateExpression();
+    // Attach click listeners to all calculator buttons
+    const buttons = document.querySelectorAll('.calc-button');
+    buttons.forEach(btn => btn.addEventListener('click', handleButtonClick));
+
+    // Keyboard support
+    document.addEventListener('keydown', handleKeyPress);
+  }
+
+  /** Click handler for calculator buttons */
+  function handleButtonClick(event) {
+    const btn = /** @type {HTMLElement} */ (event.currentTarget);
+    const value = btn.getAttribute('data-value');
+    if (value !== null) {
+      processInput(value);
     }
   }
-}
 
-/**
- * Append a token (digit, operator, parenthesis, or decimal) to the expression.
- * Performs basic validation to avoid malformed input.
- * @param {string} token
- */
-function appendToExpression(token) {
-  if (!displayElement) return;
+  /** Keyboard handler */
+  function handleKeyPress(event) {
+    const key = event.key;
 
-  const operators = /[+\-*/]/;
-  const lastChar = currentExpression.slice(-1);
+    // Map keys to calculator values
+    const keyMap = {
+      'Enter': '=',
+      '=': '=',
+      'Escape': 'C',
+      'c': 'C',
+      'C': 'C',
+      'Backspace': '←',
+      'Delete': '←',
+      '*': '×',
+      '/': '÷',
+      '+': '+',
+      '-': '-',
+      '.': '.',
+      ',': '.', // some keyboards
+      '0': '0',
+      '1': '1',
+      '2': '2',
+      '3': '3',
+      '4': '4',
+      '5': '5',
+      '6': '6',
+      '7': '7',
+      '8': '8',
+      '9': '9'
+    };
 
-  // Operator handling
-  if (operators.test(token)) {
-    if (currentExpression === "" || operators.test(lastChar) || lastChar === "(") {
-      return; // prevent consecutive operators or starting with operator
+    if (keyMap.hasOwnProperty(key)) {
+      event.preventDefault();
+      processInput(keyMap[key]);
     }
-    currentExpression += token;
-    updateDisplay();
-    return;
   }
 
-  // Decimal point handling
-  if (token === ".") {
-    const lastNumber = currentExpression.split(/[+\-*/()]/).pop() || "";
-    if (lastNumber.includes(".")) return; // only one decimal per number
-    // Prevent leading decimal without a preceding digit (optional, allow)
-    currentExpression += token;
-    updateDisplay();
-    return;
-  }
-
-  // Parentheses handling
-  if (token === "(") {
-    // Allow '(' after operator or at start
-    if (currentExpression && !operators.test(lastChar) && lastChar !== "(") {
-      // Implicit multiplication (e.g., 2(3) -> 2*(3))
-      currentExpression += "*";
+  /** Core input processor */
+  function processInput(value) {
+    switch (value) {
+      case 'C':
+        clearDisplay();
+        break;
+      case '←':
+        deleteLastChar();
+        break;
+      case '=':
+        evaluateExpression();
+        break;
+      default:
+        if (isDigit(value) || value === '.') {
+          handleDigitOrDecimal(value);
+        } else if (isOperator(value)) {
+          handleOperator(value);
+        }
+        // ignore any other characters
     }
-    currentExpression += token;
-    updateDisplay();
-    return;
   }
 
-  if (token === ")") {
-    const openCount = (currentExpression.match(/\(/g) || []).length;
-    const closeCount = (currentExpression.match(/\)/g) || []).length;
-    if (closeCount >= openCount) return; // unbalanced
-    if (operators.test(lastChar) || lastChar === "(") return; // cannot close after operator or '('
-    currentExpression += token;
-    updateDisplay();
-    return;
+  /** Append digit or decimal point with validation */
+  function handleDigitOrDecimal(char) {
+    if (char === '.') {
+      const lastNumber = getCurrentNumber();
+      if (lastNumber.includes('.')) return; // prevent multiple decimals
+      // allow leading decimal (e.g., ".5")
+    }
+    expressionBuffer += char;
+    updateDisplay(expressionBuffer);
   }
 
-  // Digits (0-9)
-  if (/[0-9]/.test(token)) {
-    currentExpression += token;
-    updateDisplay();
-    return;
-  }
-}
-
-/**
- * Clear the calculator display and reset the current expression.
- */
-function clearDisplay() {
-  currentExpression = "";
-  if (displayElement) displayElement.value = "";
-}
-
-/**
- * Evaluate the current arithmetic expression safely.
- */
-function evaluateExpression() {
-  if (!displayElement) return;
-
-  const sanitized = sanitizeExpression(currentExpression);
-  if (!isValidExpression(sanitized)) {
-    displayError();
-    return;
-  }
-
-  try {
-    // eslint-disable-next-line no-new-func
-    const result = Function(`"use strict"; return (${sanitized})`)();
-    if (!isFinite(result)) {
-      displayError("Error: Division by zero");
+  /** Append operator with validation */
+  function handleOperator(op) {
+    if (expressionBuffer.length === 0) {
+      // Disallow starting with an operator except minus for negative numbers
+      if (op === '-') {
+        expressionBuffer += op;
+        updateDisplay(expressionBuffer);
+      }
       return;
     }
-    displayElement.value = result;
-    currentExpression = result.toString();
-  } catch {
-    displayError();
+    const lastChar = expressionBuffer[expressionBuffer.length - 1];
+    if (isOperator(lastChar) || lastChar === '.') return; // prevent consecutive operators or operator after decimal
+    expressionBuffer += op;
+    updateDisplay(expressionBuffer);
   }
-}
 
-/**
- * Handle keyboard input, mapping keys to calculator actions.
- * @param {KeyboardEvent} event
- */
-function handleKeyPress(event) {
-  const key = event.key;
-
-  if (key >= "0" && key <= "9") {
-    appendToExpression(key);
-    event.preventDefault();
-  } else if (["+", "-", "*", "/"].includes(key)) {
-    appendToExpression(key);
-    event.preventDefault();
-  } else if (key === ".") {
-    appendToExpression(".");
-    event.preventDefault();
-  } else if (key === "(") {
-    appendToExpression("(");
-    event.preventDefault();
-  } else if (key === ")") {
-    appendToExpression(")");
-    event.preventDefault();
-  } else if (key === "Enter" || key === "=") {
-    evaluateExpression();
-    event.preventDefault();
-  } else if (key === "Escape" || key === "c" || key === "C") {
-    clearDisplay();
-    event.preventDefault();
+  /** Returns the substring after the last operator (or whole buffer) */
+  function getCurrentNumber() {
+    const operators = /[+\-*/×÷]/;
+    const parts = expressionBuffer.split(operators);
+    return parts[parts.length - 1] || '';
   }
-}
 
-/**
- * Remove any characters not allowed in the arithmetic expression.
- * @param {string} expr
- * @returns {string}
- */
-function sanitizeExpression(expr) {
-  return expr.replace(/[^0-9.+\-*/()]/g, "").replace(/\s+/g, "");
-}
-
-/**
- * Validate the expression against a whitelist regex and balanced parentheses.
- * @param {string} expr
- * @returns {boolean}
- */
-function isValidExpression(expr) {
-  const whitelist = /^[0-9.+\-*/()]+$/;
-  if (!whitelist.test(expr)) return false;
-
-  // Parentheses balance check
-  let balance = 0;
-  for (const ch of expr) {
-    if (ch === "(") balance++;
-    else if (ch === ")") {
-      balance--;
-      if (balance < 0) return false;
+  /** Update the read‑only display */
+  function updateDisplay(content) {
+    if (displayEl) {
+      displayEl.value = content;
     }
   }
-  return balance === 0;
-}
 
-/**
- * Display an error message and reset the expression.
- * @param {string} [msg="Error"]
- */
-function displayError(msg = "Error") {
-  if (displayElement) displayElement.value = msg;
-  currentExpression = "";
-}
+  /** Clear everything */
+  function clearDisplay() {
+    expressionBuffer = '';
+    updateDisplay('');
+  }
 
-/**
- * Update the calculator display with the current expression.
- */
-function updateDisplay() {
-  if (displayElement) displayElement.value = currentExpression;
-}
+  /** Delete the last character */
+  function deleteLastChar() {
+    if (expressionBuffer.length === 0) return;
+    expressionBuffer = expressionBuffer.slice(0, -1);
+    updateDisplay(expressionBuffer);
+  }
 
-// Kick off the initialization
-initCalculator();
+  /** Evaluate the current expression safely */
+  function evaluateExpression() {
+    if (expressionBuffer.length === 0) return;
+
+    // Replace visual operators with JS equivalents
+    let sanitized = expressionBuffer.replace(/×/g, '*').replace(/÷/g, '/');
+
+    // Allow only digits, operators, decimal point
+    if (!/^[0-9+\-*/.]+$/.test(sanitized)) {
+      showError('Error');
+      return;
+    }
+
+    try {
+      const rpn = infixToRPN(sanitized);
+      const result = evaluateRPN(rpn);
+      if (!isFinite(result)) {
+        showError('Error: Division by zero');
+        return;
+      }
+      const resultStr = Number.isInteger(result) ? result.toString() : result.toFixed(10).replace(/\.?0+$/, '');
+      expressionBuffer = resultStr;
+      updateDisplay(resultStr);
+    } catch (e) {
+      showError('Error');
+    }
+  }
+
+  /** Display error and reset buffer */
+  function showError(message) {
+    updateDisplay(message);
+    expressionBuffer = '';
+  }
+
+  /** Utility: check if character is an operator */
+  function isOperator(char) {
+    return ['+', '-', '*', '/', '×', '÷'].includes(char);
+  }
+
+  /** Utility: check if character is a digit */
+  function isDigit(char) {
+    return /^[0-9]$/.test(char);
+  }
+
+  /** Convert infix expression string to Reverse Polish Notation (Shunting‑Yard) */
+  function infixToRPN(expr) {
+    const outputQueue = [];
+    const operatorStack = [];
+
+    const precedence = {
+      '+': 1,
+      '-': 1,
+      '*': 2,
+      '/': 2
+    };
+
+    const associativity = {
+      '+': 'Left',
+      '-': 'Left',
+      '*': 'Left',
+      '/': 'Left'
+    };
+
+    // Tokenize numbers and operators
+    const tokens = expr.match(/(\d+\.?\d*|\.\d+|[+\-*/])/g);
+    if (!tokens) throw new Error('Tokenization failed');
+
+    for (const token of tokens) {
+      if (isNumeric(token)) {
+        outputQueue.push(token);
+      } else if (isOperator(token)) {
+        while (
+          operatorStack.length &&
+          isOperator(operatorStack[operatorStack.length - 1]) &&
+          ((associativity[token] === 'Left' && precedence[token] <= precedence[operatorStack[operatorStack.length - 1]]) ||
+            (associativity[token] === 'Right' && precedence[token] < precedence[operatorStack[operatorStack.length - 1]]))
+        ) {
+          outputQueue.push(operatorStack.pop());
+        }
+        operatorStack.push(token);
+      } else {
+        throw new Error('Invalid token');
+      }
+    }
+
+    while (operatorStack.length) {
+      const op = operatorStack.pop();
+      if (!isOperator(op)) throw new Error('Mismatched parentheses');
+      outputQueue.push(op);
+    }
+
+    return outputQueue;
+  }
+
+  /** Evaluate RPN expression */
+  function evaluateRPN(rpn) {
+    const stack = [];
+
+    for (const token of rpn) {
+      if (isNumeric(token)) {
+        stack.push(parseFloat(token));
+      } else if (isOperator(token)) {
+        if (stack.length < 2) throw new Error('Insufficient values');
+        const b = stack.pop();
+        const a = stack.pop();
+        let res;
+        switch (token) {
+          case '+':
+            res = a + b;
+            break;
+          case '-':
+            res = a - b;
+            break;
+          case '*':
+            res = a * b;
+            break;
+          case '/':
+            if (b === 0) throw new Error('Division by zero');
+            res = a / b;
+            break;
+          default:
+            throw new Error('Unknown operator');
+        }
+        stack.push(res);
+      } else {
+        throw new Error('Invalid RPN token');
+      }
+    }
+
+    if (stack.length !== 1) throw new Error('RPN evaluation error');
+    return stack[0];
+  }
+
+  /** Helper to test numeric strings */
+  function isNumeric(str) {
+    return /^-?\d+(\.\d+)?$/.test(str);
+  }
+
+  // Register init on DOMContentLoaded
+  document.addEventListener('DOMContentLoaded', init);
+})();
