@@ -1,12 +1,12 @@
-/* Root font size for responsive scaling */
-html {
+/* Root font size for mobile friendliness */
+:root {
     font-size: 100%; /* 16px default, scales with user settings */
 }
 
 /* Calculator container */
 #calculator {
     max-width: 400px;
-    margin: 0 auto;
+    margin: auto;
     padding: 1rem;
     box-sizing: border-box;
 }
@@ -14,16 +14,13 @@ html {
 /* Display area */
 #display {
     width: 100%;
-    height: 3rem;
-    font-size: 1.5rem;
+    font-size: 2rem;
     text-align: right;
-    margin-bottom: 0.5rem;
     padding: 0.5rem;
-    box-sizing: border-box;
     border: 1px solid #ccc;
     border-radius: 4px;
-    background-color: #fff;
-    overflow-x: auto;
+    background-color: #fafafa;
+    box-sizing: border-box;
 }
 
 /* Button grid layout */
@@ -31,40 +28,31 @@ html {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 0.5rem;
+    margin-top: 1rem;
 }
 
-/* Default button styling */
-.button-grid button {
-    font-size: 1.2rem;
+/* Individual calculator buttons */
+.calc-button {
+    font-size: 1.5rem;
     padding: 1rem;
+    min-height: 60px;
     border: none;
     border-radius: 4px;
-    background-color: #f0f0f0;
+    background-color: #e0e0e0;
     cursor: pointer;
-    transition: background-color 0.1s ease;
+    transition: background-color 0.2s;
 }
 
-/* Button active state */
-.button-grid button:active {
+.calc-button:hover,
+.calc-button:focus {
     background-color: #d0d0d0;
 }
 
-/* Clear button */
-.button-grid button[data-action="clear"] {
-    background-color: #ff6666;
-    color: #fff;
-}
-
-/* Evaluate (=) button */
-.button-grid button[data-action="evaluate"] {
-    background-color: #66cc66;
-    color: #fff;
-}
-
-/* Responsive adjustments for smaller screens */
-@media (max-width: 600px) {
-    .button-grid button {
-        padding: 0.8rem;
-        font-size: 1rem;
+/* Media query for very small screens – increase touch targets */
+@media (max-width: 400px) {
+    .calc-button {
+        padding: 1.5rem;
+        min-height: 80px;
+        font-size: 1.75rem;
     }
 }
