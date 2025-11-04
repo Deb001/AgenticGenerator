@@ -1,25 +1,66 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Simple Calculator</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<title>Simple Calculator</title>
+<style>
+body{font-family:sans-serif;margin:2rem;}
+label{display:block;margin-top:0.5rem;}
+#result{margin-top:1rem;font-weight:bold;}
+</style>
 </head>
 <body>
-    <main class="calculator">
-        <h1>Calculator</h1>
-        <div class="inputs">
-            <input type="number" id="operand1" placeholder="First number" />
-            <input type="number" id="operand2" placeholder="Second number" />
-        </div>
-        <div class="operations">
-            <button data-op="+">+</button>
-            <button data-op="-">−</button>
-            <button data-op="*">×</button>
-            <button data-op="/">÷</button>
-        </div>
-        <div id="result" class="result"></div>
-    </main>
-    <script src="script.js" defer></script>
+<h1>Calculator</h1>
+<form id="calcForm">
+<label>First number:
+<input type="text" id="num1" required>
+</label>
+<label>Operator:
+<select id="operator">
+<option value="+">+</option>
+<option value="-">-</option>
+<option value="*">*</option>
+<option value="/">/</option>
+</select>
+</label>
+<label>Second number:
+<input type="text" id="num2" required>
+</label>
+<button type="submit">Calculate</button>
+</form>
+<div id="result"></div>
+<script>
+const operatorMap = {
+  '+': (a, b) => a + b,
+  '-': (a, b) => a - b,
+  '*': (a, b) => a * b,
+  '/': (a, b) => a / b
+};
+function displayResult(result) {
+  document.getElementById('result').innerText = result;
+}
+function calculate(event) {
+  event.preventDefault();
+  const num1 = parseFloat(document.getElementById('num1').value);
+  const num2 = parseFloat(document.getElementById('num2').value);
+  const op = document.getElementById('operator').value;
+  if (isNaN(num1) || isNaN(num2)) {
+    displayResult('Invalid input');
+    return;
+  }
+  if (op === '/' && num2 === 0) {
+    displayResult('Error: Division by zero');
+    return;
+  }
+  const operation = operatorMap[op];
+  if (!operation) {
+    displayResult('Invalid operator');
+    return;
+  }
+  const result = operation(num1, num2);
+  displayResult(result.toString());
+}
+document.getElementById('calcForm').addEventListener('submit', calculate);
+</script>
 </body>
 </html>
