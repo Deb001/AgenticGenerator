@@ -1,40 +1,64 @@
 # Simple Web Calculator
 
 ## Overview
-A minimal web‑based calculator that performs basic arithmetic operations (addition, subtraction, multiplication, division). It runs entirely in the browser, requiring no server or additional dependencies.
+This project provides a minimal, single‑file web calculator implemented with HTML, inline CSS, and JavaScript. The calculator accepts two numeric inputs and offers buttons for addition (`+`), subtraction (`-`), multiplication (`×`), and division (`÷`). All calculations are performed client‑side, and the result is displayed instantly. Basic input validation and divide‑by‑zero handling are included.
 
-## Files
-- **index.html** – The entry point containing the UI, minimal styling, and JavaScript logic.
-- **test_report.txt** – A one‑page summary of test cases, expected results, actual results, and pass/fail status.
-- **README.md** – This documentation.
+## File Structure
+/ (root)
+│
+├─ demo.html      # The calculator UI, styling, and logic in one file
+├─ test_log.txt   # Log of functional tests (pass/fail)
+└─ README.md      # This documentation
 
-## Installation
-1. Clone or download the repository.
-2. No build steps are required. All files are static.
+## demo.html
+- **HTML**: Two `<input type="text">` fields for numbers, four operation buttons, and a `<div>` to show the result.
+- **CSS (inline)**: Simple, responsive layout with clear visual feedback.
+- **JavaScript (inline)**: 
+  - Parses input values as floats.
+  - Validates that both inputs are numeric.
+  - Handles each operation, including a specific check for division by zero.
+  - Updates the result display with either the computed value or an error message.
 
-## Running the Calculator
-1. Open `index.html` in any modern web browser (Chrome, Firefox, Edge, Safari).
-2. Enter two numbers and select an operator (`+`, `-`, `*`, `/`) or type a simple expression (e.g., `3+4`).
-3. Click **Calculate**.
-4. The result appears below the button. If division by zero is attempted, an error message is shown.
+Open `demo.html` in any modern browser (Chrome, Firefox, Edge, Safari) to use the calculator.
 
-## Test Report
-The file `test_report.txt` contains the results of the following validation cases:
+## test_log.txt
+The test log records the outcome of the following functional tests:
 
-| Test | Input | Expected | Actual | Status |
-|------|-------|----------|--------|--------|
-| 1 | 2 + 2 | 4 | 4 | Pass |
-| 2 | 5 - 3 | 2 | 2 | Pass |
-| 3 | 4 * 6 | 24 | 24 | Pass |
-| 4 | 8 / 2 | 4 | 4 | Pass |
-| 5 | 7 / 0 | Error (division by zero) | Error (division by zero) | Pass |
+| Test Case                     | Expected Result | Pass/Fail |
+|-------------------------------|-----------------|-----------|
+| Addition (2 + 3)              | 5               | Pass |
+| Subtraction (5 - 2)           | 3               | Pass |
+| Multiplication (4 × 3)        | 12              | Pass |
+| Division (10 ÷ 2)             | 5               | Pass |
+| Division by zero (5 ÷ 0)      | “Error: Division by zero” | Pass |
+| Non‑numeric input (“a”, 2)    | “Error: Invalid input”    | Pass |
 
-Review `test_report.txt` for the full details.
+The log file is plain text and can be opened with any text editor.
+
+## Usage
+1. **Open** `demo.html` in a web browser.
+2. **Enter** numbers in the two input fields.
+3. **Click** the desired operation button.
+4. **View** the result or error message below the buttons.
+
+## Testing
+To verify the calculator works as intended:
+
+1. Open `demo.html` in a browser.
+2. Perform the test cases listed in `test_log.txt`.
+3. Compare the displayed results with the expected outcomes.
+4. Update `test_log.txt` if you add new test cases.
 
 ## Troubleshooting
-- **Result shows “Error”** – This occurs when dividing by zero or when the input cannot be parsed as a valid arithmetic expression.
-- **Calculator does not respond** – Ensure JavaScript is enabled in your browser.
-- **Unexpected output** – Verify that only numbers and the supported operators are used; spaces are ignored.
+- **Result shows “Error: Invalid input”**  
+  Ensure both fields contain valid numbers (no letters, symbols, or empty strings).
+
+- **Result shows “Error: Division by zero”**  
+  The divisor (second input) must not be zero for division operations.
+
+- **Calculator does not respond**  
+  - Verify JavaScript is enabled in your browser.  
+  - Check the browser console for any script errors.
 
 ## License
-This project is released into the public domain. Feel free to use, modify, and distribute it without restriction.
+This project is released into the public domain. Feel free to copy, modify, and distribute it without restriction.
