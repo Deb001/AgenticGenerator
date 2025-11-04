@@ -2,35 +2,24 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculator</title>
+    <title>Simple Calculator</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="calculator">
-        <input id="display" type="text" aria-label="Calculator display" readonly>
-        <button class="calc-button" type="button" data-value="7" aria-label="Digit 7">7</button>
-        <button class="calc-button" type="button" data-value="8" aria-label="Digit 8">8</button>
-        <button class="calc-button" type="button" data-value="9" aria-label="Digit 9">9</button>
-        <button class="calc-button" type="button" data-value="/" aria-label="Divide">÷</button>
-
-        <button class="calc-button" type="button" data-value="4" aria-label="Digit 4">4</button>
-        <button class="calc-button" type="button" data-value="5" aria-label="Digit 5">5</button>
-        <button class="calc-button" type="button" data-value="6" aria-label="Digit 6">6</button>
-        <button class="calc-button" type="button" data-value="*" aria-label="Multiply">×</button>
-
-        <button class="calc-button" type="button" data-value="1" aria-label="Digit 1">1</button>
-        <button class="calc-button" type="button" data-value="2" aria-label="Digit 2">2</button>
-        <button class="calc-button" type="button" data-value="3" aria-label="Digit 3">3</button>
-        <button class="calc-button" type="button" data-value="-" aria-label="Subtract">−</button>
-
-        <button class="calc-button" type="button" data-value="0" aria-label="Digit 0">0</button>
-        <button class="calc-button" type="button" data-value="." aria-label="Decimal point">.</button>
-        <button class="calc-button" type="button" data-value="C" aria-label="Clear">C</button>
-        <button class="calc-button" type="button" data-value="+" aria-label="Add">+</button>
-
-        <button class="calc-button" type="button" data-value="=" aria-label="Equals" style="grid-column: span 4;">=</button>
-    </div>
-    <script src="main.js" defer></script>
+    <main class="calculator">
+        <h1>Calculator</h1>
+        <div class="inputs">
+            <input type="number" id="operand1" placeholder="First number" />
+            <input type="number" id="operand2" placeholder="Second number" />
+        </div>
+        <div class="operations">
+            <button data-op="+">+</button>
+            <button data-op="-">−</button>
+            <button data-op="*">×</button>
+            <button data-op="/">÷</button>
+        </div>
+        <div id="result" class="result"></div>
+    </main>
+    <script src="script.js" defer></script>
 </body>
 </html>
