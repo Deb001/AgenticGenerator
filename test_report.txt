@@ -1,0 +1,37 @@
+Test Report – Simple Web Calculator
+Date: 2025-11-04
+
+Test Cases Executed
+-------------------
+1. Expression: 2 + 2
+   Expected Result: 4
+   Actual Result:   4
+   Status:          PASS
+
+2. Expression: 5 - 3
+   Expected Result: 2
+   Actual Result:   2
+   Status:          PASS
+
+3. Expression: 4 * 6
+   Expected Result: 24
+   Actual Result:   24
+   Status:          PASS
+
+4. Expression: 8 / 2
+   Expected Result: 4
+   Actual Result:   4
+   Status:          PASS
+
+5. Expression: 10 / 0
+   Expected Result: Error – Division by zero
+   Actual Result:   Error – Division by zero
+   Status:          PASS
+
+Summary
+-------
+Total Tests Run: 5
+Passed:          5
+Failed:          0
+
+All test cases passed successfully. The calculator correctly handles addition, subtraction, multiplication, division, and division‑by‑zero error handling.
