@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Simple Calculator</title>
+<style>
+body {font-family:Arial, sans-serif; margin:20px;}
+.container {max-width:300px; margin:auto;}
+input[type="text"] {width:100%; padding:8px; margin:5px 0; box-sizing:border-box;}
+button {width:48%; padding:10px; margin:5px 1%; font-size:16px;}
+#result {font-weight:bold; display:block; margin-top:10px;}
+#errorMessage {color:red; margin-top:10px;}
+</style>
+</head>
+<body>
+<div class="container">
+<h2>Calculator</h2>
+<input type="text" id="input1" placeholder="First number">
+<input type="text" id="input2" placeholder="Second number">
+<div>
+<button onclick="calculate('add')">+</button>
+<button onclick="calculate('subtract')">−</button>
+<button onclick="calculate('multiply')">×</button>
+<button onclick="calculate('divide')">÷</button>
+</div>
+<span id="result"></span>
+<div id="errorMessage"></div>
+</div>
+<script>
+function validateInput(value) {
+  var num = Number(value);
+  return typeof num === 'number' && isFinite(num);
+}
+function displayResult(result) {
+  var resultEl = document.getElementById('result');
+  var errorEl = document.getElementById('errorMessage');
+  resultEl.textContent = 'Result: ' + result;
+  errorEl.textContent = '';
+}
+function displayError(message) {
+  var resultEl = document.getElementById('result');
+  var errorEl = document.getElementById('errorMessage');
+  errorEl.textContent = message;
+  resultEl.textContent = '';
+}
+function calculate(operation) {
+  var val1 = document.getElementById('input1').value.trim();
+  var val2 = document.getElementById('input2').value.trim();
+  if (!validateInput(val1) || !validateInput(val2)) {
+    displayError('Please enter valid numbers.');
+    return;
+  }
+  var num1 = Number(val1);
+  var num2 = Number(val2);
+  var result;
+  switch (operation) {
+    case 'add':
+      result = num1 + num2;
+      break;
+    case 'subtract':
+      result = num1 - num2;
+      break;
+    case 'multiply':
+      result = num1 * num2;
+      break;
+    case 'divide':
+      if (num2 === 0) {
+        displayError('Cannot divide by zero.');
+        return;
+      }
+      result = num1 / num2;
+      break;
+    default:
+      displayError('Unknown operation.');
+      return;
+  }
+  displayResult(result);
+}
+document.addEventListener('DOMContentLoaded', function(){});
+</script>
+</body>
+</html>
