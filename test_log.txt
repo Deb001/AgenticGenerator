@@ -1,0 +1,6 @@
+Addition (2 + 3) => 5 : PASS
+Subtraction (5 - 2) => 3 : PASS
+Multiplication (4 × 6) => 24 : PASS
+Division (8 ÷ 2) => 4 : PASS
+Division by zero (7 ÷ 0) => Error handled : PASS
+Non-numeric input ("a" + 3) => Validation error : PASS
