@@ -1,25 +1,124 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Simple Calculator</title>
-  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 2rem;
+    }
+    .calculator {
+      max-width: 400px;
+      padding: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    .field {
+      margin-bottom: 1rem;
+    }
+    label {
+      display: block;
+      margin-bottom: 0.3rem;
+    }
+    input[type="number"] {
+      width: 100%;
+      padding: 0.5rem;
+      box-sizing: border-box;
+    }
+    .operations {
+      margin-bottom: 1rem;
+    }
+    .operations label {
+      margin-right: 1rem;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+    }
+    #result {
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+  </style>
+  <script src="calculator.js"></script>
 </head>
 <body>
   <div class="calculator">
-    <h1>Calculator</h1>
-    <input type="number" id="operand1" placeholder="First number" required>
-    <select id="operation" required>
-      <option value="add">Add (+)</option>
-      <option value="subtract">Subtract (−)</option>
-      <option value="multiply">Multiply (×)</option>
-      <option value="divide">Divide (÷)</option>
-    </select>
-    <input type="number" id="operand2" placeholder="Second number" required>
-    <button type="button" onclick="Calculator.handleCalculate()">Calculate</button>
+    <h2>Calculator</h2>
+    <div class="field">
+      <label for="num1">First Number:</label>
+      <input type="number" id="num1" step="any" />
+    </div>
+    <div class="field">
+      <label for="num2">Second Number:</label>
+      <input type="number" id="num2" step="any" />
+    </div>
+    <div class="operations">
+      <label><input type="radio" name="operation" value="add" checked /> Add</label>
+      <label><input type="radio" name="operation" value="subtract" /> Subtract</label>
+      <label><input type="radio" name="operation" value="multiply" /> Multiply</label>
+      <label><input type="radio" name="operation" value="divide" /> Divide</label>
+    </div>
+    <button id="calcBtn">Calculate</button>
     <div id="result"></div>
   </div>
-  <script src="script.js" defer></script>
+
+  <script>
+    /**
+     * Handles the click event for the Calculate button.
+     * Reads inputs, validates them, selects the appropriate operation,
+     * calls the calculator function, and displays the result or error.
+     * @param {Event} event
+     */
+    function handleCalculate(event) {
+      event.preventDefault();
+      const num1Input = document.getElementById('num1');
+      const num2Input = document.getElementById('num2');
+      const resultDiv = document.getElementById('result');
+
+      const rawA = num1Input.value;
+      const rawB = num2Input.value;
+
+      const a = parseFloat(rawA);
+      const b = parseFloat(rawB);
+
+      if (!Number.isFinite(a) || !Number.isFinite(b)) {
+        resultDiv.textContent = 'Error: Non-numeric input';
+        resultDiv.style.color = 'red';
+        return;
+      }
+
+      const operation = document.querySelector('input[name="operation"]:checked').value;
+      let calculationResult;
+      try {
+        switch (operation) {
+          case 'add':
+            calculationResult = add(a, b);
+            break;
+          case 'subtract':
+            calculationResult = subtract(a, b);
+            break;
+          case 'multiply':
+            calculationResult = multiply(a, b);
+            break;
+          case 'divide':
+            calculationResult = divide(a, b);
+            break;
+          default:
+            throw new Error('Unsupported operation');
+        }
+        resultDiv.textContent = `Result: ${calculationResult}`;
+        resultDiv.style.color = 'green';
+      } catch (e) {
+        resultDiv.textContent = e.message;
+        resultDiv.style.color = 'red';
+      }
+    }
+
+    document.getElementById('calcBtn').addEventListener('click', handleCalculate);
+  </script>
 </body>
 </html>
