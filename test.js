@@ -1,36 +1,132 @@
-function assertEquals(actual, expected, testName) {
-    const output = document.getElementById('test-output');
-    if (!output) return;
-    const result = Object.is(actual, expected);
-    const div = document.createElement('div');
-    div.textContent = `${testName}: ${result ? 'PASS' : 'FAIL'} (expected ${expected}, got ${actual})`;
-    div.style.color = result ? 'green' : 'red';
-    output.appendChild(div);
+import { Calculator } from "./script.js";
+
+function assertEqual(actual, expected, testName) {
+  const areEqual =
+    Number.isNaN(actual) && Number.isNaN(expected)
+      ? true
+      : actual === expected;
+  if (!areEqual) {
+    throw new Error(
+      `${testName} – Expected: ${expected}, Received: ${actual}`
+    );
+  }
 }
 
 function runTests() {
-    const tests = [
-        { name: 'Addition', fn: () => calculateResult(2, 3, '+'), expected: 5 },
-        { name: 'Subtraction', fn: () => calculateResult(5, 2, '-'), expected: 3 },
-        { name: 'Multiplication', fn: () => calculateResult(4, 3, '*'), expected: 12 },
-        { name: 'Division', fn: () => calculateResult(10, 2, '/'), expected: 5 },
-        { name: 'Division by Zero', fn: () => calculateResult(10, 0, '/'), expected: 'Error: Division by zero' },
-        { name: 'Invalid Input', fn: () => calculateResult('a', 2, '+'), expected: 'Error: Invalid input' }
-    ];
+  const testCases = [
+    // add
+    {
+      method: "add",
+      args: [1, 2],
+      expected: 3,
+      name: "add positive integers",
+    },
+    {
+      method: "add",
+      args: [-5, 5],
+      expected: 0,
+      name: "add negative and positive integer",
+    },
+    {
+      method: "add",
+      args: [0, 0],
+      expected: 0,
+      name: "add zeros",
+    },
+    // subtract
+    {
+      method: "subtract",
+      args: [10, 4],
+      expected: 6,
+      name: "subtract positive integers",
+    },
+    {
+      method: "subtract",
+      args: [5, 10],
+      expected: -5,
+      name: "subtract resulting negative",
+    },
+    // multiply
+    {
+      method: "multiply",
+      args: [3, 7],
+      expected: 21,
+      name: "multiply positive integers",
+    },
+    {
+      method: "multiply",
+      args: [-2, 4],
+      expected: -8,
+      name: "multiply negative and positive",
+    },
+    {
+      method: "multiply",
+      args: [0, 100],
+      expected: 0,
+      name: "multiply by zero",
+    },
+    // divide
+    {
+      method: "divide",
+      args: [20, 4],
+      expected: 5,
+      name: "divide positive integers",
+    },
+    {
+      method: "divide",
+      args: [5, 2],
+      expected: 2.5,
+      name: "divide resulting float",
+    },
+    {
+      method: "divide",
+      args: [10, 0],
+      expected: Infinity,
+      name: "divide by zero returns Infinity",
+    },
+    // invalid input
+    {
+      method: "add",
+      args: ["a", 2],
+      expected: NaN,
+      name: "add with non‑numeric input",
+    },
+    {
+      method: "divide",
+      args: [null, 5],
+      expected: NaN,
+      name: "divide with null input",
+    },
+  ];
 
-    tests.forEach(test => {
-        try {
-            const actual = test.fn();
-            assertEquals(actual, test.expected, test.name);
-        } catch (e) {
-            const output = document.getElementById('test-output');
-            if (!output) return;
-            const div = document.createElement('div');
-            div.textContent = `${test.name}: FAIL (exception thrown: ${e.message})`;
-            div.style.color = 'red';
-            output.appendChild(div);
-        }
-    });
+  let passed = 0;
+  let failed = 0;
+  const results = [];
+
+  for (const tc of testCases) {
+    try {
+      const actual = Calculator[tc.method](...tc.args);
+      assertEqual(actual, tc.expected, tc.name);
+      passed++;
+      results.push(`✅ ${tc.name}`);
+    } catch (e) {
+      failed++;
+      results.push(`❌ ${tc.name} – ${e.message}`);
+    }
+  }
+
+  const summary = `Passed: ${passed}, Failed: ${failed}`;
+  const outputElement = document.getElementById("test-results");
+  if (outputElement) {
+    outputElement.innerHTML = `<pre>${summary}\n${results.join(
+      "\n"
+    )}</pre>`;
+  } else {
+    console.log(summary);
+    console.log(results.join("\n"));
+  }
 }
+
+export { assertEqual, runTests };
 
 runTests();
