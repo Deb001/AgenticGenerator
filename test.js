@@ -1,132 +1,130 @@
-import { Calculator } from "./script.js";
+// test.js
+// Automated test suite for calculator.js functions.
 
-function assertEqual(actual, expected, testName) {
-  const areEqual =
-    Number.isNaN(actual) && Number.isNaN(expected)
-      ? true
-      : actual === expected;
-  if (!areEqual) {
-    throw new Error(
-      `${testName} – Expected: ${expected}, Received: ${actual}`
-    );
+/**
+ * Helper that throws an error if actual !== expected.
+ * @param {*} actual
+ * @param {*} expected
+ * @param {string} description
+ */
+function assertEqual(actual, expected, description) {
+  if (actual !== expected) {
+    throw new Error(`${description} - Expected ${expected}, but got ${actual}`);
   }
 }
 
+/**
+ * Runs all defined test cases and writes results to the DOM.
+ */
 function runTests() {
-  const testCases = [
-    // add
+  const resultsContainer = document.getElementById('test-results');
+  if (!resultsContainer) {
+    console.error('No element with id "test-results" found.');
+    return;
+  }
+
+  const tests = [
+    // Normal operations
     {
-      method: "add",
-      args: [1, 2],
-      expected: 3,
-      name: "add positive integers",
-    },
-    {
-      method: "add",
-      args: [-5, 5],
-      expected: 0,
-      name: "add negative and positive integer",
-    },
-    {
-      method: "add",
-      args: [0, 0],
-      expected: 0,
-      name: "add zeros",
-    },
-    // subtract
-    {
-      method: "subtract",
-      args: [10, 4],
-      expected: 6,
-      name: "subtract positive integers",
-    },
-    {
-      method: "subtract",
-      args: [5, 10],
-      expected: -5,
-      name: "subtract resulting negative",
-    },
-    // multiply
-    {
-      method: "multiply",
-      args: [3, 7],
-      expected: 21,
-      name: "multiply positive integers",
-    },
-    {
-      method: "multiply",
-      args: [-2, 4],
-      expected: -8,
-      name: "multiply negative and positive",
-    },
-    {
-      method: "multiply",
-      args: [0, 100],
-      expected: 0,
-      name: "multiply by zero",
-    },
-    // divide
-    {
-      method: "divide",
-      args: [20, 4],
+      description: 'add(2, 3) should return 5',
+      fn: () => add(2, 3),
       expected: 5,
-      name: "divide positive integers",
+      expectError: false
     },
     {
-      method: "divide",
-      args: [5, 2],
-      expected: 2.5,
-      name: "divide resulting float",
+      description: 'add(0.1, 0.2) should handle decimals',
+      fn: () => add(0.1, 0.2),
+      expected: 0.30000000000000004, // JavaScript floating point
+      expectError: false
     },
     {
-      method: "divide",
-      args: [10, 0],
-      expected: Infinity,
-      name: "divide by zero returns Infinity",
-    },
-    // invalid input
-    {
-      method: "add",
-      args: ["a", 2],
-      expected: NaN,
-      name: "add with non‑numeric input",
+      description: 'subtract(10, 4) should return 6',
+      fn: () => subtract(10, 4),
+      expected: 6,
+      expectError: false
     },
     {
-      method: "divide",
-      args: [null, 5],
-      expected: NaN,
-      name: "divide with null input",
+      description: 'multiply(3, 5) should return 15',
+      fn: () => multiply(3, 5),
+      expected: 15,
+      expectError: false
     },
+    {
+      description: 'divide(20, 4) should return 5',
+      fn: () => divide(20, 4),
+      expected: 5,
+      expectError: false
+    },
+    // Division by zero
+    {
+      description: 'divide(10, 0) should throw division by zero error',
+      fn: () => divide(10, 0),
+      expected: 'Error: Division by zero',
+      expectError: true
+    },
+    // Non‑numeric inputs
+    {
+      description: 'add("a", 2) should throw non‑numeric error',
+      fn: () => add('a', 2),
+      expected: 'Error: Non-numeric input',
+      expectError: true
+    },
+    {
+      description: 'subtract(5, null) should throw non‑numeric error',
+      fn: () => subtract(5, null),
+      expected: 'Error: Non-numeric input',
+      expectError: true
+    },
+    {
+      description: 'multiply(undefined, 3) should throw non‑numeric error',
+      fn: () => multiply(undefined, 3),
+      expected: 'Error: Non-numeric input',
+      expectError: true
+    },
+    {
+      description: 'divide("10", "2") should return 5',
+      fn: () => divide('10', '2'),
+      expected: 5,
+      expectError: false
+    }
   ];
 
-  let passed = 0;
-  let failed = 0;
-  const results = [];
-
-  for (const tc of testCases) {
+  tests.forEach(test => {
+    const line = document.createElement('p');
     try {
-      const actual = Calculator[tc.method](...tc.args);
-      assertEqual(actual, tc.expected, tc.name);
-      passed++;
-      results.push(`✅ ${tc.name}`);
+      const result = test.fn();
+      if (test.expectError) {
+        line.textContent = `FAIL: ${test.description} - Expected error but got result ${result}`;
+        line.style.color = 'red';
+      } else {
+        assertEqual(result, test.expected, test.description);
+        line.textContent = `PASS: ${test.description}`;
+        line.style.color = 'green';
+      }
     } catch (e) {
-      failed++;
-      results.push(`❌ ${tc.name} – ${e.message}`);
+      if (test.expectError && e.message === test.expected) {
+        line.textContent = `PASS: ${test.description}`;
+        line.style.color = 'green';
+      } else {
+        line.textContent = `FAIL: ${test.description} - ${e.message}`;
+        line.style.color = 'red';
+      }
     }
-  }
-
-  const summary = `Passed: ${passed}, Failed: ${failed}`;
-  const outputElement = document.getElementById("test-results");
-  if (outputElement) {
-    outputElement.innerHTML = `<pre>${summary}\n${results.join(
-      "\n"
-    )}</pre>`;
-  } else {
-    console.log(summary);
-    console.log(results.join("\n"));
-  }
+    resultsContainer.appendChild(line);
+  });
 }
 
-export { assertEqual, runTests };
-
-runTests();
+// Execute tests automatically when the script loads.
+try {
+  runTests();
+} catch (globalError) {
+  const resultsContainer = document.getElementById('test-results');
+  if (resultsContainer) {
+    const line = document.createElement('p');
+    line.textContent = `UNEXPECTED FAILURE: ${globalError.message}`;
+    line.style.color = 'red';
+    resultsContainer.appendChild(line);
+  } else {
+    console.error('Test execution failed:', globalError);
+  }
+}
