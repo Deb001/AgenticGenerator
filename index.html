@@ -1,66 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Simple Calculator</title>
-<style>
-body{font-family:sans-serif;margin:2rem;}
-label{display:block;margin-top:0.5rem;}
-#result{margin-top:1rem;font-weight:bold;}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Calculator</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<h1>Calculator</h1>
-<form id="calcForm">
-<label>First number:
-<input type="text" id="num1" required>
-</label>
-<label>Operator:
-<select id="operator">
-<option value="+">+</option>
-<option value="-">-</option>
-<option value="*">*</option>
-<option value="/">/</option>
-</select>
-</label>
-<label>Second number:
-<input type="text" id="num2" required>
-</label>
-<button type="submit">Calculate</button>
-</form>
-<div id="result"></div>
-<script>
-const operatorMap = {
-  '+': (a, b) => a + b,
-  '-': (a, b) => a - b,
-  '*': (a, b) => a * b,
-  '/': (a, b) => a / b
-};
-function displayResult(result) {
-  document.getElementById('result').innerText = result;
-}
-function calculate(event) {
-  event.preventDefault();
-  const num1 = parseFloat(document.getElementById('num1').value);
-  const num2 = parseFloat(document.getElementById('num2').value);
-  const op = document.getElementById('operator').value;
-  if (isNaN(num1) || isNaN(num2)) {
-    displayResult('Invalid input');
-    return;
-  }
-  if (op === '/' && num2 === 0) {
-    displayResult('Error: Division by zero');
-    return;
-  }
-  const operation = operatorMap[op];
-  if (!operation) {
-    displayResult('Invalid operator');
-    return;
-  }
-  const result = operation(num1, num2);
-  displayResult(result.toString());
-}
-document.getElementById('calcForm').addEventListener('submit', calculate);
-</script>
+  <div class="calculator">
+    <h1>Calculator</h1>
+    <input type="number" id="operand1" placeholder="First number" required>
+    <select id="operation" required>
+      <option value="add">Add (+)</option>
+      <option value="subtract">Subtract (−)</option>
+      <option value="multiply">Multiply (×)</option>
+      <option value="divide">Divide (÷)</option>
+    </select>
+    <input type="number" id="operand2" placeholder="Second number" required>
+    <button type="button" onclick="Calculator.handleCalculate()">Calculate</button>
+    <div id="result"></div>
+  </div>
+  <script src="script.js" defer></script>
 </body>
 </html>
