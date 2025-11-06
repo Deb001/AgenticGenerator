@@ -1,14 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Calculator Test Suite</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="script.js"></script>
-    <script src="test.js" defer></script>
+<meta charset="UTF-8">
+<title>Calculator Tests</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Calculator Test Results</h1>
-    <div id="test-output"></div>
+<div id="test-results"></div>
+<script src="script.js"></script>
+<script src="test.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  try {
+    if (typeof runTests === 'function') {
+      runTests();
+    } else {
+      document.getElementById('test-results').textContent = 'runTests function not found.';
+    }
+  } catch (e) {
+    const results = document.getElementById('test-results');
+    results.innerHTML = '<pre>' + e.stack + '</pre>';
+  }
+});
+</script>
 </body>
 </html>
