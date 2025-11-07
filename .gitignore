@@ -1,11 +1,9 @@
-# Dependency directories
-node_modules/
-
-# Log files
-*.log
-
-# Environment variables
+__pycache__/
+*.pyc
 .env
-
-# SQLite database files
-data/*.db
+instance/
+db_data/
+venv/
+node_modules/
+dist/
+.DS_Store
