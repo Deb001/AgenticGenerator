@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculator</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="calculator">
+    <div id="display" aria-live="polite" role="textbox" tabindex="0"></div>
+    <div class="buttons">
+      <!-- Row 1 -->
+      <button data-action="7">7</button>
+      <button data-action="8">8</button>
+      <button data-action="9">9</button>
+      <button data-action="/">÷</button>
+      <!-- Row 2 -->
+      <button data-action="4">4</button>
+      <button data-action="5">5</button>
+      <button data-action="6">6</button>
+      <button data-action="*">×</button>
+      <!-- Row 3 -->
+      <button data-action="1">1</button>
+      <button data-action="2">2</button>
+      <button data-action="3">3</button>
+      <button data-action="-">−</button>
+      <!-- Row 4 -->
+      <button data-action="0">0</button>
+      <button data-action=".">.</button>
+      <button data-action="=">=</button>
+      <button data-action="+">+</button>
+      <!-- Row 5 -->
+      <button data-action="(">(</button>
+      <button data-action=")">)</button>
+      <button data-action="C">C</button>
+      <button data-action="←">←</button>
+    </div>
+  </div>
+  <script type="module" src="app.js" defer></script>
+</body>
+</html>
