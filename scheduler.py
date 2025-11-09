@@ -1,99 +1,136 @@
 from datetime import date, timedelta
 from typing import List, Dict
-import logging
 
-from models import Employee, Shift, db
-
-logger = logging.getLogger(__name__)
+from models import db, Employee, Shift
+from utils import has_overlap, has_consecutive, weekly_shift_count
 
 
-def _week_number(start: date, current: date) -> int:
-    """Return the week index (0‑based) relative to *start*.
-    """
-    return (current - start).days // 7
+class SchedulingError(Exception):
+    """Raised when the scheduler cannot find an eligible employee for a shift."""
+
+    def __init__(self, message: str, shift_date: date, shift_type: str):
+        super().__init__(message)
+        self.shift_date = shift_date
+        self.shift_type = shift_type
+        self.message = message
+
+    def __str__(self) -> str:
+        return f"SchedulingError on {self.shift_date} ({self.shift_type}): {self.message}"
 
 
-def generate_schedule(store_id: int, start_date: date, weeks: int = 1) -> List[Dict]:
-    """Generate a shift schedule for a store.
+class ShiftScheduler:
+    """Encapsulates scheduling logic.
 
-    Parameters
+    Attributes
     ----------
-    store_id: int
-        Identifier of the store for which to generate the schedule.
-    start_date: date
-        The first day of the planning horizon.
-    weeks: int, optional
-        Number of weeks to plan (default is 1).
-
-    Returns
-    -------
-    List[Dict]
-        A list of dictionaries, each containing ``employee_id``, ``shift_id`` and ``date``.
-
-    Raises
-    ------
-    ValueError
-        If a feasible assignment cannot be found for any shift.
+    employees: List[Employee]
+        All employees loaded from the database.
+    shifts: List[Shift]
+        Existing shift assignments loaded from the database.
     """
-    # Fetch employees belonging to the store
-    employees: List[Employee] = Employee.query.filter_by(store_id=store_id).all()
-    if not employees:
-        raise ValueError(f"No employees found for store {store_id}")
 
-    # Fetch shift templates for the store (assume three shifts per day)
-    shift_templates: List[Shift] = Shift.query.filter_by(store_id=store_id).order_by(Shift.id).all()
-    if not shift_templates:
-        raise ValueError(f"No shift definitions found for store {store_id}")
+    def __init__(self) -> None:
+        self.employees: List[Employee] = Employee.query.all()
+        self.shifts: List[Shift] = Shift.query.all()
 
-    # Prepare tracking structures
-    employee_assignments: Dict[int, List[date]] = {e.id: [] for e in employees}
-    weekly_shift_counts: Dict[int, Dict[int, int]] = {}
-    # weekly_shift_counts[employee_id][week_index] = count
+    def _employee_shifts(self, employee: Employee) -> List[Shift]:
+        """Return a list of shifts already assigned to *employee* (including any that
+        have been generated during the current scheduling run)."""
+        return [s for s in self.shifts if s.employee_id == employee.id]
 
-    schedule: List[Dict] = []
-    total_days = weeks * 7
+    def validate_shift_rules(self, employee: Employee, candidate_shift: Shift) -> bool:
+        """Validate that assigning *candidate_shift* to *employee* respects all business
+        rules.
 
-    for day_offset in range(total_days):
-        current_day = start_date + timedelta(days=day_offset)
-        week_idx = _week_number(start_date, current_day)
-        for shift in shift_templates:
-            assigned = False
-            for employee in employees:
-                # Initialise weekly counter if needed
-                weekly_shift_counts.setdefault(employee.id, {})
-                weekly_shift_counts[employee.id].setdefault(week_idx, 0)
+        Rules
+        -----
+        * No more than 5 shifts per calendar week.
+        * No overlapping shifts on the same day.
+        * No consecutive day shifts.
+        """
+        employee_shifts = self._employee_shifts(employee)
 
-                # Rule 1: Max weekly shifts (default 5, can be overridden per employee)
-                max_shifts = employee.max_weekly_shifts if hasattr(employee, "max_weekly_shifts") else 5
-                if weekly_shift_counts[employee.id][week_idx] >= max_shifts:
+        # Overlap rule
+        if has_overlap(employee_shifts, candidate_shift):
+            return False
+
+        # Consecutive rule
+        if has_consecutive(employee_shifts, candidate_shift):
+            return False
+
+        # Weekly limit rule (max 5 per week)
+        week_start = candidate_shift.date - timedelta(days=candidate_shift.date.weekday())
+        current_count = weekly_shift_count(employee_shifts, week_start)
+        if current_count >= 5:
+            return False
+
+        return True
+
+    def generate_schedule(self, start_date: date, end_date: date) -> Dict[date, Dict[str, int]]:
+        """Generate a deterministic schedule.
+
+        For each day in the inclusive range ``[start_date, end_date]`` the scheduler
+        attempts to assign the three shift types ``["Morning", "Afternoon", "Evening"]``
+        to the first employee that satisfies all validation rules.
+
+        Returns
+        -------
+        Dict[date, Dict[str, int]]
+            Mapping of ``date -> {shift_type: employee_id}``.
+        """
+        if start_date > end_date:
+            raise ValueError("start_date must be on or before end_date")
+
+        schedule: Dict[date, Dict[str, int]] = {}
+        shift_types = ["Morning", "Afternoon", "Evening"]
+        current = start_date
+        while current <= end_date:
+            schedule[current] = {}
+            for shift_type in shift_types:
+                # Skip if a shift already exists in DB for this date/type
+                existing = next((s for s in self.shifts if s.date == current and s.shift_type == shift_type), None)
+                if existing:
+                    schedule[current][shift_type] = existing.employee_id
                     continue
 
-                # Rule 2: No consecutive days (no back‑to‑back assignments)
-                previous_day = current_day - timedelta(days=1)
-                if previous_day in employee_assignments[employee.id]:
-                    continue
+                assigned = False
+                for employee in self.employees:
+                    candidate = Shift(date=current, shift_type=shift_type, employee_id=employee.id)
+                    if self.validate_shift_rules(employee, candidate):
+                        schedule[current][shift_type] = employee.id
+                        # Add to internal list so later assignments respect the new shift
+                        self.shifts.append(candidate)
+                        assigned = True
+                        break
+                if not assigned:
+                    raise SchedulingError(
+                        f"No eligible employee found for {shift_type} shift.",
+                        shift_date=current,
+                        shift_type=shift_type,
+                    )
+            current += timedelta(days=1)
+        return schedule
 
-                # Rule 3: No more than one shift per day per employee (implicit by assignments list)
-                if current_day in employee_assignments[employee.id]:
-                    continue
+    def persist_schedule(self, schedule: Dict[date, Dict[str, int]]) -> None:
+        """Persist a generated *schedule* into the database.
 
-                # Assign employee to this shift
-                employee_assignments[employee.id].append(current_day)
-                weekly_shift_counts[employee.id][week_idx] += 1
-                schedule.append(
-                    {
-                        "employee_id": employee.id,
-                        "shift_id": shift.id,
-                        "date": current_day,
-                    }
-                )
-                assigned = True
-                break  # Move to next shift
-
-            if not assigned:
-                raise ValueError(
-                    f"Unable to assign a employee for store {store_id}, date {current_day}, shift {shift.id}"
-                )
-
-    logger.info("Generated schedule with %d entries", len(schedule))
-    return schedule
+        The method creates :class:`models.Shift` rows for each assignment and commits
+        the transaction. It runs inside a single transaction – if any insert fails the
+        whole operation is rolled back.
+        """
+        try:
+            for shift_date, assignments in schedule.items():
+                for shift_type, employee_id in assignments.items():
+                    # Avoid duplicate entries – check if the record already exists
+                    exists = (
+                        db.session.query(Shift)
+                        .filter_by(date=shift_date, shift_type=shift_type, employee_id=employee_id)
+                        .first()
+                    )
+                    if not exists:
+                        new_shift = Shift(date=shift_date, shift_type=shift_type, employee_id=employee_id)
+                        db.session.add(new_shift)
+            db.session.commit()
+        except Exception as exc:
+            db.session.rollback()
+            raise exc
