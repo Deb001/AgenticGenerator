@@ -1,14 +1,26 @@
-'''Configuration constants for the Flask application.
+import os
+from pathlib import Path
 
-This module is imported by ``app.py``, ``models.py`` and ``seed.py`` to obtain
-the database connection string and the debug flag.
-'''
+class Config:
+    """Central configuration object used by Flask and SQLAlchemy.
 
-# Database connection string – using SQLite for simplicity. Change to a
-# PostgreSQL URI (e.g. ``postgresql://user:pass@host/dbname``) for production.
-SQLALCHEMY_DATABASE_URI: str = "sqlite:///app.db"
+    Attributes
+    ----------
+    SQLALCHEMY_DATABASE_URI: str
+        SQLite database file path. Defaults to ``sqlite:///retail.db`` located in the
+        project root.
+    SQLALCHEMY_TRACK_MODIFICATIONS: bool
+        Disables Flask‑SQLAlchemy event system to save memory.
+    SECRET_KEY: str
+        Random secret used by Flask for session management and CSRF protection.
+    """
 
-# Enable Flask debug mode when running locally.
-DEBUG: bool = True
+    # Base directory of the project (directory containing this file)
+    BASE_DIR = Path(__file__).resolve().parent
 
-__all__ = ["SQLALCHEMY_DATABASE_URI", "DEBUG"]
+    # SQLite database stored in the project root
+    SQLALCHEMY_DATABASE_URI: str = f"sqlite:///{BASE_DIR / 'retail.db'}"
+    SQLALCHEMY_TRACK_MODIFICATIONS: bool = False
+
+    # Generate a secret key; allow override via environment variable for production
+    SECRET_KEY: str = os.getenv('FLASK_SECRET_KEY', os.urandom(24).hex())
