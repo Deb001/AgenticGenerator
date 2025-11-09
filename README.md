@@ -1,97 +1,58 @@
-# Portfolio Advisory Backend
+# Retail Shift Scheduler
 
-This repository contains the backend service for the Portfolio Advisory application. It is built with **FastAPI**, uses **PostgreSQL** for persistence, and provides a set of RESTful endpoints for managing clients, advisors, portfolios, holdings, and signal generation.
-
-## Table of Contents
-- [Prerequisites](#prerequisites)
-- [Project Structure](#project-structure)
-- [Environment Variables](#environment-variables)
-- [Running Locally](#running-locally)
-- [Running with Docker Compose](#running-with-docker-compose)
-- [Testing the API](#testing-the-api)
-- [License](#license)
-
-## Prerequisites
-- Python 3.11 or newer
-- Docker & Docker Compose (optional, for containerised deployment)
-- PostgreSQL 15 (if running locally without Docker)
+This repository contains a Flask‑based web application for managing employee shift schedules.
 
 ## Project Structure
-```
-root/
-├─ backend/                # FastAPI application package
-│   ├─ main.py             # Application entry point
-│   ├─ database.py         # SQLAlchemy engine & session handling
-│   ├─ models.py           # ORM model definitions
-│   ├─ schemas.py          # Pydantic request/response schemas
-│   ├─ auth.py             # JWT authentication utilities
-│   ├─ api_routes.py       # API router definitions
-│   ├─ utils.py            # Helper utilities (logging, retry, etc.)
-│   ├─ ingestion_price.py # Price data ingestion pipeline
-│   ├─ ingestion_buzz.py  # News buzz ingestion & sentiment analysis
-│   ├─ indicator_engine.py# Technical indicator calculations
-│   ├─ sector_scoring.py   # Sector‑level scoring aggregation
-│   └─ signal_engine.py   # Signal generation engine
-├─ frontend/               # Simple static frontend (optional)
-│   ├─ index.html
-│   ├─ styles.css
-│   └─ main.js
-├─ infra/                  # Deployment artefacts
-│   ├─ Dockerfile
-│   └─ docker-compose.yml
-├─ .env.example            # Template for required environment variables
-├─ requirements.txt        # Python dependencies
-├─ README.md               # Project documentation (this file)
-└─ .gitignore              # Git ignore patterns
-```
 
-## Environment Variables
-Copy `.env.example` to `.env` and adjust values as needed:
-```
-DATABASE_URL=postgresql://postgres:example@localhost:5432/portfolio_advisory
-JWT_SECRET=your-secret-key
-JWT_ALGORITHM=HS256
-JWT_EXP_MINUTES=60
-```
+- **app.py** – Flask application factory.
+- **config.py** – Central configuration object (database URI, secret key, etc.).
+- **models.py** – SQLAlchemy ORM definitions for `Employee`, `Shift`, and `Notification`.
+- **db_init.py** – Database creation and optional demo data seeding.
+- **utils.py** – Helper functions for shift validation (overlap, consecutive shifts, weekly limits).
+- **scheduler.py** – Core scheduling engine that generates deterministic schedules while respecting business rules.
+- **routes.py** – Flask Blueprint exposing HTML views and JSON APIs.
+- **templates/** – Jinja2 HTML templates for manager and employee interfaces.
+- **static/** – CSS and JavaScript assets.
+- **Dockerfile** – Container definition for production deployment.
+- **requirements.txt** – Python dependencies.
 
-## Running Locally
-1. **Create a virtual environment**
+## Getting Started
+
+1. **Clone the repository**
    ```bash
-   python -m venv venv
-   source venv/bin/activate   # On Windows use `venv\Scripts\activate`
+   git clone https://github.com/yourusername/retail-shift-scheduler.git
+   cd retail-shift-scheduler
    ```
-2. **Install dependencies**
+
+2. **Create a virtual environment and install dependencies**
    ```bash
+   python -m venv .venv
+   source .venv/bin/activate   # On Windows use `.venv\\Scripts\\activate`
    pip install -r requirements.txt
    ```
-3. **Set up the database**
-   Ensure PostgreSQL is running and the database defined in `DATABASE_URL` exists.
+
+3. **Initialize the database**
    ```bash
-   createdb -U postgres portfolio_advisory
+   python db_init.py
    ```
-4. **Run database migrations** (if using Alembic – not included in this scaffold, but you can create tables via SQLAlchemy's `Base.metadata.create_all`).
-5. **Start the FastAPI server**
+   This will create a SQLite database file `retail.db` in the project root.
+
+4. **Run the application**
    ```bash
-   uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+   python app.py
    ```
-   The API docs will be available at `http://localhost:8000/docs`.
+   The app will be available at `http://127.0.0.1:5000/`.
 
-## Running with Docker Compose
-```bash
-docker compose -f infra/docker-compose.yml up --build
-```
-This will build the backend image, start a PostgreSQL container, and expose the API on port **8000**.
+5. **Docker deployment (optional)**
+   ```bash
+   docker build -t retail-scheduler .
+   docker run -p 5000:5000 retail-scheduler
+   ```
 
-## Testing the API
-You can interact with the API using **cURL**, **httpie**, **Postman**, or the automatically generated Swagger UI at `http://localhost:8000/docs`.
+## Configuration
 
-Example: Create a new portfolio (replace `<TOKEN>` with a valid JWT):
-```bash
-curl -X POST "http://localhost:8000/portfolios" \
-     -H "Authorization: Bearer <TOKEN>" \
-     -H "Content-Type: application/json" \
-     -d '{"name": "My Portfolio", "client_id": 1}'
-```
+All configuration values are defined in `config.py`. Adjust `SQLALCHEMY_DATABASE_URI` if you wish to use a different database backend.
 
 ## License
-This project is licensed under the MIT License – see the `LICENSE` file for details.
+
+This project is licensed under the MIT License.
