@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manager Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+</head>
+<body>
+    <h1>Manager Dashboard</h1>
+    <section id="schedule-form">
+        <form id="generate-form">
+            <label for="start-date">Start Date:</label>
+            <input type="date" id="start-date" name="start_date" required>
+            <label for="end-date">End Date:</label>
+            <input type="date" id="end-date" name="end_date" required>
+            <button type="submit">Generate Schedule</button>
+        </form>
+    </section>
+    <section id="schedule-table">
+        <h2>Current Schedule</h2>
+        <table id="shifts-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Shift Type</th>
+                    <th>Employee</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Rows will be populated by script.js -->
+            </tbody>
+        </table>
+    </section>
+</body>
+</html>
