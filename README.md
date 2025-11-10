@@ -1,68 +1,57 @@
 # SecureTodoAPI
-A minimal, production‑ready Flask REST API for managing personal to‑do items with JWT authentication and strong security defaults.
-
+A minimal, secure, production‑ready REST API for managing personal to‑do items.
 ## Features
-- User registration & login (bcrypt‑hashed passwords)
-- Stateless JWT access tokens (1‑hour expiry)
-- CRUD endpoints for to‑do items, scoped per user
-- Input validation via Pydantic
-- Secure HTTP headers (via Flask‑Talisman)
-- CORS limited to API routes
-- Docker‑compose for local development
-
+- JWT‑based stateless authentication
+- Password hashing with bcrypt (Werkzeug)
+- Input validation via Marshmallow
+- PostgreSQL persistence (Dockerized)
+- Full test suite with pytest
 ## Quick Start (Docker)
 ```bash
+# Clone the repository
 git clone <repo-url>
 cd SecureTodoAPI
-cp .env.example .env   # edit secrets
-docker compose up --build -d
+# Copy example env and set secrets
+cp .env.example .env
+# Edit .env and replace SECRET_KEY and JWT_SECRET with strong random strings
+# Build and run containers
+docker-compose up --build -d
+# Apply database migrations (optional – for MVP tables are created on first request)
+docker exec -it secure_todo_api flask db upgrade
 ```
-The API will be reachable at `http://localhost:5000/api/`.
-
-## API Reference
-### Auth
-- `POST /api/auth/register`
+The API will be reachable at `http://localhost:5000/`.
+## API Documentation
+### Authentication
+- **POST /auth/register**
   ```json
-  {"email": "user@example.com", "password": "StrongPass123"}
+  {"username": "johndoe", "email": "john@example.com", "password": "StrongPass!"}
   ```
-- `POST /api/auth/login`
+  Returns `201 Created` on success.
+- **POST /auth/login**
   ```json
-  {"email": "user@example.com", "password": "StrongPass123"}
+  {"username": "johndoe", "password": "StrongPass!"}
   ```
-  Returns `{ "access_token": "..." }`.
-
-### Todos (JWT required)
-- `GET /api/todos/` – list all user todos
-- `POST /api/todos/` – create
-- `GET /api/todos/<id>` – retrieve
-- `PUT /api/todos/<id>` – update
-- `DELETE /api/todos/<id>` – delete
-All requests must include header:
-`Authorization: Bearer <access_token>`
-
-## Development
-### Prerequisites
-- Python 3.11+
-- PostgreSQL (or use SQLite for quick tests)
-### Setup
+  Returns `{ "token": "<jwt>" }`.
+### To‑Do Endpoints (Bearer token required)
+- **GET /todos** – list user's todos.
+- **POST /todos** – create new todo.
+- **GET /todos/<id>** – retrieve specific todo.
+- **PUT /todos/<id>** – update fields.
+- **DELETE /todos/<id>** – delete todo.
+All request/response bodies are JSON. Use header `Authorization: Bearer <token>`.
+## Running Tests
 ```bash
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env
-export FLASK_ENV=development
-flask run
+pip install pytest
+pytest
 ```
-### Running Tests
-```bash
-pytest -v
-```
-
 ## Security Considerations
-- **Secrets**: Never commit real secrets. Use environment variables.
-- **HTTPS**: In production, terminate TLS at a reverse proxy (nginx, Traefik).
-- **Rate Limiting**: Add Flask‑Limiter or similar before exposing to the internet.
-- **CSP**: Adjust `Flask-Talisman` CSP settings as needed.
-
+- Secrets are never stored in code; they must be provided via environment variables.
+- Debug mode is disabled in production.
+- JWTs have a short lifetime (15 min).
+- All inputs are validated; no raw SQL is used.
+- CORS is not enabled by default; add Flask‑CORS if needed.
 ## License
 MIT
