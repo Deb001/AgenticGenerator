@@ -1,154 +1,153 @@
-import { evaluateExpression } from './calculator.js';
+// src/app.js
+/**
+ * Front‑end controller for the calculator UI.
+ * Handles button clicks, keyboard input, display updates, and history persistence.
+ */
+
+import { evaluate } from "./calculator.js";
 
 /**
- * Holds the current arithmetic expression as a string.
- * @type {string}
+ * Key mapping for keyboard support.
  */
-let expressionBuffer = '';
+const KEY_MAP = {
+  "Enter": "=",
+  "Backspace": "⌫",
+  "Delete": "C",
+  "Escape": "C",
+  "+": "+",
+  "-": "-",
+  "*": "*",
+  "/": "/",
+  "=": "=",
+  "c": "C",
+  "C": "C",
+  "%": "%"
+};
 
 /**
- * Initializes the UI: attaches click listeners to all buttons and a keydown listener to the document.
+ * Initializes the calculator UI once the DOM is ready.
  */
-function initUI() {
-  const display = document.getElementById('display');
-  if (!display) {
-    console.error('Display element not found');
+function initCalculator() {
+  const display = document.getElementById("calc-display");
+  const buttons = document.querySelectorAll(".calc-button");
+  const historyContainer = document.getElementById("calc-history");
+
+  if (!display || !buttons.length) {
+    console.error("Calculator UI elements missing");
     return;
   }
 
-  const buttons = document.querySelectorAll('.buttons button[data-action]');
+  // Load persisted history
+  const persisted = localStorage.getItem("calc_history");
+  const history = persisted ? JSON.parse(persisted) : [];
+  renderHistory(history, historyContainer);
+
+  // Attach click listeners
   buttons.forEach((btn) => {
-    btn.addEventListener('click', handleButtonClick);
+    btn.addEventListener("click", () => handleButton(btn.dataset.value, display, history, historyContainer));
   });
 
-  document.addEventListener('keydown', handleKeyPress);
-
-  // Ensure the display is focusable for screen readers.
-  display.setAttribute('tabindex', '0');
-  updateDisplay('');
+  // Keyboard support
+  document.addEventListener("keydown", (e) => {
+    const key = e.key;
+    if (KEY_MAP[key] !== undefined) {
+      e.preventDefault();
+      handleButton(KEY_MAP[key], display, history, historyContainer);
+    } else if (/[0-9.]/.test(key)) {
+      e.preventDefault();
+      handleButton(key, display, history, historyContainer);
+    }
+  });
 }
 
 /**
- * Handles a button click event.
- * @param {MouseEvent} event
+ * Handles a button press.
+ * @param {string} value The button's logical value (e.g., "1", "+", "C").
+ * @param {HTMLElement} display The display element.
+ * @param {Array} history The in‑memory history array.
+ * @param {HTMLElement} historyContainer The DOM container for history.
  */
-function handleButtonClick(event) {
-  const target = /** @type {HTMLButtonElement} */ (event.currentTarget);
-  const action = target.getAttribute('data-action');
-  if (!action) return;
-
-  switch (action) {
-    case 'C':
-      clearBuffer();
+function handleButton(value, display, history, historyContainer) {
+  switch (value) {
+    case "C":
+      clearDisplay(display);
       break;
-    case '←':
-      backspace();
+    case "⌫":
+      backspace(display);
       break;
-    case '=':
-      evaluateCurrentExpression();
+    case "=":
+      calculate(display, history, historyContainer);
       break;
     default:
-      // Append numbers, operators, parentheses, or decimal point.
-      expressionBuffer += action;
-      updateDisplay(expressionBuffer);
+      appendToDisplay(display, value);
   }
 }
 
 /**
- * Handles keyboard input and maps keys to calculator actions.
- * @param {KeyboardEvent} event
+ * Appends a character to the display safely.
  */
-function handleKeyPress(event) {
-  const key = event.key;
-  const keyMap = {
-    'Enter': '=',
-    '=': '=',
-    'Backspace': '←',
-    'Delete': 'C',
-    'Escape': 'C',
-    '+': '+',
-    '-': '-',
-    '*': '*',
-    'x': '*',
-    'X': '*',
-    '/': '/',
-    '÷': '/',
-    '(': '(',
-    ')': ')',
-    '.': '.',
-    ',': '.',
-    '0': '0',
-    '1': '1',
-    '2': '2',
-    '3': '3',
-    '4': '4',
-    '5': '5',
-    '6': '6',
-    '7': '7',
-    '8': '8',
-    '9': '9'
-  };
-
-  if (key in keyMap) {
-    event.preventDefault();
-    const action = keyMap[key];
-    // Simulate a button click for uniform handling.
-    const fakeButton = document.createElement('button');
-    fakeButton.setAttribute('data-action', action);
-    handleButtonClick({ currentTarget: fakeButton });
-  }
-}
-
-/**
- * Updates the calculator display.
- * @param {string} value
- */
-function updateDisplay(value) {
-  const display = document.getElementById('display');
-  if (!display) return;
-  display.textContent = value || '0';
-}
-
-/**
- * Clears the expression buffer and resets the display.
- */
-function clearBuffer() {
-  expressionBuffer = '';
-  updateDisplay('');
-}
-
-/**
- * Removes the last character from the buffer and updates the display.
- */
-function backspace() {
-  expressionBuffer = expressionBuffer.slice(0, -1);
-  updateDisplay(expressionBuffer);
-}
-
-/**
- * Evaluates the current expression buffer using the calculator engine.
- */
-function evaluateCurrentExpression() {
-  if (!expressionBuffer.trim()) {
-    updateDisplay('Error');
+function appendToDisplay(display, char) {
+  // Prevent multiple consecutive operators (except minus for negative numbers)
+  const lastChar = display.value.slice(-1);
+  const operators = "+-*/";
+  if (operators.includes(char) && operators.includes(lastChar) && !(char === "-" && lastChar !== "-")) {
+    // Replace the previous operator with the new one
+    display.value = display.value.slice(0, -1) + char;
     return;
   }
+  display.value += char;
+}
+
+/**
+ * Clears the calculator display.
+ */
+function clearDisplay(display) {
+  display.value = "";
+}
+
+/**
+ * Removes the last character from the display.
+ */
+function backspace(display) {
+  display.value = display.value.slice(0, -1);
+}
+
+/**
+ * Evaluates the expression shown in the display.
+ */
+function calculate(display, history, historyContainer) {
+  const expr = display.value;
   try {
-    const result = evaluateExpression(expressionBuffer);
-    // Use toString to avoid scientific notation for large integers.
-    expressionBuffer = String(result);
-    updateDisplay(expressionBuffer);
-  } catch (e) {
-    if (e instanceof SyntaxError) {
-      updateDisplay('Error');
-    } else {
-      console.error('Unexpected error during evaluation:', e);
-      updateDisplay('Error');
-    }
+    const result = evaluate(expr);
+    const entry = `${expr} = ${result}`;
+    history.unshift(entry);
+    if (history.length > 20) history.pop(); // keep recent 20 entries
+    localStorage.setItem("calc_history", JSON.stringify(history));
+    renderHistory(history, historyContainer);
+    display.value = result.toString();
+  } catch (err) {
+    console.error(err);
+    alert(`Error: ${err.message}`);
   }
 }
 
-// Initialize UI when the DOM is ready.
-window.addEventListener('DOMContentLoaded', initUI);
+/**
+ * Renders the calculation history.
+ */
+function renderHistory(history, container) {
+  if (!container) return;
+  container.innerHTML = "";
+  history.forEach((entry) => {
+    const div = document.createElement("div");
+    div.textContent = entry;
+    div.className = "calc-history-item";
+    container.appendChild(div);
+  });
+}
 
-export { initUI, handleButtonClick, handleKeyPress, updateDisplay, clearBuffer, backspace, evaluateCurrentExpression };
+// Initialize when DOM is ready
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initCalculator);
+} else {
+  initCalculator();
+}
