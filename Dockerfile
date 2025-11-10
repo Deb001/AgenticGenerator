@@ -5,6 +5,8 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
+RUN addgroup --system appgroup && adduser --system --group appuser
+USER appuser
 EXPOSE 5000
 ENV FLASK_ENV=production
-CMD ["python", "run.py"]
+CMD ["gunicorn", "run:app", "-b", "0.0.0.0:5000", "--workers", "3"]
