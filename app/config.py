@@ -1,48 +1,43 @@
 import os
-from dotenv import load_dotenv
-
-# Load environment variables from a .env file if present.
-load_dotenv()
 
 
 class Config(object):
-    """Application configuration loaded from environment variables.
+    """Central Flask configuration.
 
-    The class is used by ``app.__init__`` to configure Flask and its extensions.
-    ``validate`` should be called during startup to ensure all required secrets
-    are present.
+    All secrets must be supplied via environment variables. On import the class
+    validates that the required variables are present and raises a clear
+    ``RuntimeError`` if any are missing.
     """
 
-    # Core Flask settings
-    FLASK_ENV: str = os.getenv('FLASK_ENV', 'production')
-    DEBUG: bool = FLASK_ENV == 'development'
+    # Environment (development|production)
+    ENV = os.getenv('FLASK_ENV', 'development')
 
-    # Security keys – must be provided in the environment
-    SECRET_KEY: str = os.getenv('SECRET_KEY')
-    JWT_SECRET_KEY: str = os.getenv('JWT_SECRET_KEY')
+    # Debug mode is only enabled in development when explicitly requested
+    DEBUG = os.getenv('FLASK_DEBUG', '0') == '1' and ENV != 'production'
 
-    # Database configuration
-    SQLALCHEMY_DATABASE_URI: str = os.getenv('DATABASE_URL')
-    SQLALCHEMY_TRACK_MODIFICATIONS: bool = False
+    # Cryptographic secrets – must be set in the environment
+    SECRET_KEY = os.getenv('SECRET_KEY')
+    JWT_SECRET = os.getenv('JWT_SECRET')
 
-    # JWT settings
-    JWT_ACCESS_TOKEN_EXPIRES: int = 3600  # seconds (1 hour)
+    # Database connection string
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
 
-    @classmethod
-    def validate(cls) -> None:
-        """Validate that all critical configuration values are present.
+    # SQLAlchemy configuration
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-        Raises:
-            RuntimeError: If any required environment variable is missing.
-        """
-        missing = []
-        if not cls.SECRET_KEY:
-            missing.append('SECRET_KEY')
-        if not cls.JWT_SECRET_KEY:
-            missing.append('JWT_SECRET_KEY')
-        if not cls.SQLALCHEMY_DATABASE_URI:
-            missing.append('DATABASE_URL')
-        if missing:
-            raise RuntimeError(
-                f"Missing required environment variables: {', '.join(missing)}"
-            )
+
+# ---------------------------------------------------------------------------
+# Validation of required environment variables
+# ---------------------------------------------------------------------------
+_missing_vars = []
+if not Config.SECRET_KEY:
+    _missing_vars.append('SECRET_KEY')
+if not Config.JWT_SECRET:
+    _missing_vars.append('JWT_SECRET')
+if not Config.SQLALCHEMY_DATABASE_URI:
+    _missing_vars.append('DATABASE_URL')
+
+if _missing_vars:
+    raise RuntimeError(
+        f"Missing required environment variables: {', '.join(_missing_vars)}"
+    )
