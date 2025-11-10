@@ -1,100 +1,169 @@
-/* CSS Variables */
+/* -------------------------------------------------
+   Calculator Styles – Responsive Grid Layout
+   ------------------------------------------------- */
+
+/* Global box-sizing & reset */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* Root variables – easy theming */
 :root {
-  --bg-color: #f5f5f5;
-  --display-bg: #222;
-  --display-color: #0f0;
-  --key-bg: #e0e0e0;
-  --key-hover: #d0d0d0;
-  --key-active: #c0c0c0;
-  --key-operator-bg: #ff9500;
-  --key-operator-color: #fff;
-  --font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --color-bg: #f9f9f9;
+    --color-bg-dark: #1e1e1e;
+    --color-surface: #ffffff;
+    --color-surface-dark: #2b2b2b;
+    --color-primary: #0066ff;
+    --color-primary-dark: #3399ff;
+    --color-text: #222222;
+    --color-text-dark: #eeeeee;
+    --color-muted: #777777;
+    --radius: 0.5rem;
+    --gap: 0.5rem;
+    --transition: 0.2s ease;
 }
 
-/* Global Styles */
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --color-bg: var(--color-bg-dark);
+        --color-surface: var(--color-surface-dark);
+        --color-primary: var(--color-primary-dark);
+        --color-text: var(--color-text-dark);
+    }
+}
+
+/* Page background */
 html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  background: var(--bg-color);
-  font-family: var(--font-family);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+    height: 100%;
+    background: var(--color-bg);
+    font-family: var(--font-family);
+    color: var(--color-text);
 }
 
+/* Center the calculator */
+body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--gap);
+}
+
+/* Calculator container */
 .calculator {
-  width: 320px;
-  max-width: 100%;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  overflow: hidden;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    gap: var(--gap);
+    width: 100%;
+    max-width: 360px;
+    background: var(--color-surface);
+    border-radius: var(--radius);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    padding: var(--gap);
 }
 
-.calculator__display {
-  background: var(--display-bg);
-  color: var(--display-color);
-  font-size: 2rem;
-  text-align: right;
-  padding: 1rem;
-  box-sizing: border-box;
-  word-wrap: break-word;
+/* Display (output) */
+.calculator .display {
+    width: 100%;
+    height: 3rem;
+    font-size: 1.5rem;
+    text-align: right;
+    padding: 0 var(--gap);
+    border: 1px solid var(--color-muted);
+    border-radius: var(--radius);
+    background: var(--color-bg);
+    color: var(--color-text);
 }
 
-.calculator__keys {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1px;
-  background: #bbb;
+/* Buttons grid */
+.calculator .buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--gap);
 }
 
-.key {
-  background: var(--key-bg);
-  border: none;
-  font-size: 1.5rem;
-  padding: 1rem;
-  cursor: pointer;
-  transition: background 0.2s;
+/* Individual button */
+.calculator .btn {
+    font-size: 1.25rem;
+    padding: 0.75rem;
+    border: none;
+    border-radius: var(--radius);
+    background: var(--color-primary);
+    color: #fff;
+    cursor: pointer;
+    transition: background var(--transition), transform var(--transition);
 }
 
-.key:hover {
-  background: var(--key-hover);
+/* Hover / active states */
+.calculator .btn:hover,
+.calculator .btn:focus-visible {
+    background: #0052cc;
+    outline: 2px solid #ffcc00;
+    outline-offset: 2px;
+}
+.calculator .btn:active {
+    transform: translateY(1px);
 }
 
-.key:active {
-  background: var(--key-active);
+/* Special button modifiers */
+.calculator .btn.operator {
+    background: #ff9500;
+}
+.calculator .btn.operator:hover,
+.calculator .btn.operator:focus-visible {
+    background: #e68a00;
+}
+.calculator .btn.equal {
+    grid-column: span 2;
+    background: #34c759;
+}
+.calculator .btn.equal:hover,
+.calculator .btn.equal:focus-visible {
+    background: #28a745;
 }
 
-.key[data-action="operator"] {
-  background: var(--key-operator-bg);
-  color: var(--key-operator-color);
+/* Responsive breakpoints */
+
+/* Small screens – full width */
+@media (max-width: 480px) {
+    .calculator {
+        max-width: 100%;
+        padding: var(--gap);
+    }
+    .calculator .display {
+        height: 2.5rem;
+        font-size: 1.25rem;
+    }
+    .calculator .btn {
+        font-size: 1rem;
+        padding: 0.5rem;
+    }
 }
 
-.key[data-action="equals"] {
-  background: var(--key-operator-bg);
-  color: var(--key-operator-color);
-  grid-row: span 2;
+/* Tablet / landscape – larger grid */
+@media (min-width: 481px) and (max-width: 768px) {
+    .calculator {
+        max-width: 400px;
+    }
 }
 
-.key.key--wide {
-  grid-column: span 2;
+/* Desktop – optional extra spacing */
+@media (min-width: 769px) {
+    .calculator {
+        max-width: 420px;
+    }
 }
 
-.key:focus-visible {
-  outline: 3px solid #0066ff;
-  outline-offset: -2px;
+/* Accessibility – focus outlines */
+:focus-visible {
+    outline: 2px solid #ffcc00;
+    outline-offset: 2px;
 }
 
-.noscript-message {
-  color: #c00;
-  font-weight: bold;
-  text-align: center;
-  margin-top: 1rem;
-}
-
-/* Fallback fonts */
-@font-face {
-  font-family: "Helvetica Neue";
-  src: local("Helvetica Neue"), local("Helvetica"), local("Arial"), local("sans-serif");
+/* Prevent text selection on buttons */
+button {
+    user-select: none;
 }
