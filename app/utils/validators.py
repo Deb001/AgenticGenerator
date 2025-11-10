@@ -1,12 +1,39 @@
-import re
-from typing import Any
+from marshmallow import ValidationError
+from ..schemas import UserSchema, LoginSchema, TodoSchema
 
-def is_valid_email(email: Any) -> bool:
-    """Return True if *email* is a non‑empty string matching a simple email pattern.
-
-    The function safely returns ``False`` for any non‑string input.
+def validate_registration(data: dict) -> dict:
     """
-    if not isinstance(email, str):
-        return False
-    pattern = r'^[^@\s]+@[^@\s]+\.[^@\s]+$'
-    return re.fullmatch(pattern, email) is not None
+    Validate registration payload using UserSchema.
+    Returns deserialized data.
+    Raises marshmallow.ValidationError on failure.
+    """
+    schema = UserSchema()
+    try:
+        result = schema.load(data)
+        return result
+    except ValidationError as err:
+        raise err
+
+def validate_login(data: dict) -> dict:
+    """
+    Validate login payload using LoginSchema.
+    Returns deserialized data.
+    """
+    schema = LoginSchema()
+    try:
+        result = schema.load(data)
+        return result
+    except ValidationError as err:
+        raise err
+
+def validate_todo_payload(data: dict, partial: bool = False) -> dict:
+    """
+    Validate todo payload using TodoSchema.
+    ``partial`` allows partial updates.
+    """
+    schema = TodoSchema(partial=partial)
+    try:
+        result = schema.load(data)
+        return result
+    except ValidationError as err:
+        raise err
