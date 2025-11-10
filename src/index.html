@@ -2,41 +2,44 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Calculator</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>Web Calculator</title>
+  <!-- Content Security Policy to mitigate XSS -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;" />
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="calculator">
-    <div id="display" aria-live="polite" role="textbox" tabindex="0"></div>
-    <div class="buttons">
-      <!-- Row 1 -->
-      <button data-action="7">7</button>
-      <button data-action="8">8</button>
-      <button data-action="9">9</button>
-      <button data-action="/">÷</button>
-      <!-- Row 2 -->
-      <button data-action="4">4</button>
-      <button data-action="5">5</button>
-      <button data-action="6">6</button>
-      <button data-action="*">×</button>
-      <!-- Row 3 -->
-      <button data-action="1">1</button>
-      <button data-action="2">2</button>
-      <button data-action="3">3</button>
-      <button data-action="-">−</button>
-      <!-- Row 4 -->
-      <button data-action="0">0</button>
-      <button data-action=".">.</button>
-      <button data-action="=">=</button>
-      <button data-action="+">+</button>
-      <!-- Row 5 -->
-      <button data-action="(">(</button>
-      <button data-action=")">)</button>
-      <button data-action="C">C</button>
-      <button data-action="←">←</button>
-    </div>
-  </div>
-  <script type="module" src="app.js" defer></script>
+  <main class="calc-container" role="application" aria-label="Simple calculator">
+    <input type="text" id="calc-display" class="calc-display" aria-label="Calculator display" readonly />
+    <section class="calc-buttons" aria-label="Calculator buttons">
+      <button class="calc-button" data-value="7" aria-label="Seven">7</button>
+      <button class="calc-button" data-value="8" aria-label="Eight">8</button>
+      <button class="calc-button" data-value="9" aria-label="Nine">9</button>
+      <button class="calc-button" data-value="/" aria-label="Divide">÷</button>
+
+      <button class="calc-button" data-value="4" aria-label="Four">4</button>
+      <button class="calc-button" data-value="5" aria-label="Five">5</button>
+      <button class="calc-button" data-value="6" aria-label="Six">6</button>
+      <button class="calc-button" data-value="*" aria-label="Multiply">×</button>
+
+      <button class="calc-button" data-value="1" aria-label="One">1</button>
+      <button class="calc-button" data-value="2" aria-label="Two">2</button>
+      <button class="calc-button" data-value="3" aria-label="Three">3</button>
+      <button class="calc-button" data-value="-" aria-label="Subtract">−</button>
+
+      <button class="calc-button" data-value="0" aria-label="Zero">0</button>
+      <button class="calc-button" data-value="." aria-label="Decimal point">.</button>
+      <button class="calc-button" data-value="=" aria-label="Equals">=</button>
+      <button class="calc-button" data-value="+" aria-label="Add">+</button>
+
+      <button class="calc-button" data-value="C" aria-label="Clear">C</button>
+      <button class="calc-button" data-value="⌫" aria-label="Backspace">⌫</button>
+      <button class="calc-button" data-value="(" aria-label="Open parenthesis">(</button>
+      <button class="calc-button" data-value=")" aria-label="Close parenthesis">)</button>
+    </section>
+    <section class="calc-history" id="calc-history" aria-label="Calculation history"></section>
+  </main>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
