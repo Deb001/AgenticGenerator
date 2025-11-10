@@ -1,17 +1,23 @@
 {
   "name": "calculator-app",
   "version": "1.0.0",
-  "description": "A simple web calculator with unit and end-to-end tests.",
-  "private": true,
+  "description": "A simple web calculator with unit tests using Jest.",
+  "main": "src/app.js",
+  "type": "module",
   "scripts": {
     "test": "jest",
-    "e2e": "playwright test",
-    "serve": "serve -s src -l 5000",
-    "ci": "npm run test && npm run e2e"
+    "start": "live-server"
   },
+  "keywords": [
+    "calculator",
+    "web",
+    "jest",
+    "live-server"
+  ],
+  "author": "",
+  "license": "MIT",
   "devDependencies": {
     "jest": "^29.0.0",
-    "@playwright/test": "^1.40.0",
-    "serve": "^14.2.0"
+    "live-server": "^1.2.2"
   }
 }
