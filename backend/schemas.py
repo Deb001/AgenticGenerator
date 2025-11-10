@@ -1,60 +1,72 @@
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 
+class UserCreate(BaseModel):
+    """Payload for registering a new advisor."""
+
+    email: EmailStr
+    password: str = Field(..., min_length=8)
+
+class UserRead(BaseModel):
+    """Returned user data (no password)."""
+
+    id: int
+    email: EmailStr
+    role: str
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
+
+class Token(BaseModel):
+    """JWT access token response."""
+
+    access_token: str
+    token_type: str = "bearer"
 
 class PortfolioCreate(BaseModel):
-    """Payload for creating a new portfolio."""
+    """Payload to create a client portfolio."""
 
-    client_id: int = Field(..., description="Identifier of the client owning the portfolio")
-    advisor_id: int = Field(..., description="Identifier of the advisor managing the portfolio")
-    name: str = Field(..., description="Human readable name of the portfolio")
-
-
-class PortfolioOut(BaseModel):
-    """Response model for a portfolio record."""
-
-    id: int
-    client_id: int
-    advisor_id: int
-    name: str
-    created_at: datetime
-
-    class Config:
-        orm_mode = True
-
+    client_name: str = Field(..., max_length=255)
 
 class HoldingCreate(BaseModel):
-    """Payload for adding a holding to a portfolio."""
+    """Payload to add a holding."""
 
-    portfolio_id: int = Field(..., description="Portfolio to which the holding belongs")
-    symbol: str = Field(..., description="Ticker symbol of the security")
-    quantity: float = Field(..., gt=0, description="Number of shares/units held")
-    average_price: float = Field(..., gt=0, description="Average acquisition price per unit")
+    ticker: str = Field(..., max_length=10)
+    quantity: int = Field(..., gt=0)
+    average_price: float = Field(..., gt=0)
 
-
-class HoldingOut(BaseModel):
-    """Response model for a holding record."""
+class HoldingRead(BaseModel):
+    """Holding data returned from API."""
 
     id: int
-    portfolio_id: int
-    symbol: str
-    quantity: float
+    ticker: str
+    quantity: int
     average_price: float
-    created_at: datetime
 
     class Config:
         orm_mode = True
 
+class PortfolioRead(BaseModel):
+    """Portfolio data with holdings."""
 
-class SignalOut(BaseModel):
-    """Response model for a generated signal."""
+    id: int
+    client_name: str
+    created_at: datetime
+    holdings: List[HoldingRead] = []
 
-    symbol: str
+    class Config:
+        orm_mode = True
+
+class SignalRead(BaseModel):
+    """Advisory signal for a ticker."""
+
+    ticker: str
     date: datetime
-    recommendation: str
-    provenance: str
+    signal: str
+    explanation: Optional[str] = None
 
     class Config:
         orm_mode = True
