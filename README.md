@@ -1,63 +1,49 @@
-# Calculator App
+# Portfolio Advisory Platform
 
-A lightweight web‑based calculator built with vanilla JavaScript. The project includes a pure calculation engine, a responsive UI, comprehensive unit tests (Jest) and end‑to‑end tests (Playwright).
+## Overview
 
-## Project Structure
+This repository contains a full‑stack application that provides portfolio advisory services. The backend is built with **FastAPI**, **SQLAlchemy**, and **PostgreSQL**, while the frontend (not part of this batch) will be a React/TypeScript SPA.
 
-```
-root/
-├─ src/
-│  ├─ index.html      # Entry point
-│  ├─ styles.css      # UI styling
-│  ├─ app.js          # UI logic
-│  └─ calculator.js   # Pure calculation engine
-├─ tests/
-│  ├─ calculator.test.js   # Jest unit tests
-│  └─ e2e.test.js          # Playwright e2e tests
-├─ package.json
-├─ jest.config.js
-└─ .github/workflows/ci.yml
-```
+The **config** batch supplies all deployment‑related artifacts:
+- `Dockerfile` – builds a container image for the FastAPI service.
+- `docker-compose.yml` – orchestrates the backend and PostgreSQL database.
+- `.env.example` – template for required environment variables.
+- `requirements.txt` – pinned Python dependencies.
+- `README.md` – this documentation.
 
-## Setup & Development
+## Quick Start
 
-1. **Install Node.js (v20 or later)**
-2. Clone the repository and install dependencies:
+1. **Copy environment file**
    ```bash
-   npm ci
+   cp .env.example .env
    ```
-3. Run a local static server to view the UI:
+   Edit `.env` and replace placeholder values with secure secrets.
+
+2. **Build and run with Docker Compose**
    ```bash
-   npm run serve
+   docker compose up --build -d
    ```
-   The app will be available at `http://localhost:5000`.
+   The API will be reachable at `http://localhost:8000`.
 
-## Testing
+3. **Run migrations / initialise database**
+   (Assumes you have added migration scripts in a later batch.)
+   ```bash
+   docker compose exec backend alembic upgrade head
+   ```
 
-- **Unit tests** (Jest):
-  ```bash
-  npm run test
-  ```
-- **End‑to‑end tests** (Playwright):
-  ```bash
-  npm run e2e
-  ```
-- **CI script** (runs both suites):
-  ```bash
-  npm run ci
-  ```
+## Development
 
-## Continuous Integration
+- **Python version**: 3.11 (slim image).
+- **Hot‑reload**: Use `uvicorn backend.main:app --reload` locally (do **not** enable in production).
+- **Logging**: The container logs are streamed to Docker; configure a proper logging driver for production.
 
-GitHub Actions automatically runs the CI workflow on every push and pull request to the `main` branch. The workflow installs dependencies, executes unit tests, installs Playwright browsers, and runs the e2e suite in headless mode.
+## Security Considerations
 
-## Security & Production Notes
-
-- No secrets or API keys are stored in the repository.
-- The UI does **not** evaluate user input with `eval`; the calculation engine parses expressions safely.
-- The static server (`serve`) runs in production mode without debug flags.
-- All scripts exit with non‑zero status on failure, causing the CI pipeline to fail accordingly.
+- Never commit real secrets; keep them in `.env` or a secret manager.
+- The container runs without root privileges (default for the slim image).
+- All traffic should be served behind a TLS termination proxy (e.g., Nginx, Traefik).
+- Ensure the `JWT_SECRET_KEY` is a strong, randomly generated string.
 
 ## License
 
-MIT License
+MIT License.
