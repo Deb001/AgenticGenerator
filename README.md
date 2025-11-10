@@ -1,102 +1,163 @@
-# Project Overview
+# Calculator Web App
 
-A lightweight, accessible web‑based calculator built with vanilla HTML, CSS, and JavaScript. The application demonstrates best practices for semantic markup, ARIA roles, keyboard navigation, and responsive design while providing a clean, production‑ready code base.
+A lightweight, accessible, and responsive web calculator built with vanilla JavaScript (ES modules), HTML5, and CSS3. The project follows a clean separation of concerns:
+
+* **`src/calculator.js`** – Pure calculation logic with validation.
+* **`src/app.js`** – UI integration, event handling, keyboard support, and accessibility wiring.
+* **`index.html`** – Semantic markup for the calculator UI.
+* **`styles.css`** – Responsive layout and visual styling.
+* **Jest** – Browser‑based unit tests for the calculation module.
+
+---
+
+## Table of Contents
+
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Available Scripts](#available-scripts)
+- [Development Workflow](#development-workflow)
+- [Testing](#testing)
+- [Folder Structure](#folder-structure)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
+
+## Features
+
+- **Accessible UI** – Semantic HTML, ARIA attributes, focus management, and full keyboard support.
+- **Responsive Design** – Works on mobile, tablet, and desktop screens.
+- **Pure Calculation Engine** – No DOM manipulation inside `calculator.js`; pure functions are fully unit‑tested.
+- **Robust Validation** – Handles division by zero, overflow, and invalid input gracefully.
+- **Zero‑dependency Build** – No bundlers required; runs directly in modern browsers.
+- **Automated Tests** – Jest runs in a headless browser environment (`jsdom`).
+
+---
+
+## Tech Stack
+
+| Layer                | Technology                     |
+|----------------------|--------------------------------|
+| UI Markup            | HTML5 (semantic)                |
+| Styling              | CSS3 (Flexbox, media queries)   |
+| Logic                | JavaScript (ES2022 modules)     |
+| Testing              | Jest + jsdom                    |
+| Package Management   | npm                             |
+| Linting/Formatting   | ESLint, Prettier (optional)     |
+
+---
+
+## Prerequisites
+
+- **Node.js** ≥ 18 (includes npm)
+- A modern browser (Chrome, Firefox, Edge, Safari) for manual testing
+
+---
+
+## Installation
+
+# Clone the repository
+git clone https://github.com/your-username/calculator-web-app.git
+cd calculator-web-app
+
+# Install development dependencies
+npm install
+
+---
+
+## Available Scripts
+
+| Script          | Description                                          |
+|-----------------|------------------------------------------------------|
+| `npm start`     | Starts a lightweight development server (`http-server`) on `http://localhost:8080`. |
+| `npm test`      | Runs Jest unit tests in watch mode.                  |
+| `npm run lint`  | Executes ESLint against the source files.            |
+| `npm run format`| Formats code with Prettier.                          |
+
+**Note:** The `start` script uses the `http-server` package (installed as a dev dependency) to serve static files without a build step.
+
+---
+
+## Development Workflow
+
+1. **Start the dev server**
+
+      npm start
+   
+   The app will be available at `http://localhost:8080`. Any changes to HTML, CSS, or JS files are reflected instantly (no hot‑reload required).
+
+2. **Edit source files**
+
+   - **Calculator logic** – `src/calculator.js`
+   - **UI integration** – `src/app.js`
+   - **Markup** – `index.html`
+   - **Styling** – `styles.css`
+
+3. **Run tests continuously**
+
+      npm test
+   
+   Jest watches for changes and re‑runs affected test suites.
+
+4. **Lint & format before committing**
+
+      npm run lint
+   npm run format
+   
+---
+
+## Testing
+
+The test suite lives in `src/calculator.test.js` and validates all public functions exported by `src/calculator.js`.
+
+npm test
+
+The configuration uses Jest’s default `jsdom` environment, so no additional setup is required. Tests cover:
+
+- Basic arithmetic (add, subtract, multiply, divide)
+- Edge cases (division by zero, large numbers, non‑numeric input)
+- Input validation errors (throws `TypeError` for invalid arguments)
 
 ---
 
 ## Folder Structure
 
-```
-root/
-├─ index.html          # Entry point – UI layout with ARIA attributes
-├─ styles.css          # Responsive styling, focus states, and visual layout
-├─ app.js              # UI controller – DOM wiring, input buffering, display logic, error handling, keyboard support
-├─ calculator.js       # Pure arithmetic evaluator exposing evaluate(expression)
-├─ README.md           # Project documentation (this file)
-└─ .gitignore          # Files/folders excluded from version control
-```
+/
+├─ .gitignore          # Excludes node_modules, coverage, etc.
+├─ README.md           # ← This file
+├─ index.html          # Semantic UI markup
+├─ styles.css          # Responsive styling
+├─ package.json        # npm metadata & scripts
+├─ package-lock.json
+├─ src/
+│   ├─ calculator.js   # Pure calculation functions
+│   ├─ app.js          # UI glue code
+│   └─ calculator.test.js # Jest unit tests
+└─ tests/              # (optional) additional integration tests
 
 ---
 
-## Setup & Run
+## Contributing
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository‑url>
-   cd <repository‑folder>
-   ```
-2. **Open the application**
-   - No build step is required. Simply open `index.html` in a modern browser (Chrome, Firefox, Edge, Safari).
-   - For a local server (recommended for CSP testing), run:
-     ```bash
-     npx serve .
-     ```
-     Then navigate to `http://localhost:3000`.
+Contributions are welcome! Please follow these steps:
 
----
-
-## Usage
-
-- Click the on‑screen buttons or use the keyboard shortcuts (see below) to build an arithmetic expression.
-- Press **Enter** or click the **=** button to evaluate.
-- The display shows the current expression and the result. Errors such as division by zero are shown in a user‑friendly message.
-
----
-
-## Keyboard Shortcuts
-
-| Key | Action |
-|-----|--------|
-| `0‑9` | Input digit |
-| `+` `-` `*` `/` | Input operator |
-| `.` | Decimal point |
-| `Enter` or `=` | Evaluate expression |
-| `Backspace` | Delete last character |
-| `Escape` | Clear the entire expression |
-| `ArrowLeft` / `ArrowRight` | Move cursor within the expression |
-
----
-
-## Accessibility Features
-
-- **Semantic HTML**: All interactive elements are `<button>` elements with clear accessible names.
-- **ARIA Roles & Labels**: The calculator container uses `role="region"` with `aria‑label="Calculator"`. Buttons have `aria‑label` where the visual label differs from the spoken label (e.g., `×` is labelled "multiply").
-- **Focus Management**: Logical tab order, visible focus outlines, and `aria‑live="polite"` region for result updates.
-- **Keyboard Navigation**: Full operation via keyboard without requiring a mouse.
-- **Contrast & Font Size**: Colors meet WCAG AA contrast ratios; scalable with browser zoom.
-
----
-
-## Manual Testing Summary
-
-| Test Case | Steps | Expected Result |
-|-----------|-------|-----------------|
-| Basic addition | `2 + 3 =` | `5` |
-| Subtraction with negative result | `5 - 9 =` | `-4` |
-| Multiplication with decimals | `2.5 * 4 =` | `10` |
-| Division by zero | `7 / 0 =` | Error message "Cannot divide by zero" |
-| Consecutive operations | `3 + 2 * 4 =` | `11` (standard left‑to‑right evaluation as implemented) |
-| Keyboard entry | Press keys `1 0 / 2 Enter` | `5` |
-| Clear operation | Press `Escape` at any time | Display resets to empty |
-
-All tests were performed on Chrome 124, Firefox 124, and Edge 124 with no visual or functional regressions.
-
----
-
-## Deployment
-
-The project can be deployed to any static‑hosting service (GitHub Pages, Netlify, Vercel, etc.).
-
-1. Push the repository to a remote.
-2. Enable the static site feature of the chosen platform.
-3. (Optional) Add a Content‑Security‑Policy header to mitigate XSS:
-   ```
-   Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';
-   ```
-4. Verify that the site loads over HTTPS and that security headers such as `X-Frame-Options: DENY` and `Strict-Transport-Security` are present.
+1. Fork the repository.
+2. Create a feature branch (`git checkout -b feat/your-feature`).
+3. Ensure code passes linting and all tests (`npm run lint && npm test`).
+4. Open a Pull Request with a clear description of changes.
 
 ---
 
 ## License
 
 This project is licensed under the **MIT License** – see the `LICENSE` file for details.
+
+---
+
+## Quick Start (One‑Liner)
+
+git clone https://github.com/your-username/calculator-web-app.git && cd calculator-web-app && npm install && npm start
+
+Open `http://localhost:8080` in your browser to see the calculator in action. Happy coding!
