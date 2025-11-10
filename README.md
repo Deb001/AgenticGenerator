@@ -1,49 +1,68 @@
-# Portfolio Advisory Platform
+# SecureTodoAPI
+A minimal, production‑ready Flask REST API for managing personal to‑do items with JWT authentication and strong security defaults.
 
-## Overview
+## Features
+- User registration & login (bcrypt‑hashed passwords)
+- Stateless JWT access tokens (1‑hour expiry)
+- CRUD endpoints for to‑do items, scoped per user
+- Input validation via Pydantic
+- Secure HTTP headers (via Flask‑Talisman)
+- CORS limited to API routes
+- Docker‑compose for local development
 
-This repository contains a full‑stack application that provides portfolio advisory services. The backend is built with **FastAPI**, **SQLAlchemy**, and **PostgreSQL**, while the frontend (not part of this batch) will be a React/TypeScript SPA.
+## Quick Start (Docker)
+```bash
+git clone <repo-url>
+cd SecureTodoAPI
+cp .env.example .env   # edit secrets
+docker compose up --build -d
+```
+The API will be reachable at `http://localhost:5000/api/`.
 
-The **config** batch supplies all deployment‑related artifacts:
-- `Dockerfile` – builds a container image for the FastAPI service.
-- `docker-compose.yml` – orchestrates the backend and PostgreSQL database.
-- `.env.example` – template for required environment variables.
-- `requirements.txt` – pinned Python dependencies.
-- `README.md` – this documentation.
+## API Reference
+### Auth
+- `POST /api/auth/register`
+  ```json
+  {"email": "user@example.com", "password": "StrongPass123"}
+  ```
+- `POST /api/auth/login`
+  ```json
+  {"email": "user@example.com", "password": "StrongPass123"}
+  ```
+  Returns `{ "access_token": "..." }`.
 
-## Quick Start
-
-1. **Copy environment file**
-   ```bash
-   cp .env.example .env
-   ```
-   Edit `.env` and replace placeholder values with secure secrets.
-
-2. **Build and run with Docker Compose**
-   ```bash
-   docker compose up --build -d
-   ```
-   The API will be reachable at `http://localhost:8000`.
-
-3. **Run migrations / initialise database**
-   (Assumes you have added migration scripts in a later batch.)
-   ```bash
-   docker compose exec backend alembic upgrade head
-   ```
+### Todos (JWT required)
+- `GET /api/todos/` – list all user todos
+- `POST /api/todos/` – create
+- `GET /api/todos/<id>` – retrieve
+- `PUT /api/todos/<id>` – update
+- `DELETE /api/todos/<id>` – delete
+All requests must include header:
+`Authorization: Bearer <access_token>`
 
 ## Development
-
-- **Python version**: 3.11 (slim image).
-- **Hot‑reload**: Use `uvicorn backend.main:app --reload` locally (do **not** enable in production).
-- **Logging**: The container logs are streamed to Docker; configure a proper logging driver for production.
+### Prerequisites
+- Python 3.11+
+- PostgreSQL (or use SQLite for quick tests)
+### Setup
+```bash
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+export FLASK_ENV=development
+flask run
+```
+### Running Tests
+```bash
+pytest -v
+```
 
 ## Security Considerations
-
-- Never commit real secrets; keep them in `.env` or a secret manager.
-- The container runs without root privileges (default for the slim image).
-- All traffic should be served behind a TLS termination proxy (e.g., Nginx, Traefik).
-- Ensure the `JWT_SECRET_KEY` is a strong, randomly generated string.
+- **Secrets**: Never commit real secrets. Use environment variables.
+- **HTTPS**: In production, terminate TLS at a reverse proxy (nginx, Traefik).
+- **Rate Limiting**: Add Flask‑Limiter or similar before exposing to the internet.
+- **CSP**: Adjust `Flask-Talisman` CSP settings as needed.
 
 ## License
-
-MIT License.
+MIT
