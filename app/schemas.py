@@ -1,42 +1,37 @@
-from datetime import datetime
-from typing import Optional
+from marshmallow import Schema, fields, validate, validates, ValidationError
+from .models import User
 
-from pydantic import BaseModel, EmailStr, Field, root_validator
+class UserSchema(Schema):
+    id = fields.Int(dump_only=True)
+    username = fields.Str(
+        required=True,
+        validate=validate.Length(min=3, max=150)
+    )
+    email = fields.Email(required=True)
+    password = fields.Str(
+        load_only=True,
+        required=True,
+        validate=validate.Length(min=8)
+    )
 
+    @validates("username")
+    def validate_username(self, value):
+        if not value.isidentifier():
+            raise ValidationError(
+                "Username must contain only letters, numbers, and underscores."
+            )
 
-class UserRegisterSchema(BaseModel):
-    email: EmailStr
-    password: str = Field(..., min_length=8)
+class LoginSchema(Schema):
+    username = fields.Str(required=True)
+    password = fields.Str(required=True, load_only=True)
 
-
-class UserLoginSchema(BaseModel):
-    email: EmailStr
-    password: str
-
-
-class TodoCreateSchema(BaseModel):
-    title: str = Field(..., min_length=1, max_length=200)
-    description: Optional[str] = None
-
-
-class TodoUpdateSchema(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    completed: Optional[bool] = None
-
-    @root_validator
-    def at_least_one_field(cls, values):
-        if not any(values.get(field) is not None for field in ("title", "description", "completed")):
-            raise ValueError("At least one field must be provided")
-        return values
-
-
-class TodoResponseSchema(BaseModel):
-    id: int
-    title: str
-    description: Optional[str]
-    completed: bool
-    created_at: datetime
-
-    class Config:
-        orm_mode = True
+class TodoSchema(Schema):
+    id = fields.Int(dump_only=True)
+    title = fields.Str(
+        required=True,
+        validate=validate.Length(min=1, max=255)
+    )
+    description = fields.Str(allow_none=True)
+    completed = fields.Bool()
+    created_at = fields.DateTime(dump_only=True)
+    updated_at = fields.DateTime(dump_only=True)
