@@ -1,58 +1,63 @@
-# Retail Shift Scheduler
+# Calculator App
 
-This repository contains a Flask‑based web application for managing employee shift schedules.
+A lightweight web‑based calculator built with vanilla JavaScript. The project includes a pure calculation engine, a responsive UI, comprehensive unit tests (Jest) and end‑to‑end tests (Playwright).
 
 ## Project Structure
 
-- **app.py** – Flask application factory.
-- **config.py** – Central configuration object (database URI, secret key, etc.).
-- **models.py** – SQLAlchemy ORM definitions for `Employee`, `Shift`, and `Notification`.
-- **db_init.py** – Database creation and optional demo data seeding.
-- **utils.py** – Helper functions for shift validation (overlap, consecutive shifts, weekly limits).
-- **scheduler.py** – Core scheduling engine that generates deterministic schedules while respecting business rules.
-- **routes.py** – Flask Blueprint exposing HTML views and JSON APIs.
-- **templates/** – Jinja2 HTML templates for manager and employee interfaces.
-- **static/** – CSS and JavaScript assets.
-- **Dockerfile** – Container definition for production deployment.
-- **requirements.txt** – Python dependencies.
+```
+root/
+├─ src/
+│  ├─ index.html      # Entry point
+│  ├─ styles.css      # UI styling
+│  ├─ app.js          # UI logic
+│  └─ calculator.js   # Pure calculation engine
+├─ tests/
+│  ├─ calculator.test.js   # Jest unit tests
+│  └─ e2e.test.js          # Playwright e2e tests
+├─ package.json
+├─ jest.config.js
+└─ .github/workflows/ci.yml
+```
 
-## Getting Started
+## Setup & Development
 
-1. **Clone the repository**
+1. **Install Node.js (v20 or later)**
+2. Clone the repository and install dependencies:
    ```bash
-   git clone https://github.com/yourusername/retail-shift-scheduler.git
-   cd retail-shift-scheduler
+   npm ci
    ```
-
-2. **Create a virtual environment and install dependencies**
+3. Run a local static server to view the UI:
    ```bash
-   python -m venv .venv
-   source .venv/bin/activate   # On Windows use `.venv\\Scripts\\activate`
-   pip install -r requirements.txt
+   npm run serve
    ```
+   The app will be available at `http://localhost:5000`.
 
-3. **Initialize the database**
-   ```bash
-   python db_init.py
-   ```
-   This will create a SQLite database file `retail.db` in the project root.
+## Testing
 
-4. **Run the application**
-   ```bash
-   python app.py
-   ```
-   The app will be available at `http://127.0.0.1:5000/`.
+- **Unit tests** (Jest):
+  ```bash
+  npm run test
+  ```
+- **End‑to‑end tests** (Playwright):
+  ```bash
+  npm run e2e
+  ```
+- **CI script** (runs both suites):
+  ```bash
+  npm run ci
+  ```
 
-5. **Docker deployment (optional)**
-   ```bash
-   docker build -t retail-scheduler .
-   docker run -p 5000:5000 retail-scheduler
-   ```
+## Continuous Integration
 
-## Configuration
+GitHub Actions automatically runs the CI workflow on every push and pull request to the `main` branch. The workflow installs dependencies, executes unit tests, installs Playwright browsers, and runs the e2e suite in headless mode.
 
-All configuration values are defined in `config.py`. Adjust `SQLALCHEMY_DATABASE_URI` if you wish to use a different database backend.
+## Security & Production Notes
+
+- No secrets or API keys are stored in the repository.
+- The UI does **not** evaluate user input with `eval`; the calculation engine parses expressions safely.
+- The static server (`serve`) runs in production mode without debug flags.
+- All scripts exit with non‑zero status on failure, causing the CI pipeline to fail accordingly.
 
 ## License
 
-This project is licensed under the MIT License.
+MIT License
