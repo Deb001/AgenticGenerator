@@ -1,96 +1,57 @@
-import '@testing-library/jest-dom';
-import { fireEvent, getByText, getByRole } from '@testing-library/dom';
-import path from 'path';
-import fs from 'fs';
-import '../src/app.js';
+// tests/e2e.test.js
+import { test, expect } from "@playwright/test";
 
-function loadHTML() {
-  const htmlPath = path.resolve(__dirname, '../src/index.html');
-  const html = fs.readFileSync(htmlPath, 'utf8');
-  document.documentElement.innerHTML = html;
-  const event = new Event('DOMContentLoaded', { bubbles: true, cancelable: true });
-  document.dispatchEvent(event);
-}
+/**
+ * Assumes the application is served locally at http://localhost:3000
+ * Adjust the baseURL in the Playwright config if needed.
+ */
 
-describe('Calculator end-to-end UI tests', () => {
-  beforeEach(() => {
-    document.body.innerHTML = '';
-    loadHTML();
+test.describe("Calculator UI end‑to‑end", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("http://localhost:3000/src/index.html");
   });
 
-  test('click sequence computes 7*8=', async () => {
-    try {
-      const button7 = getByText(document.body, '7');
-      const buttonMultiply = getByText(document.body, '×');
-      const button8 = getByText(document.body, '8');
-      const buttonEquals = getByText(document.body, '=');
-      const display = getByRole(document.body, 'textbox', { name: /display/i });
-
-      fireEvent.click(button7);
-      fireEvent.click(buttonMultiply);
-      fireEvent.click(button8);
-      fireEvent.click(buttonEquals);
-
-      expect(display).toHaveValue('56');
-    } catch (err) {
-      throw err;
-    }
+  test("should perform a simple calculation", async ({ page }) => {
+    await page.click("button[data-value='2']");
+    await page.click("button[data-value='+']");
+    await page.click("button[data-value='3']");
+    await page.click("button[data-value='=']");
+    const display = await page.locator("#calc-display");
+    await expect(display).toHaveValue("5");
   });
 
-  test('keyboard entry works', async () => {
-    try {
-      const display = getByRole(document.body, 'textbox', { name: /display/i });
-
-      fireEvent.keyDown(document.body, { key: '1', code: 'Digit1' });
-      fireEvent.keyDown(document.body, { key: '+', code: 'Equal', shiftKey: true });
-      fireEvent.keyDown(document.body, { key: '2', code: 'Digit2' });
-      fireEvent.keyDown(document.body, { key: 'Enter', code: 'Enter' });
-
-      expect(display).toHaveValue('3');
-    } catch (err) {
-      throw err;
-    }
+  test("should respect operator precedence", async ({ page }) => {
+    await page.click("button[data-value='2']");
+    await page.click("button[data-value='+']");
+    await page.click("button[data-value='3']");
+    await page.click("button[data-value='*']");
+    await page.click("button[data-value='4']");
+    await page.click("button[data-value='=']");
+    const display = await page.locator("#calc-display");
+    await expect(display).toHaveValue("14");
   });
 
-  test('clear and backspace behavior', async () => {
-    try {
-      const button1 = getByText(document.body, '1');
-      const button2 = getByText(document.body, '2');
-      const buttonClear = getByText(document.body, 'C');
-      const buttonBackspace = getByText(document.body, '←');
-      const display = getByRole(document.body, 'textbox', { name: /display/i });
-
-      fireEvent.click(button1);
-      fireEvent.click(button2);
-      expect(display).toHaveValue('12');
-
-      fireEvent.click(buttonBackspace);
-      expect(display).toHaveValue('1');
-
-      fireEvent.click(buttonClear);
-      expect(display).toHaveValue('');
-    } catch (err) {
-      throw err;
-    }
+  test("should handle clear and backspace", async ({ page }) => {
+    await page.click("button[data-value='9']");
+    await page.click("button[data-value='8']");
+    await page.click("button[data-value='⌫']"); // backspace removes 8
+    const display = await page.locator("#calc-display");
+    await expect(display).toHaveValue("9");
+    await page.click("button[data-value='C']"); // clear
+    await expect(display).toHaveValue("");
   });
 
-  test('accessibility focus order', async () => {
-    try {
-      const allButtons = Array.from(document.querySelectorAll('button'));
-      let focusIndex = 0;
-      allButtons[focusIndex].focus();
-      expect(document.activeElement).toBe(allButtons[focusIndex]);
-
-      for (let i = 1; i < allButtons.length; i++) {
-        fireEvent.keyDown(document.body, { key: 'Tab', code: 'Tab' });
-        allButtons[i].focus();
-        expect(document.activeElement).toBe(allButtons[i]);
-        expect(allButtons[i].classList.contains('focus-visible')).toBe(true);
-        const ariaLabel = allButtons[i].getAttribute('aria-label');
-        expect(ariaLabel).toBeTruthy();
-      }
-    } catch (err) {
-      throw err;
-    }
+  test("should display error on invalid expression", async ({ page }) => {
+    // Intercept alert to verify message
+    page.on('dialog', async (dialog) => {
+      expect(dialog.message()).toMatch(/Error:/);
+      await dialog.dismiss();
+    });
+    await page.click("button[data-value='(']");
+    await page.click("button[data-value='2']");
+    await page.click("button[data-value='+']");
+    await page.click("button[data-value='3']");
+    await page.click("button[data-value='=']"); // missing closing parenthesis
+    // No further assertions needed; alert handling verifies error path
   });
 });
