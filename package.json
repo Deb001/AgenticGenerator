@@ -1,17 +1,17 @@
 {
-  "name": "calculator-project",
+  "name": "calculator-app",
   "version": "1.0.0",
-  "description": "Simple calculator with tests",
-  "main": "src/app.js",
+  "description": "A simple web calculator with unit and end-to-end tests.",
+  "private": true,
   "scripts": {
     "test": "jest",
-    "start": "npx serve -s ."
+    "e2e": "playwright test",
+    "serve": "serve -s src -l 5000",
+    "ci": "npm run test && npm run e2e"
   },
   "devDependencies": {
     "jest": "^29.0.0",
-    "@testing-library/dom": "^9.0.0",
-    "@testing-library/jest-dom": "^6.0.0",
-    "serve": "^14.0.0"
-  },
-  "license": "MIT"
+    "@playwright/test": "^1.40.0",
+    "serve": "^14.2.0"
+  }
 }
