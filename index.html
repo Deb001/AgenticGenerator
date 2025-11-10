@@ -2,43 +2,39 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Web Calculator</title>
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; base-uri 'self';">
+  <title>Calculator</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <main class="calculator" role="application" aria-label="Calculator">
-    <div id="display" class="calculator__display" aria-live="polite" aria-atomic="true">0</div>
-    <div class="calculator__keys" role="grid">
+  <main class="calculator" aria-label="Simple calculator">
+    <div id="display" class="calculator-display" role="textbox" aria-live="polite" tabindex="0"></div>
+    <div class="calculator-keys">
       <button type="button" class="key" data-action="clear" aria-label="Clear">C</button>
-      <button type="button" class="key" data-action="backspace" aria-label="Backspace">←</button>
-      <button type="button" class="key" data-action="operator" data-value="/" aria-label="Divide">÷</button>
-      <button type="button" class="key" data-action="operator" data-value="*" aria-label="Multiply">×</button>
+      <button type="button" class="key" data-action="divide" aria-label="Divide">÷</button>
+      <button type="button" class="key" data-action="multiply" aria-label="Multiply">×</button>
+      <button type="button" class="key" data-action="backspace" aria-label="Backspace">⌫</button>
 
       <button type="button" class="key" data-action="digit" data-value="7">7</button>
       <button type="button" class="key" data-action="digit" data-value="8">8</button>
       <button type="button" class="key" data-action="digit" data-value="9">9</button>
-      <button type="button" class="key" data-action="operator" data-value="-" aria-label="Subtract">−</button>
+      <button type="button" class="key" data-action="subtract" aria-label="Subtract">−</button>
 
       <button type="button" class="key" data-action="digit" data-value="4">4</button>
       <button type="button" class="key" data-action="digit" data-value="5">5</button>
       <button type="button" class="key" data-action="digit" data-value="6">6</button>
-      <button type="button" class="key" data-action="operator" data-value="+" aria-label="Add">+</button>
+      <button type="button" class="key" data-action="add" aria-label="Add">+</button>
 
       <button type="button" class="key" data-action="digit" data-value="1">1</button>
       <button type="button" class="key" data-action="digit" data-value="2">2</button>
       <button type="button" class="key" data-action="digit" data-value="3">3</button>
-      <button type="button" class="key" data-action="equals" aria-label="Equals">=</button>
+      <button type="button" class="key equals" data-action="equals" aria-label="Equals">=</button>
 
-      <button type="button" class="key key--wide" data-action="digit" data-value="0">0</button>
-      <button type="button" class="key" data-action="decimal" data-value=".">.</button>
+      <button type="button" class="key zero" data-action="digit" data-value="0">0</button>
+      <button type="button" class="key" data-action="decimal" aria-label="Decimal point">.</button>
     </div>
   </main>
-  <noscript>
-    <p class="noscript-message">JavaScript is required to use the calculator. Please enable JavaScript in your browser.</p>
-  </noscript>
-  <script type="module" src="app.js"></script>
+
+  <script type="module" src="src/app.js"></script>
 </body>
 </html>
