@@ -1,92 +1,129 @@
-from sqlalchemy import Column, Integer, String, DateTime, Float, ForeignKey, func
+from datetime import datetime
+from sqlalchemy import Column, Integer, String, DateTime, Float, Date, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
+from backend.db import Base
 
-Base = declarative_base()
+class User(Base):
+    """Advisor user account model."""
 
+    __tablename__ = "users"
 
-class Client(Base):
-    """Represents an end‑customer."""
-    __tablename__ = "client"
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False)
-    email = Column(String, unique=True, nullable=False)
-
-
-class Advisor(Base):
-    """Advisor user with role‑based access."""
-    __tablename__ = "advisor"
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False)
-    email = Column(String, unique=True, nullable=False)
+    email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
-    role = Column(String, default="advisor")
+    role = Column(String, nullable=False, default="advisor")
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
+    # One advisor can have many client portfolios.
+    portfolios = relationship(
+        "ClientPortfolio",
+        back_populates="advisor",
+        cascade="all, delete-orphan",
+    )
 
-class Portfolio(Base):
-    """Collection of holdings belonging to a client."""
-    __tablename__ = "portfolio"
+    def __repr__(self) -> str:
+        return f"<User id={self.id} email={self.email} role={self.role}>"
+
+class ClientPortfolio(Base):
+    """Portfolio belonging to a client."""
+
+    __tablename__ = "client_portfolios"
+
     id = Column(Integer, primary_key=True, index=True)
-    client_id = Column(Integer, ForeignKey("client.id"))
-    advisor_id = Column(Integer, ForeignKey("advisor.id"))
-    name = Column(String, nullable=False)
-    created_at = Column(DateTime, default=func.now())
+    advisor_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    client_name = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    client = relationship("Client", backref="portfolios")
-    advisor = relationship("Advisor", backref="portfolios")
-    holdings = relationship("Holding", back_populates="portfolio", cascade="all, delete-orphan")
+    advisor = relationship("User", back_populates="portfolios")
+    holdings = relationship(
+        "Holding",
+        back_populates="portfolio",
+        cascade="all, delete-orphan",
+    )
 
+    def __repr__(self) -> str:
+        return f"<ClientPortfolio id={self.id} client_name={self.client_name}>"
 
 class Holding(Base):
-    """A security position within a portfolio."""
-    __tablename__ = "holding"
+    """Individual equity holding within a portfolio."""
+
+    __tablename__ = "holdings"
+
     id = Column(Integer, primary_key=True, index=True)
-    portfolio_id = Column(Integer, ForeignKey("portfolio.id"))
-    symbol = Column(String, nullable=False)
-    quantity = Column(Float, nullable=False)
+    portfolio_id = Column(Integer, ForeignKey("client_portfolios.id", ondelete="CASCADE"), nullable=False)
+    ticker = Column(String, nullable=False, index=True)
+    quantity = Column(Integer, nullable=False)
     average_price = Column(Float, nullable=False)
 
-    portfolio = relationship("Portfolio", back_populates="holdings")
+    portfolio = relationship("ClientPortfolio", back_populates="holdings")
 
+    def __repr__(self) -> str:
+        return f"<Holding id={self.id} ticker={self.ticker} qty={self.quantity}>"
 
-class HistoricalPrice(Base):
-    """OHLCV daily price data for a security."""
-    __tablename__ = "historical_price"
+class MarketData(Base):
+    """OHLCV daily bar for a ticker."""
+
+    __tablename__ = "market_data"
+
     id = Column(Integer, primary_key=True, index=True)
-    symbol = Column(String, index=True, nullable=False)
-    date = Column(DateTime, index=True, nullable=False)
-    open = Column(Float)
-    high = Column(Float)
-    low = Column(Float)
-    close = Column(Float)
-    volume = Column(Float)
+    ticker = Column(String, nullable=False, index=True)
+    date = Column(Date, nullable=False)
+    open = Column(Float, nullable=False)
+    high = Column(Float, nullable=False)
+    low = Column(Float, nullable=False)
+    close = Column(Float, nullable=False)
+    volume = Column(Integer, nullable=False)
 
+    __table_args__ = (UniqueConstraint("ticker", "date", name="_marketdata_ticker_date_uc"),)
 
-class SectorInfo(Base):
-    """Metadata about a sector and its aggregate score."""
-    __tablename__ = "sector_info"
+    def __repr__(self) -> str:
+        return f"<MarketData ticker={self.ticker} date={self.date}>"
+
+class Sentiment(Base):
+    """Aggregated buzz score per ticker per day."""
+
+    __tablename__ = "sentiments"
+
     id = Column(Integer, primary_key=True, index=True)
-    sector_name = Column(String, unique=True, nullable=False)
-    score = Column(Float)
-    last_updated = Column(DateTime, default=func.now(), onupdate=func.now())
+    ticker = Column(String, nullable=False, index=True)
+    date = Column(Date, nullable=False)
+    score = Column(Float, nullable=False)
 
+    __table_args__ = (UniqueConstraint("ticker", "date", name="_sentiment_ticker_date_uc"),)
 
-class SentimentRecord(Base):
-    """News buzz sentiment for a symbol on a given date."""
-    __tablename__ = "sentiment_record"
+    def __repr__(self) -> str:
+        return f"<Sentiment ticker={self.ticker} date={self.date} score={self.score}>"
+
+class Indicator(Base):
+    """Technical indicator values per ticker per day."""
+
+    __tablename__ = "indicators"
+
     id = Column(Integer, primary_key=True, index=True)
-    symbol = Column(String, index=True, nullable=False)
-    date = Column(DateTime, index=True, nullable=False)
-    sentiment_score = Column(Float)
-    source = Column(String)
+    ticker = Column(String, nullable=False, index=True)
+    date = Column(Date, nullable=False)
+    rsi = Column(Float, nullable=True)
+    macd = Column(Float, nullable=True)
+    sma_20 = Column(Float, nullable=True)
+    sma_50 = Column(Float, nullable=True)
 
+    __table_args__ = (UniqueConstraint("ticker", "date", name="_indicator_ticker_date_uc"),)
 
-class Signal(Base):
-    """Advisory signal generated for a symbol on a date."""
-    __tablename__ = "signal"
+    def __repr__(self) -> str:
+        return f"<Indicator ticker={self.ticker} date={self.date}>"
+
+class AdvisorySignal(Base):
+    """Buy/Hold/Sell recommendation per ticker per day."""
+
+    __tablename__ = "advisory_signals"
+
     id = Column(Integer, primary_key=True, index=True)
-    symbol = Column(String, index=True, nullable=False)
-    date = Column(DateTime, index=True, nullable=False, default=func.now())
-    recommendation = Column(String)
-    provenance = Column(String)
-    generated_by = Column(String)
+    ticker = Column(String, nullable=False, index=True)
+    date = Column(Date, nullable=False)
+    signal = Column(String, nullable=False)  # Expected values: 'Buy', 'Hold', 'Sell'
+    explanation = Column(String, nullable=True)
+
+    __table_args__ = (UniqueConstraint("ticker", "date", name="_signal_ticker_date_uc"),)
+
+    def __repr__(self) -> str:
+        return f"<AdvisorySignal ticker={self.ticker} date={self.date} signal={self.signal}>"
