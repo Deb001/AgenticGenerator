@@ -1,104 +1,92 @@
-/* -------------------------------------------------
-   Root scaling – makes the whole UI responsive to
-   the user's default font size and viewport width.
-   ------------------------------------------------- */
-:root {
-  /* Base font size scales between 14px and 18px */
-  font-size: clamp(14px, 1vw + 0.5rem, 18px);
-  --bg-primary: #f9f9f9;
-  --bg-display: #222;
-  --color-display: #0f0;
-  --color-button: #333;
-  --color-button-text: #fff;
-  --color-button-hover: #444;
-  --focus-outline: 2px solid #005fcc;
+/* Mobile‑first responsive grid */
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 0;
+    padding: 1rem;
+    background-color: #f9f9f9;
+    color: #222;
 }
 
-/* -------------------------------------------------
-   Calculator display – large, right‑aligned text.
-   ------------------------------------------------- */
-#display {
-  background: var(--bg-display);
-  color: var(--color-display);
-  font-family: 'Segoe UI', Tahoma, sans-serif;
-  font-size: 2.5rem;
-  text-align: right;
-  padding: 0.5rem 1rem;
-  border-radius: 0.4rem;
-  min-height: 3rem;
-  overflow-x: auto;
-  white-space: nowrap;
+h1 {
+    text-align: center;
+    margin-bottom: 1rem;
 }
 
-/* -------------------------------------------------
-   Button container – uniform grid layout.
-   ------------------------------------------------- */
-.buttons {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.5rem;
-  margin-top: 1rem;
+/* Calculator container */
+#calculator {
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 1rem;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 
-/* -------------------------------------------------
-   Individual calculator buttons.
-   ------------------------------------------------- */
-.calc-button {
-  background: var(--color-button);
-  color: var(--color-button-text);
-  border: none;
-  border-radius: 0.4rem;
-  font-size: 1.6rem;
-  font-weight: 600;
-  cursor: pointer;
-  height: 4rem;
-  width: 100%;
-  transition: background 0.15s ease-in-out;
+/* Grid layout for inputs */
+.calc-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
 }
 
-/* Hover / active states */
-.calc-button:hover,
-.calc-button:focus-visible {
-  background: var(--color-button-hover);
+/* Larger screens */
+@media (min-width: 480px) {
+    .calc-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
-/* Focus-visible – keyboard navigation aid */
-.calc-button:focus-visible {
-  outline: var(--focus-outline);
-  outline-offset: 2px;
+/* Form controls */
+input[type="number"],
+select {
+    width: 100%;
+    padding: 0.5rem;
+    font-size: 1rem;
+    border: 2px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
 }
 
-/* Disabled state (e.g., when the UI is locked) */
-.calc-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+/* Focus styles for accessibility */
+input[type="number"]:focus,
+select:focus,
+button:focus {
+    outline: none;
+    border-color: #0066cc;
+    box-shadow: 0 0 0 3px rgba(0,102,204,0.2);
 }
 
-/* -------------------------------------------------
-   Media query – larger touch targets on small screens.
-   ------------------------------------------------- */
-@media (max-width: 600px) {
-  .calc-button {
-    height: 5rem;
-    font-size: 2rem;
-  }
-
-  #display {
-    font-size: 3rem;
-    padding: 0.75rem 1rem;
-  }
+/* Calculate button */
+button {
+    grid-column: 1 / -1;
+    padding: 0.75rem;
+    font-size: 1rem;
+    background-color: #0066cc;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
 }
 
-/* -------------------------------------------------
-   Accessibility helpers – ARIA related styling.
-   ------------------------------------------------- */
-[aria-pressed="true"] {
-  background: var(--color-button-hover);
+button:hover {
+    background-color: #005bb5;
 }
 
-/* Ensure focus outline is visible even when using high‑contrast mode */
-@media (forced-colors: active) {
-  .calc-button:focus-visible {
-    outline: 2px solid Highlight;
-  }
+/* Result area */
+#result {
+    margin-top: 1rem;
+    font-weight: bold;
+    min-height: 1.5rem;
+}
+
+/* Error styling */
+.error {
+    color: #d8000c;
+}
+
+/* Test output styling */
+pre {
+    background: #eee;
+    padding: 1rem;
+    overflow-x: auto;
 }
