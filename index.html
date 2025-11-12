@@ -1,45 +1,122 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Simple Calculator</title>
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'">
-  <link rel="stylesheet" href="style.css">
-  <script src="script.js" defer></script>
+<meta charset="UTF-8">
+<title>Calculator</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'">
+<style>
+body {font-family: Arial, sans-serif; display:flex; justify-content:center; align-items:center; height:100vh; background:#f0f0f0;}
+#calculator {background:#fff; padding:20px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.2);}
+#display {width:240px; height:40px; margin-bottom:10px; font-size:24px; text-align:right; padding:5px; border:1px solid #ccc; border-radius:4px; background:#eaeaea;}
+.button {width:55px; height:55px; margin:5px; font-size:20px; cursor:pointer; border:none; border-radius:4px; background:#ddd;}
+.button.operator {background:#ff9500; color:#fff;}
+.button.equal {background:#34c759; color:#fff;}
+.button.clear {background:#ff3b30; color:#fff;}
+.error {color:#ff0000; background:#ffe5e5;}
+</style>
 </head>
 <body>
-  <div id="calculator">
-    <div id="display" aria-live="polite"></div>
-    <div id="buttons">
-      <!-- Row 1 -->
-      <button class="calc-button" data-value="7">7</button>
-      <button class="calc-button" data-value="8">8</button>
-      <button class="calc-button" data-value="9">9</button>
-      <button class="calc-button" data-value="/">÷</button>
-      <!-- Row 2 -->
-      <button class="calc-button" data-value="4">4</button>
-      <button class="calc-button" data-value="5">5</button>
-      <button class="calc-button" data-value="6">6</button>
-      <button class="calc-button" data-value="*">×</button>
-      <!-- Row 3 -->
-      <button class="calc-button" data-value="1">1</button>
-      <button class="calc-button" data-value="2">2</button>
-      <button class="calc-button" data-value="3">3</button>
-      <button class="calc-button" data-value="-">−</button>
-      <!-- Row 4 -->
-      <button class="calc-button" data-value="0">0</button>
-      <button class="calc-button" data-value=".">.</button>
-      <button class="calc-button" data-value="(">(</button>
-      <button class="calc-button" data-value=")">)</button>
-      <!-- Row 5 -->
-      <button class="calc-button" data-value="C">C</button>
-      <button class="calc-button" data-value="⌫">⌫</button>
-      <button class="calc-button" data-value="=">=</button>
-      <button class="calc-button" data-value="+">+</button>
-    </div>
+<div id="calculator">
+  <div id="display" aria-live="polite"></div>
+  <div id="buttons">
+    <button class="button clear" data-value="C">C</button>
+    <button class="button operator" data-value="(">(</button>
+    <button class="button operator" data-value=")">)</button>
+    <button class="button operator" data-value="/">÷</button>
+
+    <button class="button" data-value="7">7</button>
+    <button class="button" data-value="8">8</button>
+    <button class="button" data-value="9">9</button>
+    <button class="button operator" data-value="*">×</button>
+
+    <button class="button" data-value="4">4</button>
+    <button class="button" data-value="5">5</button>
+    <button class="button" data-value="6">6</button>
+    <button class="button operator" data-value="-">−</button>
+
+    <button class="button" data-value="1">1</button>
+    <button class="button" data-value="2">2</button>
+    <button class="button" data-value="3">3</button>
+    <button class="button operator" data-value="+">+</button>
+
+    <button class="button" data-value="0">0</button>
+    <button class="button" data-value=".">.</button>
+    <button class="button equal" data-value="=">=</button>
   </div>
-  <noscript>
-    JavaScript is required to use the calculator. Please enable JavaScript in your browser.
-  </noscript>
+</div>
+<script>
+"use strict";
+/**
+ * Safely evaluates a mathematical expression.
+ * @param {string} expr - The arithmetic expression to evaluate.
+ * @returns {string} - Result as string or "Error" on failure.
+ */
+function evaluateExpression(expr) {
+    const trimmed = expr.trim();
+    const whitelist = /^[0-9+\-*/().\s]+$/;
+    if (!whitelist.test(trimmed)) {
+        return "Error";
+    }
+    try {
+        // eslint-disable-next-line no-new-func
+        const result = new Function('return ' + trimmed)();
+        if (result === Infinity || result === -Infinity) {
+            return "Error";
+        }
+        const rounded = Number.isFinite(result) ? Number(result.toFixed(12)) : result;
+        return String(rounded);
+    } catch (e) {
+        return "Error";
+    }
+}
+/**
+ * Displays an error message in the calculator display.
+ * @param {string} message - Error message to show.
+ */
+function showError(message) {
+    const display = document.getElementById('display');
+    if (!display) return;
+    display.textContent = message;
+    display.classList.add('error');
+}
+/**
+ * Handles button click events.
+ * @param {MouseEvent} event - Click event.
+ */
+function onButtonClick(event) {
+    const target = event.target;
+    if (!target.matches('button[data-value]')) {
+        return;
+    }
+    const value = target.getAttribute('data-value');
+    const display = document.getElementById('display');
+    if (!display) return;
+    display.classList.remove('error');
+    try {
+        if (value === 'C') {
+            display.textContent = '';
+        } else if (value === '=') {
+            const expr = display.textContent;
+            const result = evaluateExpression(expr);
+            if (result === "Error") {
+                showError('Error');
+            } else {
+                display.textContent = result;
+            }
+        } else {
+            display.textContent += value;
+        }
+    } catch (e) {
+        showError('Error');
+    }
+}
+// Attach event listeners after DOM is ready
+document.addEventListener('DOMContentLoaded', function () {
+    const buttonsContainer = document.getElementById('buttons');
+    if (buttonsContainer) {
+        buttonsContainer.addEventListener('click', onButtonClick);
+    }
+});
+</script>
 </body>
 </html>
