@@ -1,28 +1,32 @@
-# Simple Browser‑Only Calculator
+# React Calculator
 
-## Project Overview
-A static, browser‑only arithmetic calculator supporting addition (`+`), subtraction (`-`), multiplication (`*`), division (`/`) with proper operator precedence and parentheses.
+A simple arithmetic calculator built with React, Vite, and a custom safe expression evaluator.
 
-## Setup & Execution
-1. Clone or download the repository.
-2. Open `index.html` in any modern browser (Chrome, Firefox, Edge, Safari).
-3. No server or build step is required.
+## Features
 
-## Usage
-- Click the numeric and operator buttons to build an expression.
-- Press `=` to compute.
-- `C` clears the display.
-- `⌫` (backspace) deletes the last character.
+- Basic arithmetic operations: addition, subtraction, multiplication, division.
+- Real‑time expression display.
+- Safe evaluation without using `eval`.
+- Accessible UI with ARIA attributes.
+- Unit tests for the evaluator and component integration tests.
+- CI pipeline with linting, testing, and production build.
 
-## Testing Checklist
-- **Addition:** `2 + 3 = 5`
-- **Subtraction:** `9 - 4 = 5`
-- **Multiplication:** `6 × 7 = 42`
-- **Division:** `8 ÷ 2 = 4`
-- **Operator precedence:** `2 + 3 × 4 = 14`
-- **Parentheses:** `(2 + 3) × 4 = 20`
-- **Divide‑by‑zero:** `5 ÷ 0 → displays 'Error'`
-- **Invalid input (e.g., letters) → displays 'Error'`
+## Development
 
-## Security Considerations
-The page uses a strict Content‑Security‑Policy meta tag (`default-src 'self'`) and does not load any external scripts or styles, mitigating XSS risks.
+```bash
+npm install
+npm run dev   # start Vite dev server
+```
+
+## Build
+
+```bash
+npm run build   # creates production bundle in /dist
+npm start       # serves the bundle with Express
+```
+
+## Testing
+
+```bash
+npm test        # runs Jest tests
+```
