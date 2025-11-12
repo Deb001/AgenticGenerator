@@ -1,47 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portfolio Dashboard</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
-</head>
-<body>
-    <header>
-        <h1>Portfolio Dashboard</h1>
-    </header>
-    <nav>
-        <ul>
-            <li><a href="#">Home</a></li>
-            <li><a href="#">Portfolios</a></li>
-            <li><a href="#">About</a></li>
-        </ul>
-    </nav>
-    <main class="grid-container">
-        <section id="portfolio-section">
-            <h2>Portfolios</h2>
-            <table id="portfolio-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Client ID</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </section>
-        <section id="chart-section">
-            <h2>Price Chart</h2>
-            <canvas id="chart-canvas"></canvas>
-        </section>
-        <section id="signal-section">
-            <h2>Signal Timeline</h2>
-            <ul id="signal-list"></ul>
-        </section>
-    </main>
-    <div id="toast" class="toast"></div>
-    <script src="main.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Portfolio Advisor</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
