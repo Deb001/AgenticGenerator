@@ -1,37 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Arithmetic Web Calculator</title>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self';">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="css/styles.css">
+  <meta charset="UTF-8">
+  <title>Simple Calculator</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'">
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
 </head>
 <body>
-    <h1>Arithmetic Calculator</h1>
-    <section id="calculator">
-        <form id="calc-form" novalidate>
-            <div class="calc-grid">
-                <label for="input-a">First Number</label>
-                <input type="number" id="input-a" required aria-required="true" step="any">
-
-                <label for="input-b">Second Number</label>
-                <input type="number" id="input-b" required aria-required="true" step="any">
-
-                <label for="operator">Operation</label>
-                <select id="operator" required aria-required="true">
-                    <option value="add">Add (+)</option>
-                    <option value="sub">Subtract (−)</option>
-                    <option value="mul">Multiply (×)</option>
-                    <option value="div">Divide (÷)</option>
-                </select>
-
-                <button type="submit" id="calculate">Calculate</button>
-            </div>
-        </form>
-        <div id="result" role="alert" aria-live="assertive"></div>
-    </section>
-
-    <script type="module" src="js/app.js"></script>
+  <div id="calculator">
+    <div id="display" aria-live="polite"></div>
+    <div id="buttons">
+      <!-- Row 1 -->
+      <button class="calc-button" data-value="7">7</button>
+      <button class="calc-button" data-value="8">8</button>
+      <button class="calc-button" data-value="9">9</button>
+      <button class="calc-button" data-value="/">÷</button>
+      <!-- Row 2 -->
+      <button class="calc-button" data-value="4">4</button>
+      <button class="calc-button" data-value="5">5</button>
+      <button class="calc-button" data-value="6">6</button>
+      <button class="calc-button" data-value="*">×</button>
+      <!-- Row 3 -->
+      <button class="calc-button" data-value="1">1</button>
+      <button class="calc-button" data-value="2">2</button>
+      <button class="calc-button" data-value="3">3</button>
+      <button class="calc-button" data-value="-">−</button>
+      <!-- Row 4 -->
+      <button class="calc-button" data-value="0">0</button>
+      <button class="calc-button" data-value=".">.</button>
+      <button class="calc-button" data-value="(">(</button>
+      <button class="calc-button" data-value=")">)</button>
+      <!-- Row 5 -->
+      <button class="calc-button" data-value="C">C</button>
+      <button class="calc-button" data-value="⌫">⌫</button>
+      <button class="calc-button" data-value="=">=</button>
+      <button class="calc-button" data-value="+">+</button>
+    </div>
+  </div>
+  <noscript>
+    JavaScript is required to use the calculator. Please enable JavaScript in your browser.
+  </noscript>
 </body>
 </html>
