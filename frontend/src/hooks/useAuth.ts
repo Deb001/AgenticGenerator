@@ -1,56 +1,54 @@
-import { useState, useEffect } from 'react';
-import jwt_decode from 'jwt-decode';
+import { useState, useContext, createContext, ReactNode, FormEvent } from 'react';
+import api from '../services/api';
+import { Token } from '../types';
 
-interface JwtPayload {
-  exp: number;
-  [key: string]: any;
+interface AuthState {
+  user: string | null;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => void;
+  error: string | null;
 }
 
 /**
- * Hook that provides authentication status and utilities.
+ * Provides authentication logic (login, logout) and stores the current user.
+ * The JWT payload is decoded to extract the `sub` claim which represents the username.
  */
-export function useAuth() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [user, setUser] = useState<any>(null);
+function useProvideAuth(): AuthState {
+  const [user, setUser] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      try {
-        const decoded = jwt_decode<JwtPayload>(token);
-        const now = Date.now() / 1000;
-        if (decoded.exp > now) {
-          setIsAuthenticated(true);
-          setUser(decoded);
-        } else {
-          localStorage.removeItem('access_token');
-          setIsAuthenticated(false);
-          setUser(null);
-        }
-      } catch {
-        localStorage.removeItem('access_token');
-        setIsAuthenticated(false);
-        setUser(null);
-      }
-    } else {
-      setIsAuthenticated(false);
-      setUser(null);
+  const login = async (email: string, password: string) => {
+    try {
+      const token: Token = await api.login(email, password);
+      // Decode JWT payload (base64url) to extract username (sub).
+      const payloadBase64 = token.access_token.split('.')[1];
+      const decoded = JSON.parse(atob(payloadBase64));
+      setUser(decoded.sub);
+      setError(null);
+    } catch (e: any) {
+      setError(e.response?.data?.detail || 'Login failed');
     }
-  }, []);
-
-  const login = (token: string) => {
-    localStorage.setItem('access_token', token);
-    const decoded = jwt_decode<JwtPayload>(token);
-    setIsAuthenticated(true);
-    setUser(decoded);
   };
 
   const logout = () => {
     localStorage.removeItem('access_token');
-    setIsAuthenticated(false);
     setUser(null);
-    window.location.href = '/login';
   };
 
-  return { isAuthenticated, user, login, logout };
+  return { user, login, logout, error };
 }
+
+export const AuthContext = createContext<AuthState | null>(null);
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const auth = useProvideAuth();
+  return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>;
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
