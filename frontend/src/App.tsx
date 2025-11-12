@@ -1,25 +1,29 @@
-import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import Dashboard from './components/Dashboard';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/Login';
-import useAuth from './hooks/useAuth';
+import PortfolioList from './components/PortfolioList';
+import PortfolioDetail from './components/PortfolioDetail';
+import { useAuth } from './hooks/useAuth';
 
-function App(): JSX.Element {
-  const { isAuthenticated } = useAuth();
-
+function App() {
+  const { user } = useAuth();
   return (
-    <Routes>
-      <Route
-        path="/"
-        element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />}
-      />
-      <Route path="/login" element={<Login />} />
-      <Route
-        path="/dashboard"
-        element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" replace />}
-      />
-      <Route path="*" element={<h2>404 - Page Not Found</h2>} />
-    </Routes>
+    <Router>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route
+          path="/portfolios"
+          element={user ? <PortfolioList /> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path="/portfolios/:id"
+          element={user ? <PortfolioDetail /> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path="*"
+          element={<Navigate to={user ? '/portfolios' : '/login'} replace />}
+        />
+      </Routes>
+    </Router>
   );
 }
 
