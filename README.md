@@ -1,28 +1,28 @@
-# Arithmetic Web Calculator
+# Simple Browser‑Only Calculator
 
-## Overview
-A static, accessible single‑page calculator built with HTML, CSS, and vanilla ES6 JavaScript. It supports addition, subtraction, multiplication, and division with full client‑side validation.
+## Project Overview
+A static, browser‑only arithmetic calculator supporting addition (`+`), subtraction (`-`), multiplication (`*`), division (`/`) with proper operator precedence and parentheses.
 
-## File Structure
-- `index.html` – entry point with markup and CSP.
-- `css/styles.css` – responsive styling.
-- `js/calculator.js` – pure calculation engine.
-- `js/app.js` – UI controller and validation.
-- `test.html` & `js/test.js` – simple automated test harness.
+## Setup & Execution
+1. Clone or download the repository.
+2. Open `index.html` in any modern browser (Chrome, Firefox, Edge, Safari).
+3. No server or build step is required.
 
-## Running the Application
-1. Open `index.html` in a modern browser **or** serve the `root` folder with any static server (e.g., `python -m http.server`).
-2. No build step or environment variables are required.
+## Usage
+- Click the numeric and operator buttons to build an expression.
+- Press `=` to compute.
+- `C` clears the display.
+- `⌫` (backspace) deletes the last character.
 
-## Testing
-Open `test.html` in a browser. The page will automatically run the test suite and display pass/fail results.
-
-## Accessibility
-- Keyboard navigation with Tab/Enter.
-- ARIA `role="alert"` for error messages.
-- High‑contrast focus styles.
+## Testing Checklist
+- **Addition:** `2 + 3 = 5`
+- **Subtraction:** `9 - 4 = 5`
+- **Multiplication:** `6 × 7 = 42`
+- **Division:** `8 ÷ 2 = 4`
+- **Operator precedence:** `2 + 3 × 4 = 14`
+- **Parentheses:** `(2 + 3) × 4 = 20`
+- **Divide‑by‑zero:** `5 ÷ 0 → displays 'Error'`
+- **Invalid input (e.g., letters) → displays 'Error'`
 
 ## Security Considerations
-- Content‑Security‑Policy restricts scripts to `self`.
-- No external resources or secrets are used.
-- All inputs are sanitized and parsed as numbers before evaluation.
+The page uses a strict Content‑Security‑Policy meta tag (`default-src 'self'`) and does not load any external scripts or styles, mitigating XSS risks.
