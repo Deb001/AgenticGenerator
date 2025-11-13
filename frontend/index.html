@@ -1,12 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Portfolio Advisor</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Arithmetic Web Calculator</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <section id="calculator" role="application" aria-label="Calculator">
+    <input type="text" id="display" aria-label="Calculator display" readonly autocomplete="off" />
+    <div id="keypad">
+      <!-- Row 1 -->
+      <button class="key operator" data-action="clear" aria-label="Clear (Esc)" tabindex="0">C</button>
+      <button class="key operator" data-action="delete" aria-label="Delete (Backspace)" tabindex="0">⌫</button>
+      <button class="key operator" data-action="input" data-value="(" aria-label="Open parenthesis" tabindex="0">(</button>
+      <button class="key operator" data-action="input" data-value=")" aria-label="Close parenthesis" tabindex="0">)</button>
+      <!-- Row 2 -->
+      <button class="key" data-action="input" data-value="7" aria-label="Seven" tabindex="0">7</button>
+      <button class="key" data-action="input" data-value="8" aria-label="Eight" tabindex="0">8</button>
+      <button class="key" data-action="input" data-value="9" aria-label="Nine" tabindex="0">9</button>
+      <button class="key operator" data-action="input" data-value="/" aria-label="Divide" tabindex="0">÷</button>
+      <!-- Row 3 -->
+      <button class="key" data-action="input" data-value="4" aria-label="Four" tabindex="0">4</button>
+      <button class="key" data-action="input" data-value="5" aria-label="Five" tabindex="0">5</button>
+      <button class="key" data-action="input" data-value="6" aria-label="Six" tabindex="0">6</button>
+      <button class="key operator" data-action="input" data-value="*" aria-label="Multiply" tabindex="0">×</button>
+      <!-- Row 4 -->
+      <button class="key" data-action="input" data-value="1" aria-label="One" tabindex="0">1</button>
+      <button class="key" data-action="input" data-value="2" aria-label="Two" tabindex="0">2</button>
+      <button class="key" data-action="input" data-value="3" aria-label="Three" tabindex="0">3</button>
+      <button class="key operator" data-action="input" data-value="-" aria-label="Subtract" tabindex="0">−</button>
+      <!-- Row 5 -->
+      <button class="key" data-action="input" data-value="0" aria-label="Zero" tabindex="0">0</button>
+      <button class="key" data-action="input" data-value="." aria-label="Decimal point" tabindex="0">.</button>
+      <button class="key operator" data-action="equals" aria-label="Equals (Enter)" tabindex="0">=</button>
+      <button class="key operator" data-action="input" data-value="+" aria-label="Add" tabindex="0">+</button>
+    </div>
+  </section>
+  <script type="module" src="app.js"></script>
+</body>
 </html>
