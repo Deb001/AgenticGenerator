@@ -1,32 +1,54 @@
-# React Calculator
+# Arithmetic Web Calculator
 
-A simple arithmetic calculator built with React, Vite, and a custom safe expression evaluator.
+## Overview
+A minimal full‑stack calculator that evaluates basic arithmetic expressions safely on the server and provides a responsive, accessible web UI.
 
-## Features
+## Stack
+- **Backend**: Python 3.11, Flask, Gunicorn
+- **Frontend**: HTML5, CSS3 (Grid), vanilla JavaScript (ES6 modules)
+- **Containerisation**: Docker & Docker‑Compose
+- **Testing**: unittest (unit & integration)
 
-- Basic arithmetic operations: addition, subtraction, multiplication, division.
-- Real‑time expression display.
-- Safe evaluation without using `eval`.
-- Accessible UI with ARIA attributes.
-- Unit tests for the evaluator and component integration tests.
-- CI pipeline with linting, testing, and production build.
-
-## Development
-
+## Setup & Run Locally
 ```bash
-npm install
-npm run dev   # start Vite dev server
+# Clone repo
+git clone <repo-url>
+cd <repo-dir>
+
+# Backend (virtualenv optional)
+python -m venv env
+source env/bin/activate
+pip install -r backend/requirements.txt
+export FLASK_ENV=development
+python backend/app.py  # runs on http://127.0.0.1:5000
+
+# Frontend (simple static server)
+cd frontend
+python -m http.server 8080  # open http://localhost:8080
 ```
 
-## Build
-
+## Docker
 ```bash
-npm run build   # creates production bundle in /dist
-npm start       # serves the bundle with Express
+docker compose up --build -d
+# API available at http://localhost:5000, frontend can be served via any static host.
 ```
 
 ## Testing
-
 ```bash
-npm test        # runs Jest tests
+source env/bin/activate
+python -m unittest discover -s tests
 ```
+
+## Security Notes
+- No secrets are hard‑coded; configuration is read from environment variables.
+- CORS is restricted to the same origin (or explicit ALLOWED_ORIGINS).
+- The evaluator uses Python's `ast` module and only permits safe nodes.
+- Debug mode is disabled in production (`FLASK_ENV=production`).
+
+## Accessibility
+- All buttons are focusable (`tabindex="0"`).
+- ARIA roles (`role="application"`) and labels are provided.
+- Keyboard shortcuts mirror the visual keypad.
+
+## License
+MIT
