@@ -1,26 +1,12 @@
-version: '3.8'
+version: "3.8"
+
 services:
   api:
-    build: .
-    container_name: secure_todo_api
-    env_file:
-      - .env
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "5000:5000"
-    depends_on:
-      - db
-    restart: unless-stopped
-  db:
-    image: postgres:15-alpine
-    container_name: secure_todo_db
     environment:
-      POSTGRES_USER: todo_user
-      POSTGRES_PASSWORD: todo_pass
-      POSTGRES_DB: todo_db
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+      - FLASK_ENV=production
     restart: unless-stopped
-volumes:
-  pgdata:
