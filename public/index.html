@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Accessible Calculator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main role="application" class="calculator">
+    <section id="display" aria-live="polite" class="display" aria-label="Calculator display"></section>
+    <section id="keypad" class="keypad" aria-label="Calculator keypad">
+      <button data-key="7" aria-label="Seven" role="button">7</button>
+      <button data-key="8" aria-label="Eight" role="button">8</button>
+      <button data-key="9" aria-label="Nine" role="button">9</button>
+      <button data-key="/" aria-label="Divide" role="button">÷</button>
+
+      <button data-key="4" aria-label="Four" role="button">4</button>
+      <button data-key="5" aria-label="Five" role="button">5</button>
+      <button data-key="6" aria-label="Six" role="button">6</button>
+      <button data-key="*" aria-label="Multiply" role="button">×</button>
+
+      <button data-key="1" aria-label="One" role="button">1</button>
+      <button data-key="2" aria-label="Two" role="button">2</button>
+      <button data-key="3" aria-label="Three" role="button">3</button>
+      <button data-key="-" aria-label="Subtract" role="button">−</button>
+
+      <button data-key="0" aria-label="Zero" role="button">0</button>
+      <button data-key="." aria-label="Decimal point" role="button">.</button>
+      <button data-key="C" aria-label="Clear" role="button">C</button>
+      <button data-key="+" aria-label="Add" role="button">+</button>
+
+      <button data-key="=" aria-label="Equals" role="button" class="equals">=</button>
+    </section>
+  </main>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
