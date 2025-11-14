@@ -1,54 +1,136 @@
-# Arithmetic Web Calculator
+# Expression Evaluator API
 
-## Overview
-A minimal full‑stack calculator that evaluates basic arithmetic expressions safely on the server and provides a responsive, accessible web UI.
+A minimal, production‑ready Node.js API that safely evaluates arithmetic expressions. The backend is built with **Express**, **Helmet** for security headers, and a custom **ExpressionEvaluator** that parses and computes expressions without using `eval`.
 
-## Stack
-- **Backend**: Python 3.11, Flask, Gunicorn
-- **Frontend**: HTML5, CSS3 (Grid), vanilla JavaScript (ES6 modules)
-- **Containerisation**: Docker & Docker‑Compose
-- **Testing**: unittest (unit & integration)
+---
 
-## Setup & Run Locally
+## Table of Contents
+- [Features](#features)
+- [Prerequisites](#prerequisites)
+- [Setup](#setup)
+- [Running the Server](#running-the-server)
+- [API Specification](#api-specification)
+- [Testing the Endpoint](#testing-the-endpoint)
+- [Project Structure](#project-structure)
+- [Manual Test Checklist](#manual-test-checklist)
+- [License](#license)
+
+---
+
+## Features
+- **Stateless** expression evaluation – no external services.
+- **Secure**: No `eval`, strict whitelist of characters, and robust error handling.
+- **Helmet** middleware for common security headers.
+- **Lightweight** – only three runtime dependencies.
+- **Ready for production** – includes global error handling and payload size limits.
+
+---
+
+## Prerequisites
+- **Node.js** (v18 or later recommended)
+- **npm** (comes with Node)
+
+---
+
+## Setup
 ```bash
-# Clone repo
-git clone <repo-url>
-cd <repo-dir>
+# Clone the repository (if you haven't already)
+git clone <repository-url>
+cd <repository-folder>
 
-# Backend (virtualenv optional)
-python -m venv env
-source env/bin/activate
-pip install -r backend/requirements.txt
-export FLASK_ENV=development
-python backend/app.py  # runs on http://127.0.0.1:5000
+# Install dependencies
+npm install
 
-# Frontend (simple static server)
-cd frontend
-python -m http.server 8080  # open http://localhost:8080
+# (Optional) Create a .env file to override defaults
+cp .env.example .env   # you can also edit the existing .env directly
+```
+The default `.env` contains:
+```
+PORT=3000
+```
+You can change the port if needed.
+
+---
+
+## Running the Server
+```bash
+# Development mode with automatic restarts (requires nodemon, installed as a devDependency)
+npm run dev
+
+# Production mode
+npm start
+```
+The server will start and listen on `http://localhost:3000` (or the port defined in `.env`).
+
+---
+
+## API Specification
+### POST `/api/evaluate`
+Evaluates a simple arithmetic expression.
+
+**Request Body** (JSON):
+```json
+{ "expression": "(2 + 3) * 4 / 2" }
+```
+- `expression` – a string containing numbers, `+ - * /` operators and parentheses. Whitespace is ignored.
+
+**Responses**:
+- **200 OK** – Successful evaluation
+  ```json
+  { "result": 10 }
+  ```
+- **400 Bad Request** – Invalid input, syntax error, or division by zero
+  ```json
+  { "error": "Division by zero" }
+  ```
+- **500 Internal Server Error** – Unexpected server error (no stack trace exposed to the client).
+
+---
+
+## Testing the Endpoint
+You can test the API with `curl`, Postman, or any HTTP client.
+```bash
+curl -X POST http://localhost:3000/api/evaluate \
+     -H "Content-Type: application/json" \
+     -d '{"expression": "(1+2)*(3+4)"}'
+```
+Expected response:
+```json
+{ "result": 21 }
 ```
 
-## Docker
-```bash
-docker compose up --build -d
-# API available at http://localhost:5000, frontend can be served via any static host.
+---
+
+## Project Structure
+```
+root/
+├─ public/                # Front‑end assets (served statically)
+│   ├─ index.html
+│   ├─ style.css
+│   └─ app.js
+├─ .env                   # Environment configuration (PORT)
+├─ .gitignore             # VCS ignore rules
+├─ evaluator.js           # Core arithmetic engine
+├─ server.js              # Express server entry point
+├─ package.json           # NPM manifest
+└─ README.md              # Documentation (this file)
 ```
 
-## Testing
-```bash
-source env/bin/activate
-python -m unittest discover -s tests
-```
+---
 
-## Security Notes
-- No secrets are hard‑coded; configuration is read from environment variables.
-- CORS is restricted to the same origin (or explicit ALLOWED_ORIGINS).
-- The evaluator uses Python's `ast` module and only permits safe nodes.
-- Debug mode is disabled in production (`FLASK_ENV=production`).
+## Manual Test Checklist
+| Test | Description | Expected Result |
+|------|-------------|-----------------|
+| 1 | Empty body | `400` with error about missing expression |
+| 2 | Non‑string expression | `400` with syntax error |
+| 3 | Valid simple expression `2+2` | `200` with `{ "result": 4 }` |
+| 4 | Expression with whitespace `  3   *   ( 4 + 5 ) ` | `200` with `{ "result": 27 }` |
+| 5 | Division by zero `10/0` | `400` with `"Division by zero"` |
+| 6 | Invalid characters `2+2a` | `400` with syntax error |
+| 7 | Mismatched parentheses `(2+3` | `400` with syntax error |
+| 8 | Large payload (>1KB) | `413 Payload Too Large` (handled by Express) |
 
-## Accessibility
-- All buttons are focusable (`tabindex="0"`).
-- ARIA roles (`role="application"`) and labels are provided.
-- Keyboard shortcuts mirror the visual keypad.
+---
 
 ## License
-MIT
+MIT © Generated by AI
