@@ -1,31 +1,67 @@
-import express from 'express';
-import helmet from 'helmet';
-import path from 'path';
-import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
+// server.js
+// Express server that serves static assets and provides a POST /api/evaluate endpoint.
 
-// Load environment variables from .env file if present
-dotenv.config();
+const express = require('express');
+const helmet = require('helmet');
+const path = require('path');
+const dotenv = require('dotenv');
+const { ExpressionEvaluator } = require('./evaluator');
 
-// Resolve __dirname in ES module context
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+/**
+ * Create and configure an Express application.
+ * @returns {import('express').Express} Configured Express app.
+ */
+function createServer() {
+  // Load environment variables from .env (if present)
+  dotenv.config();
 
-const app = express();
+  const app = express();
 
-// Basic security headers – disable CSP for simplicity in this example
-app.use(helmet({ contentSecurityPolicy: false }));
+  // Security middleware
+  app.use(helmet());
 
-// Serve static assets from the Vite production build directory
-const staticPath = path.resolve(__dirname, 'dist');
-app.use(express.static(staticPath));
+  // Body parser with size limit to mitigate payload attacks
+  app.use(express.json({ limit: '1kb' }));
 
-// Fallback to index.html for SPA routing (any unknown route)
-app.get('*', (req, res) => {
-  res.sendFile(path.resolve(staticPath, 'index.html'));
-});
+  // Serve static files from the public directory
+  const publicPath = path.join(__dirname, 'public');
+  app.use(express.static(publicPath));
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
-});
+  // POST /api/evaluate endpoint
+  app.post('/api/evaluate', async (req, res, next) => {
+    try {
+      const { expression } = req.body;
+      if (typeof expression !== 'string' || expression.trim() === '') {
+        return res.status(400).json({ error: 'Request body must contain a non‑empty "expression" string.' });
+      }
+      const result = ExpressionEvaluator.evaluate(expression);
+      return res.status(200).json({ result });
+    } catch (err) {
+      if (err instanceof SyntaxError || err.message === 'Division by zero') {
+        return res.status(400).json({ error: err.message });
+      }
+      // Unexpected error – forward to global error handler
+      return next(err);
+    }
+  });
+
+  // Global error handling middleware (must be after all routes)
+  // eslint-disable-next-line no-unused-vars
+  app.use((err, req, res, _next) => {
+    console.error('Unexpected error:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  });
+
+  return app;
+}
+
+// Start the server if this file is executed directly
+if (require.main === module) {
+  const app = createServer();
+  const port = process.env.PORT || 3000;
+  app.listen(port, () => {
+    console.log(`Server listening on http://localhost:${port}`);
+  });
+}
+
+module.exports = { createServer };
