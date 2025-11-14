@@ -1,0 +1,101 @@
+/* Colour palette – derived from manual subtask M1 */
+:root {
+  --bg-color: #f5f7fa;
+  --display-bg: #1e1e1e;
+  --display-fg: #00ff41;
+  --button-bg: #ffffff;
+  --button-fg: #333333;
+  --button-bg-hover: #e0e0e0;
+  --button-bg-active: #c0c0c0;
+  --focus-color: #0066ff;
+  --operator-bg: #ff9500;
+  --operator-fg: #ffffff;
+  --equals-bg: #34c759;
+  --equals-fg: #ffffff;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bg-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.calculator {
+  width: 100%;
+  max-width: 400px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+
+.display {
+  background: var(--display-bg);
+  color: var(--display-fg);
+  font-size: 2.5rem;
+  text-align: right;
+  padding: 1rem;
+  min-height: 3rem;
+  box-sizing: border-box;
+  word-break: break-all;
+}
+
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: #fafafa;
+}
+
+.keypad button {
+  font-size: 1.5rem;
+  padding: 1rem;
+  border: none;
+  border-radius: 8px;
+  background: var(--button-bg);
+  color: var(--button-fg);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.keypad button:hover {
+  background: var(--button-bg-hover);
+}
+
+.keypad button:active {
+  background: var(--button-bg-active);
+}
+
+.keypad button:focus {
+  outline: 2px solid var(--focus-color);
+  outline-offset: 2px;
+}
+
+.keypad button[data-key="+"] ,
+.keypad button[data-key="-"] ,
+.keypad button[data-key="*"] ,
+.keypad button[data-key="/"] {
+  background: var(--operator-bg);
+  color: var(--operator-fg);
+}
+
+.keypad button.equals {
+  grid-column: span 4;
+  background: var(--equals-bg);
+  color: var(--equals-fg);
+}
+
+@media (max-width: 600px) {
+  .display {
+    font-size: 2rem;
+  }
+  .keypad button {
+    font-size: 1.2rem;
+    padding: 0.8rem;
+  }
+}
