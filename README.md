@@ -1,71 +1,51 @@
-# Arithmetic Web Calculator
+# Web Calculator
 
-## Overview
-A minimal full‑stack calculator that evaluates basic arithmetic expressions via a Flask REST API and a responsive, accessible vanilla JavaScript UI.
+A lightweight, dark‑mode friendly web calculator built with vanilla HTML, CSS, and JavaScript (ES modules). The project demonstrates:
 
-## Features
-- Safe expression evaluation (no `eval`).
-- Clear error messages for malformed input.
-- Keyboard, mouse, and touch interaction.
-- ARIA‑compliant accessibility (screen‑reader friendly).
-- Simple Docker‑compatible deployment.
+- **Secure loading** via a Content‑Security‑Policy meta tag.
+- **Responsive UI** using CSS Grid.
+- **Accessibility** with focus outlines and keyboard‑friendly controls.
+- **Robust error handling** using custom `ValidationError` and `EvaluationError` classes.
+- **Safe expression evaluation** that only permits numeric characters and basic arithmetic operators.
 
 ## Project Structure
+
 ```
-root/
-├─ backend/
-│  ├─ app.py                # Flask entry point
-│  ├─ evaluator.py          # Expression parser/evaluator
-│  └─ subtask_generator.py  # Utility for subtask JSON generation
-├─ frontend/
-│  ├─ index.html            # UI markup
-│  ├─ styles.css            # Styling
-│  └─ app.js                # UI logic & API client
-├─ requirements.txt         # Python dependencies
-├─ .env.example             # Environment variable template
-└─ README.md                # This file
+.
+├── index.html      # Entry point – loads CSS and the ES module
+├── styles.css      # Reset + dark‑mode styling + toast UI
+├── app.js          # Calculator logic, UI generation, and error handling
+├── README.md       # Documentation (this file)
+└── .gitignore      # Ignored files for Git
 ```
 
-## Setup & Run (Local)
-1. **Clone the repo**
-   ```bash
-   git clone <repo-url>
-   cd <repo-dir>
-   ```
-2. **Create a virtual environment**
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate
-   ```
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-4. **Configure environment**
-   ```bash
-   cp .env.example .env
-   # edit .env if needed
-   ```
-5. **Run the server**
-   ```bash
-   flask --app backend/app.py run --host=0.0.0.0 --port=5000
-   ```
-6. Open a browser to `http://localhost:5000` to use the calculator.
+## Getting Started
 
-## API Specification
-- **POST** `/evaluate`
-  - Request JSON: `{ "expression": "2*(3+4)" }`
-  - Success response: `{ "result": 14 }`
-  - Error response (400): `{ "error": "Division by zero" }`
+1. **Clone the repository**
+   ```bash
+   git clone <repo‑url>
+   cd <repo‑folder>
+   ```
+2. **Open `index.html`** in a modern browser (Chrome, Firefox, Edge, Safari). No build step is required because the app uses native ES modules.
 
-## Testing
-The evaluator can be unit‑tested with `python -m unittest discover backend/tests` (tests not included in MVP).
+## Usage
+
+- Click digits and operators to build an expression.
+- Press **C** to clear, **←** to delete the last character, and **=** to evaluate.
+- Errors (e.g., invalid sequences) appear as a temporary toast at the bottom of the screen.
 
 ## Security Considerations
-- No secrets are hard‑coded; use environment variables.
-- Flask runs with `debug=False` in production.
-- Content Security Policy meta tag restricts script sources.
-- All inputs are validated server‑side before evaluation.
+
+- The HTML includes a strict CSP that only allows resources from the same origin.
+- All user‑generated messages displayed in the UI are sanitized via `textContent` to prevent XSS.
+- Evaluation uses the `Function` constructor with a whitelist of allowed characters, ensuring no arbitrary code execution.
+
+## Customisation
+
+- **Styling** – Modify `styles.css` to change colors, fonts, or layout.
+- **Button Layout** – Adjust the `ButtonConfig` array in `app.js` to add/remove buttons.
+- **Extended Operations** – Implement additional methods in `Calculator` and update the UI accordingly.
 
 ## License
-MIT
+
+This project is released under the MIT License.
