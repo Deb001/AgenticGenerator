@@ -1,0 +1,118 @@
+/*
+  styles.css – Responsive, accessible styling for the calculator UI.
+  No external dependencies; works with index.html and app.js.
+*/
+
+/* Reset some basic elements */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: #f5f7fa;
+  color: #333;
+}
+
+/* Center the calculator vertically and horizontally */
+main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.calculator {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 320px;
+  max-width: 90vw;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Display */
+#calc-display {
+  width: 100%;
+  height: 60px;
+  font-size: 2rem;
+  text-align: right;
+  padding: 0 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: #fafafa;
+  box-sizing: border-box;
+}
+
+/* Grid for keypad */
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.keypad button {
+  font-size: 1.5rem;
+  padding: 15px;
+  border: none;
+  border-radius: 8px;
+  background-color: #f0f0f0;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.keypad button:hover {
+  background-color: #e0e0e0;
+}
+
+.keypad button:active {
+  transform: scale(0.97);
+}
+
+.keypad button.operator {
+  background-color: #ffd966;
+}
+
+.keypad button.operator:hover {
+  background-color: #ffca5c;
+}
+
+.keypad button.equals {
+  background-color: #93c47d;
+  grid-column: span 2;
+}
+
+.keypad button.equals:hover {
+  background-color: #81b96c;
+}
+
+.keypad button.clear {
+  background-color: #e06666;
+}
+
+.keypad button.clear:hover {
+  background-color: #d05353;
+}
+
+/* Focus styles for accessibility */
+.keypad button:focus {
+  outline: 3px solid #4a90e2;
+  outline-offset: 2px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 400px) {
+  .calculator {
+    padding: 15px;
+  }
+  #calc-display {
+    height: 50px;
+    font-size: 1.75rem;
+  }
+  .keypad button {
+    font-size: 1.25rem;
+    padding: 12px;
+  }
+}
