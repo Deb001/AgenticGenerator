@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "portfolio-advisory"
+version = "0.1.0"
+description = "Portfolio advisory backend"
+authors = ["Your Name <you@example.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "0.110.0"
+uvicorn = {extras = ["standard"], version = "0.27.0"}
+sqlalchemy = "2.0.25"
+psycopg2-binary = "2.9.9"
+python-dotenv = "1.0.0"
+passlib = {extras = ["bcrypt"], version = "1.7.4"}
+python-jose = "3.3.0"
+pandas = "2.2.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
