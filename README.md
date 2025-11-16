@@ -1,51 +1,63 @@
-# Web Calculator
+# Simple Calculator
 
-A lightweight, dark‑mode friendly web calculator built with vanilla HTML, CSS, and JavaScript (ES modules). The project demonstrates:
+A lightweight, single‑page web application that performs basic arithmetic (addition, subtraction, multiplication, division) on two user‑provided numbers.
 
-- **Secure loading** via a Content‑Security‑Policy meta tag.
-- **Responsive UI** using CSS Grid.
-- **Accessibility** with focus outlines and keyboard‑friendly controls.
-- **Robust error handling** using custom `ValidationError` and `EvaluationError` classes.
-- **Safe expression evaluation** that only permits numeric characters and basic arithmetic operators.
+## Features
+
+- **Real‑time validation** – non‑numeric input triggers a clear error message.
+- **Division‑by‑zero protection** – attempts to divide by zero are caught and reported.
+- **Responsive design** – works on desktop and mobile browsers.
+- **Pure vanilla JavaScript** – no external libraries or build steps required.
 
 ## Project Structure
 
 ```
-.
-├── index.html      # Entry point – loads CSS and the ES module
-├── styles.css      # Reset + dark‑mode styling + toast UI
-├── app.js          # Calculator logic, UI generation, and error handling
-├── README.md       # Documentation (this file)
-└── .gitignore      # Ignored files for Git
+root/
+├─ index.html          # Main HTML page
+├─ src/
+│  ├─ app.js          # Calculator logic and UI handling
+│  └─ styles.css      # Styling for the calculator UI
+├─ .env.example        # Placeholder for future environment variables
+└─ README.md           # Documentation (this file)
 ```
 
-## Getting Started
+## Setup & Run
 
-1. **Clone the repository**
-   ```bash
-   git clone <repo‑url>
-   cd <repo‑folder>
-   ```
-2. **Open `index.html`** in a modern browser (Chrome, Firefox, Edge, Safari). No build step is required because the app uses native ES modules.
+1. **Clone the repository** (or copy the files into a directory).
+2. Open `index.html` in any modern web browser (Chrome, Firefox, Edge, Safari).
+3. No additional tooling, package managers, or servers are required.
 
 ## Usage
 
-- Click digits and operators to build an expression.
-- Press **C** to clear, **←** to delete the last character, and **=** to evaluate.
-- Errors (e.g., invalid sequences) appear as a temporary toast at the bottom of the screen.
+1. Enter numbers into the **First Number** and **Second Number** fields.
+2. Click one of the operation buttons:
+   - **Add (+)**
+   - **Subtract (−)**
+   - **Multiply (×)**
+   - **Divide (÷)**
+3. The result appears below the buttons. If the input is invalid or a division‑by‑zero occurs, an error message is shown in red.
 
-## Security Considerations
+## Test Summary
 
-- The HTML includes a strict CSP that only allows resources from the same origin.
-- All user‑generated messages displayed in the UI are sanitized via `textContent` to prevent XSS.
-- Evaluation uses the `Function` constructor with a whitelist of allowed characters, ensuring no arbitrary code execution.
+| Test Case                              | Input A | Input B | Operation | Expected Output                     |
+|----------------------------------------|---------|---------|-----------|--------------------------------------|
+| Valid addition                         | 5       | 3       | add       | `Result: 8`                         |
+| Valid subtraction                      | 10      | 4       | sub       | `Result: 6`                         |
+| Valid multiplication                   | 2.5     | 4       | mul       | `Result: 10`                        |
+| Valid division                         | 9       | 3       | div       | `Result: 3`                         |
+| Division by zero                        | 7       | 0       | div       | `Cannot divide by zero.` (red)      |
+| Non‑numeric first operand               | abc     | 2       | add       | `Please enter valid numbers.` (red) |
+| Non‑numeric second operand              | 5       | xyz     | mul       | `Please enter valid numbers.` (red) |
+| Empty inputs                            | (empty) | (empty) | sub       | `Please enter valid numbers.` (red) |
 
-## Customisation
+All manual tests pass, confirming correct arithmetic, proper error handling, and UI updates.
 
-- **Styling** – Modify `styles.css` to change colors, fonts, or layout.
-- **Button Layout** – Adjust the `ButtonConfig` array in `app.js` to add/remove buttons.
-- **Extended Operations** – Implement additional methods in `Calculator` and update the UI accordingly.
+## Extending the Project
 
-## License
+- **Add more operations** (e.g., exponentiation) by extending the `calculate` function and adding a new button with the appropriate `data-operator`.
+- **Unit testing** – expose the calculator functions (already attached to `window.Calculator`) and write tests using a framework like Jest or Mocha.
+- **Styling enhancements** – replace the simple CSS with a CSS framework (Bootstrap, Tailwind) for a richer UI.
 
-This project is released under the MIT License.
+---
+
+© 2025 Simple Calculator Demo. All rights reserved.
