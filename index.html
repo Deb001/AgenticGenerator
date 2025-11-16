@@ -1,17 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Web Calculator</title>
-    <!-- Content Security Policy to restrict resources to same origin -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'">
-    <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Simple Calculator</title>
+    <link rel="stylesheet" href="src/styles.css" />
 </head>
 <body>
-    <div id="calculator-root"></div>
-    <noscript>
-        JavaScript is required to run this calculator. Please enable JavaScript in your browser.
-    </noscript>
-    <script type="module" src="app.js"></script>
+    <div id="calculator">
+        <h1>Simple Calculator</h1>
+        <div class="inputs">
+            <input type="text" id="num1" placeholder="Enter first number" />
+            <input type="text" id="num2" placeholder="Enter second number" />
+        </div>
+        <div class="buttons">
+            <button class="button" data-operator="add">Add (+)</button>
+            <button class="button" data-operator="sub">Subtract (−)</button>
+            <button class="button" data-operator="mul">Multiply (×)</button>
+            <button class="button" data-operator="div">Divide (÷)</button>
+        </div>
+        <div id="result" class="result"></div>
+    </div>
+    <script defer src="src/app.js"></script>
 </body>
 </html>
