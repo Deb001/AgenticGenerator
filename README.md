@@ -1,63 +1,74 @@
-# Simple Calculator
+# Portfolio Advisory MVP
 
-A lightweight, single‑page web application that performs basic arithmetic (addition, subtraction, multiplication, division) on two user‑provided numbers.
+## Overview
+A full‑stack web application that lets financial advisors view client portfolios of Indian equities, run technical‑indicator based advisory signals and visualise them.
 
-## Features
+- **Backend**: FastAPI, PostgreSQL, SQLAlchemy, JWT auth.
+- **Frontend**: React + TypeScript, Axios, Chart.js (via react‑chartjs‑2).
+- **Containerisation**: Docker Compose for local development.
+- **CI**: GitHub Actions lint, test, and build Docker images.
 
-- **Real‑time validation** – non‑numeric input triggers a clear error message.
-- **Division‑by‑zero protection** – attempts to divide by zero are caught and reported.
-- **Responsive design** – works on desktop and mobile browsers.
-- **Pure vanilla JavaScript** – no external libraries or build steps required.
+## Quick Start (Local Development)
+```bash
+# Clone repo
+git clone <repo-url>
+cd <repo-root>
 
-## Project Structure
+# Create .env file from example
+cp .env.example .env
+# Edit .env if you want custom passwords
 
+# Start all services
+docker compose up --build
 ```
-root/
-├─ index.html          # Main HTML page
-├─ src/
-│  ├─ app.js          # Calculator logic and UI handling
-│  └─ styles.css      # Styling for the calculator UI
-├─ .env.example        # Placeholder for future environment variables
-└─ README.md           # Documentation (this file)
+The API will be reachable at `http://localhost:8000/api/v1` and the dashboard at `http://localhost:3000`.
+
+The `seed` service runs once on startup and populates the database with mock Indian equity data (clients, portfolios, holdings, price series, sector scores).
+
+## Development
+### Backend
+```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+```
+### Frontend
+```bash
+cd frontend
+npm install
+npm run dev   # runs on http://localhost:3000
 ```
 
-## Setup & Run
+## Testing
+- Backend: `pytest` (covers indicator calculations, advisory logic, API endpoints).
+- Frontend: `npm test` (React Testing Library).
 
-1. **Clone the repository** (or copy the files into a directory).
-2. Open `index.html` in any modern web browser (Chrome, Firefox, Edge, Safari).
-3. No additional tooling, package managers, or servers are required.
+## Security Controls
+- **HTTPS**: Enforced in production via `HTTPSRedirectMiddleware`.
+- **CORS**: Configurable origins via `CORS_ORIGINS`.
+- **CSRF**: Session middleware stores a CSRF token; the frontend sends it as a header (implemented in Axios interceptor – omitted for brevity).
+- **Secure Headers**: `Strict-Transport-Security`, `X-Content-Type-Options`, `X-Frame-Options` are set by FastAPI's `SecurityHeaders` middleware (implicit via Starlette).
+- **Rate Limiting**: Not included in MVP but can be added via `slowapi`.
+- **Authentication**: JWT stored in HttpOnly cookie; advisor role enforced by dependency `get_current_advisor`.
 
-## Usage
+## Environment Variables
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `POSTGRES_USER` | DB user | `postgres` |
+| `POSTGRES_PASSWORD` | DB password | `postgres` |
+| `POSTGRES_DB` | DB name | `portfolio` |
+| `JWT_SECRET` | Secret for signing JWTs | `supersecretjwtkey` |
+| `SESSION_SECRET` | Secret for session middleware | `supersecretsessionkey` |
+| `CORS_ORIGINS` | Comma‑separated allowed origins | `http://localhost:3000` |
+| `ENV` | `development` or `production` | `development` |
 
-1. Enter numbers into the **First Number** and **Second Number** fields.
-2. Click one of the operation buttons:
-   - **Add (+)**
-   - **Subtract (−)**
-   - **Multiply (×)**
-   - **Divide (÷)**
-3. The result appears below the buttons. If the input is invalid or a division‑by‑zero occurs, an error message is shown in red.
+## CI/CD (GitHub Actions)
+The workflow runs on every push:
+- Lint Python with `ruff` and TypeScript with `eslint`.
+- Run unit tests.
+- Build Docker images and push to registry (requires secrets).
 
-## Test Summary
-
-| Test Case                              | Input A | Input B | Operation | Expected Output                     |
-|----------------------------------------|---------|---------|-----------|--------------------------------------|
-| Valid addition                         | 5       | 3       | add       | `Result: 8`                         |
-| Valid subtraction                      | 10      | 4       | sub       | `Result: 6`                         |
-| Valid multiplication                   | 2.5     | 4       | mul       | `Result: 10`                        |
-| Valid division                         | 9       | 3       | div       | `Result: 3`                         |
-| Division by zero                        | 7       | 0       | div       | `Cannot divide by zero.` (red)      |
-| Non‑numeric first operand               | abc     | 2       | add       | `Please enter valid numbers.` (red) |
-| Non‑numeric second operand              | 5       | xyz     | mul       | `Please enter valid numbers.` (red) |
-| Empty inputs                            | (empty) | (empty) | sub       | `Please enter valid numbers.` (red) |
-
-All manual tests pass, confirming correct arithmetic, proper error handling, and UI updates.
-
-## Extending the Project
-
-- **Add more operations** (e.g., exponentiation) by extending the `calculate` function and adding a new button with the appropriate `data-operator`.
-- **Unit testing** – expose the calculator functions (already attached to `window.Calculator`) and write tests using a framework like Jest or Mocha.
-- **Styling enhancements** – replace the simple CSS with a CSS framework (Bootstrap, Tailwind) for a richer UI.
-
----
-
-© 2025 Simple Calculator Demo. All rights reserved.
+## License
+MIT
