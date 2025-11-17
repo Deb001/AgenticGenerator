@@ -1,44 +1,67 @@
 version: "3.9"
-
 services:
   db:
     image: postgres:15-alpine
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: app_db
+      POSTGRES_DB: portfolio
+    volumes:
+      - db_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+
+  backend:
+    build: .
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/portfolio
+      JWT_SECRET_KEY: supersecretkey
+      JWT_ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 60
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      LOG_LEVEL: INFO
+      CORS_ORIGINS: "*"
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5173:5173"
+    environment:
+      REACT_APP_API_URL: http://localhost:8000
 
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
 
-  backend:
-    build: ./backend
+  celery_worker:
+    build: .
+    command: celery -A src.jobs.worker.celery_app worker --loglevel=info
     depends_on:
+      - backend
       - db
       - redis
     environment:
-      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/app_db
-      REDIS_URL: redis://redis:6379/0
-      JWT_SECRET_KEY: "supersecretkeymustbe32characterslong!"
-      JWT_ALGORITHM: HS256
-      ACCESS_TOKEN_EXPIRE_MINUTES: 60
-      ALLOWED_HOSTS: "*"
-      DEBUG: "true"
-    ports:
-      - "8000:8000"
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/portfolio
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
 
-  frontend:
-    build: ./frontend
+  celery_beat:
+    build: .
+    command: celery -A src.jobs.worker.celery_app beat --loglevel=info --schedule=/tmp/celerybeat-schedule
     depends_on:
-      - backend
-    ports:
-      - "3000:80"
+      - celery_worker
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/portfolio
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+
+volumes:
+  db_data:
