@@ -1,19 +1,17 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
-import App from './App';
+import { App } from './App';
+import { AuthProvider } from './context/AuthContext';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
-  console.error('Root element with id "root" not found.');
-  throw new Error('Application cannot be mounted without a root element.');
+  throw new Error('Root element with id "root" not found.');
 }
-
 const root = createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <BrowserRouter>
+    <AuthProvider>
       <App />
-    </BrowserRouter>
+    </AuthProvider>
   </React.StrictMode>
 );
