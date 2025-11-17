@@ -1,47 +1,44 @@
-version: '3.9'
+version: "3.9"
+
 services:
   db:
     image: postgres:15-alpine
-    restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-portfolio}
-    volumes:
-      - db_data:/var/lib/postgresql/data
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: app_db
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
 
   backend:
     build: ./backend
     depends_on:
       - db
+      - redis
     environment:
-      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-      - JWT_SECRET=${JWT_SECRET}
-      - SESSION_SECRET=${SESSION_SECRET}
-      - ENV=development
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/app_db
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET_KEY: "supersecretkeymustbe32characterslong!"
+      JWT_ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 60
+      ALLOWED_HOSTS: "*"
+      DEBUG: "true"
     ports:
       - "8000:8000"
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
   frontend:
     build: ./frontend
-    ports:
-      - "3000:80"
-    environment:
-      - REACT_APP_API_URL=http://localhost:8000/api/v1
     depends_on:
       - backend
-
-  seed:
-    build: ./backend
-    command: python -m app.seed
-    depends_on:
-      - db
-    environment:
-      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-    restart: "no"
-
-volumes:
-  db_data:
+    ports:
+      - "3000:80"
