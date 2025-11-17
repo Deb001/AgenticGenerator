@@ -1,41 +1,40 @@
 /**
- * Shared TypeScript interfaces for the frontend application.
+ * Shared TypeScript interfaces for API payloads and domain objects.
  */
 
-/**
- * Represents a portfolio belonging to a client.
- */
-export interface Portfolio {
-  /** Unique identifier of the portfolio */
+export interface User {
   id: number;
-  /** Human‑readable name of the portfolio */
-  name: string;
-  /** Name of the client that owns the portfolio */
-  clientName: string;
-  /** ISO timestamp when the portfolio was created */
-  createdAt: string;
+  email: string;
+  full_name: string;
+  is_advisor: boolean;
 }
 
-/**
- * Represents a single holding inside a portfolio.
- */
 export interface Holding {
-  /** Unique identifier of the holding */
-  id: number;
-  /** Stock ticker symbol, e.g. "AAPL" */
   ticker: string;
-  /** Number of shares held */
   quantity: number;
-  /** Average purchase price per share */
-  averageCost: number;
-  /** Current market price per share */
-  currentPrice: number;
+  avg_price: number;
+  last_price: number;
 }
 
-/**
- * Payload returned by the backend when fetching a portfolio with its holdings.
- */
-export interface PortfolioDetail extends Portfolio {
-  /** Array of holdings belonging to the portfolio */
+export interface Transaction {
+  id: number;
+  ticker: string;
+  quantity: number;
+  price: number;
+  date: string;
+}
+
+export interface Portfolio {
+  id: number;
+  client_name: string;
+  created_at: string;
   holdings: Holding[];
+  transactions: Transaction[];
+}
+
+export interface AdvisorySignal {
+  signal_type: 'BUY' | 'HOLD' | 'SELL';
+  confidence: number;
+  rationale: string;
+  signal_date: string;
 }
