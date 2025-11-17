@@ -1,50 +1,41 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
-from starlette.middleware.sessions import SessionMiddleware
-from app.api.router import api_router
-from app.database import engine, Base, create_db_and_tables
-import os
+from app.core.config import settings
+from app.api.auth import router as auth_router
+from app.api.users import router as users_router
+from app.api.portfolios import router as portfolios_router
+from app.core.security import add_security_headers
+import uvicorn
 
-def create_app() -> FastAPI:
-    app = FastAPI(title="Portfolio Advisory API", version="1.0.0")
+app = FastAPI(title=settings.PROJECT_NAME, version=settings.VERSION, debug=settings.DEBUG)
 
-    # CORS configuration
-    origins = os.getenv("CORS_ORIGINS", "*").split(",")
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=origins,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+# CORS configuration – allow origins defined in settings
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.ALLOWED_HOSTS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-    # Enforce HTTPS in production
-    if os.getenv("ENV", "development") == "production":
-        app.add_middleware(HTTPSRedirectMiddleware)
+# Add security headers middleware
+add_security_headers(app)
 
-    # Session middleware for CSRF token storage (HttpOnly cookie)
-    app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "defaultsession"))
+# Include routers
+app.include_router(auth_router)
+app.include_router(users_router)
+app.include_router(portfolios_router)
 
-    # Include API routes under versioned prefix
-    app.include_router(api_router, prefix="/api/v1")
-
-    @app.get("/health")
-    async def health_check():
-        return {"status": "ok"}
-
-    return app
-
-app = create_app()
-
-@app.on_event("startup")
-async def on_startup():
-    create_db_and_tables()
-
-@app.on_event("shutdown")
-async def on_shutdown():
-    await engine.dispose()
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("app.main:app", host="0.0.0.0", port=int(os.getenv("PORT", 8000)), reload=os.getenv("ENV") != "production")
+    try:
+        uvicorn.run(
+            "app.main:app",
+            host="0.0.0.0",
+            port=8000,
+            reload=settings.DEBUG,
+        )
+    except Exception as exc:
+        import sys, logging
+        logging.error(f"Failed to start server: {exc}")
+        sys.exit(1)
