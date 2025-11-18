@@ -1,67 +1,61 @@
-# Accessible Arithmetic Calculator
+# Portfolio Advisory Dashboard
 
 ## Overview
-A lightweight, ARIA‑compliant web calculator built with plain HTML, JavaScript, and Tailwind CSS. It supports addition, subtraction, multiplication, and division, works with mouse and keyboard, and announces results via a live region for screen‑reader users.
+A full‑stack SaaS product for financial advisors to manage Indian equity portfolios and receive automated Buy/Hold/Sell signals.
 
-## Features
-- **Responsive UI** built with Tailwind CSS.
-- **Keyboard support** (numbers, operators, Enter, Escape).
-- **ARIA roles & live region** for full accessibility.
-- **Hover, focus, and active states** with smooth visual feedback.
-- **Automated accessibility testing** using axe‑core (see checklist).
+## Tech Stack
+- **Frontend**: React 18, Vite, Tailwind CSS
+- **Backend**: Node.js, Express, Sequelize, PostgreSQL
+- **Auth**: JWT
+- **Charts**: Recharts (or Chart.js)
 
-## Project Structure
-```
-project‑root/
-├─ index.html          # Main UI entry point
-├─ script.js           # Calculator logic & accessibility handling
-├─ style.css           # Custom Tailwind overrides
-├─ tailwind.config.js # Tailwind configuration (placeholder)
-├─ .gitignore          # VCS ignore rules
-├─ .env.example        # Environment template (not used)
-└─ README.md           # Documentation
-```
+## Prerequisites
+- Node.js >= 18
+- npm or yarn
+- PostgreSQL database
 
-## Setup & Development
-1. **Clone the repository**
-   ```bash
-   git clone <repo‑url>
-   cd <repo‑folder>
-   ```
-2. **Open `index.html`** in any modern browser. No build step is required because Tailwind is loaded via CDN.
-
-### Optional Local Tailwind Build (for customization)
-If you wish to extend Tailwind:
+## Development Setup
 ```bash
-npm install -D tailwindcss postcss autoprefixer
-npx tailwindcss init -p
-# Edit tailwind.config.js as needed
-npx tailwindcss -i ./style.css -o ./dist/tailwind.css --watch
+# Clone repo
+git clone <repo-url>
+cd <repo-dir>
+
+# Install frontend deps
+npm install
+
+# Install backend deps
+cd backend && npm install && cd ..
+
+# Create .env file from template
+cp .env.example .env
+# Edit .env with your DB credentials and JWT secret
+
+# Run database migrations (using Sequelize CLI or custom script)
+# Example placeholder command:
+# npx sequelize-cli db:migrate
+
+# Start development servers
+# Frontend
+npm run dev   # Vite dev server on http://localhost:3000
+# Backend (in another terminal)
+cd backend && npm run dev   # Express server on http://localhost:4000
 ```
-Then replace the CDN link in `index.html` with the generated CSS file.
+
+## Build & Production
+```bash
+# Frontend build
+npm run build   # Generates ./dist
+
+# Backend production start
+cd backend && npm start
+```
 
 ## Testing
-### Accessibility Test
-The project includes an automated accessibility check using **axe‑core**. Run the following script (requires Node.js):
-```bash
-npm install axe-core
-node axe-test.js   # (script not included; you can create a simple Node runner)
-```
-All tests should pass with **0 violations**.
-
-### Manual Test Checklist
-- [x] All buttons are reachable via **Tab** navigation.
-- [x] Focus ring is clearly visible on focused elements.
-- [x] ARIA live region announces results after each calculation.
-- [x] Keyboard shortcuts work (numbers, `+ - * /`, `Enter`, `Escape`).
-- [x] Color contrast meets WCAG AA.
-- [x] No HTML validation errors.
+- Frontend: `npm run test`
+- Backend: `cd backend && npm test`
 
 ## Deployment
-The calculator is a static site and can be deployed to any static‑hosting provider (GitHub Pages, Netlify, Vercel, etc.).
-1. Push the repository to your remote.
-2. Configure the hosting service to serve `index.html` as the root.
-3. No server‑side configuration is required.
+Deploy the `dist` folder to any static host (Netlify, Vercel) and run the backend on a Node‑compatible server (AWS EC2, Render, Railway). Ensure environment variables are set in the hosting platform.
 
 ## License
-MIT © 2025
+MIT
