@@ -1,36 +1,41 @@
 import { useState, useEffect } from 'react';
-
-const TOKEN_KEY = 'access_token';
+import api from '../services/api';
 
 /**
- * Custom hook to manage JWT authentication token.
- * The token is persisted in localStorage and kept in React state.
- *
- * @returns An object containing the current token and a setter function.
+ * Simple user representation extracted from a JWT payload.
  */
-const useAuth = () => {
-  const [token, setTokenState] = useState<string>('');
+interface User {
+  id: number;
+  role: string;
+}
 
-  // Initialise token from localStorage on first render
+/**
+ * Custom hook that reads a JWT token from localStorage, decodes it, and
+ * provides the current user and loading state.
+ *
+ * In a production app you would verify the token server‑side or call a
+ * `/me` endpoint. Here we decode the payload client‑side for simplicity.
+ */
+export const useAuth = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    const stored = localStorage.getItem(TOKEN_KEY);
-    if (stored) setTokenState(stored);
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const payloadBase64 = token.split('.')[1];
+        const payloadJson = atob(payloadBase64);
+        const payload = JSON.parse(payloadJson);
+        setUser({ id: payload.sub, role: payload.role });
+      } catch (e) {
+        console.error('Failed to parse JWT:', e);
+        localStorage.removeItem('token');
+        setUser(null);
+      }
+    }
+    setLoading(false);
   }, []);
 
-  /**
-   * Update token both in state and localStorage.
-   * Passing an empty string clears the stored token.
-   */
-  const setToken = (newToken: string) => {
-    if (newToken) {
-      localStorage.setItem(TOKEN_KEY, newToken);
-    } else {
-      localStorage.removeItem(TOKEN_KEY);
-    }
-    setTokenState(newToken);
-  };
-
-  return { token, setToken };
+  return { user, loading, setUser };
 };
-
-export default useAuth;
