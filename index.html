@@ -1,44 +1,12 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-gray-100">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Accessible Calculator</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.0/dist/tailwind.min.css" rel="stylesheet" />
-  <link href="style.css" rel="stylesheet" />
+  <title>Portfolio Advisory Dashboard</title>
+  <script type="module" src="/src/main.jsx"></script>
 </head>
-<body class="flex items-center justify-center min-h-screen p-4">
-  <main class="bg-white rounded-xl shadow-lg p-6 w-full max-w-md" aria-labelledby="calc-title">
-    <h1 id="calc-title" class="text-2xl font-bold mb-4 text-center">Calculator</h1>
-    <section class="grid grid-cols-4 gap-2 mb-4">
-      <input type="text" id="display" class="col-span-4 p-3 text-right text-xl border rounded focus:outline-none focus:ring-2 focus:ring-indigo-500" aria-label="Calculator display" readonly />
-    </section>
-    <section class="grid grid-cols-4 gap-2">
-      <!-- Row 1 -->
-      <button class="calc-btn bg-gray-200 hover:bg-gray-300 focus:ring-2 focus:ring-indigo-500 rounded py-3" data-value="7" aria-label="Seven">7</button>
-      <button class="calc-btn bg-gray-200 hover:bg-gray-300 focus:ring-2 focus:ring-indigo-500 rounded py-3" data-value="8" aria-label="Eight">8</button>
-      <button class="calc-btn bg-gray-200 hover:bg-gray-300 focus:ring-2 focus:ring-indigo-500 rounded py-3" data-value="9" aria-label="Nine">9</button>
-      <button class="calc-btn bg-orange-400 hover:bg-orange-500 focus:ring-2 focus:ring-indigo-500 rounded py-3 text-white" data-action="divide" aria-label="Divide">÷</button>
-      <!-- Row 2 -->
-      <button class="calc-btn bg-gray-200 hover:bg-gray-300 focus:ring-2 focus:ring-indigo-500 rounded py-3" data-value="4" aria-label="Four">4</button>
-      <button class="calc-btn bg-gray-200 hover:bg-gray-300 focus:ring-2 focus:ring-indigo-500 rounded py-3" data-value="5" aria-label="Five">5</button>
-      <button class="calc-btn bg-gray-200 hover:bg-gray-300 focus:ring-2 focus:ring-indigo-500 rounded py-3" data-value="6" aria-label="Six">6</button>
-      <button class="calc-btn bg-orange-400 hover:bg-orange-500 focus:ring-2 focus:ring-indigo-500 rounded py-3 text-white" data-action="multiply" aria-label="Multiply">×</button>
-      <!-- Row 3 -->
-      <button class="calc-btn bg-gray-200 hover:bg-gray-300 focus:ring-2 focus:ring-indigo-500 rounded py-3" data-value="1" aria-label="One">1</button>
-      <button class="calc-btn bg-gray-200 hover:bg-gray-300 focus:ring-2 focus:ring-indigo-500 rounded py-3" data-value="2" aria-label="Two">2</button>
-      <button class="calc-btn bg-gray-200 hover:bg-gray-300 focus:ring-2 focus:ring-indigo-500 rounded py-3" data-value="3" aria-label="Three">3</button>
-      <button class="calc-btn bg-orange-400 hover:bg-orange-500 focus:ring-2 focus:ring-indigo-500 rounded py-3 text-white" data-action="subtract" aria-label="Subtract">−</button>
-      <!-- Row 4 -->
-      <button class="calc-btn bg-gray-200 hover:bg-gray-300 focus:ring-2 focus:ring-indigo-500 rounded py-3" data-value="0" aria-label="Zero">0</button>
-      <button class="calc-btn bg-gray-200 hover:bg-gray-300 focus:ring-2 focus:ring-indigo-500 rounded py-3" data-action="decimal" aria-label="Decimal point">.</button>
-      <button class="calc-btn bg-green-500 hover:bg-green-600 focus:ring-2 focus:ring-indigo-500 rounded py-3 text-white" data-action="equals" aria-label="Equals">=</button>
-      <button class="calc-btn bg-orange-400 hover:bg-orange-500 focus:ring-2 focus:ring-indigo-500 rounded py-3 text-white" data-action="add" aria-label="Add">+</button>
-      <!-- Row 5 -->
-      <button class="calc-btn col-span-4 bg-red-500 hover:bg-red-600 focus:ring-2 focus:ring-indigo-500 rounded py-3 text-white" data-action="clear" aria-label="Clear">Clear</button>
-    </section>
-    <div role="status" aria-live="polite" class="sr-only" id="live-region"></div>
-  </main>
-  <script src="script.js"></script>
+<body class="bg-gray-100">
+  <div id="root"></div>
 </body>
 </html>
