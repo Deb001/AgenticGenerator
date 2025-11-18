@@ -1,1 +1,5 @@
-node_modules/\n.env\n__pycache__/\n*.pyc\n*.pyo\n*.pyd\n*.sqlite3\n*.db\n.DS_Store\n/dist\n/build\n/.next\n/.vite\n/.cache\n
+node_modules/
+.DS_Store
+.env
+dist/
+*.log
