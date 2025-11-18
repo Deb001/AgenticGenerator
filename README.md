@@ -1,46 +1,66 @@
-# Arithmetic Web Calculator
+# Portfolio Advisory Application
 
-A minimalistic, responsive web calculator built with plain HTML, JavaScript, and Tailwind CSS. It performs addition, subtraction, multiplication, and division on two numbers.
+## Overview
+A full‑stack web app for advisors to manage Indian equity client portfolios and receive automated Buy/Hold/Sell signals.
 
-## Features
-- Instant client‑side calculation
-- Responsive design with Tailwind CSS
-- Graceful handling of division by zero
-- No build step required (open `index.html` directly)
+## Tech Stack
+- **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, Recharts
+- **Backend**: Node.js, Express, TypeScript, TypeORM, PostgreSQL
+- **Auth**: JWT with role‑based access (advisor)
 
 ## Prerequisites
-- Modern web browser (Chrome, Firefox, Edge, Safari)
-- Optional: a static file server for production (e.g., `serve`, `http-server`, Netlify, Vercel)
+- Node.js >= 18
+- PostgreSQL database
+- Git
 
-## Development Setup
-1. Clone the repository:
-   ```bash
-   git clone <repo-url>
-   cd <repo-folder>
-   ```
-2. Open `index.html` in your browser or run a simple static server:
-   ```bash
-   npx serve .
-   ```
-   Then navigate to `http://localhost:3000`.
+## Setup (Development)
+```bash
+# Clone repo
+git clone <repo-url>
+cd portfolio-advisory
 
-## Build & Run
-- **Dev:** No build required – edit `index.html` or `script.js` and refresh the browser.
-- **Build:** Not applicable (static assets only).
-- **Start (production):** Deploy the files to any static hosting service (GitHub Pages, Netlify, Vercel, etc.).
+# Install dependencies
+npm install
+
+# Create .env from example
+cp .env.example .env
+# Edit .env with your DB credentials
+
+# Run database migrations (TypeORM will sync automatically on start)
+
+# Start both frontend and backend (concurrently)
+npm run dev
+```
+
+The frontend will be available at `http://localhost:5173` and the API at `http://localhost:4000/api`.
+
+## Build (Production)
+```bash
+# Build frontend
+npm run build
+# Start backend
+npm start
+```
 
 ## Testing
-1. Open the page.
-2. Enter numbers in the two fields.
-3. Choose an operation (+, -, ×, ÷).
-4. Click **Calculate**.
-5. Verify the displayed result matches the expected calculation.
-6. Test division by zero – the UI should show an error message.
+```bash
+# Backend tests
+npm run test:backend
+# Frontend tests
+npm run test:frontend
+```
 
 ## Deployment
-1. Push the repository to a remote Git host.
-2. Connect the repo to a static hosting provider (e.g., Netlify) and configure the build command as `none` and the publish directory as the repository root.
-3. The site will be served automatically.
+1. Build the frontend (`npm run build`).
+2. Copy the `dist` folder to a static file server (NGINX, Vercel, Netlify).
+3. Deploy the backend to a Node.js host (Heroku, Render, AWS EC2). Ensure environment variables are set.
+
+## API Documentation
+- `POST /api/auth/login` – returns JWT
+- `GET /api/portfolios` – list portfolios (advisor only)
+- `POST /api/portfolios` – create portfolio
+- `GET /api/portfolios/:id` – portfolio detail
+- `GET /api/portfolios/:id/signals` – latest advisory signals
 
 ## License
-MIT © 2025
+MIT
