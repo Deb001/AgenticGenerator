@@ -1,21 +1,27 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Navbar from './components/Navbar';
-import RouteConfig from './routes/index';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './hooks/useAuth';
+import LoginPage from './pages/LoginPage';
+import PortfolioPage from './pages/PortfolioPage';
 
+/**
+ * Root component handling routing and authentication guard.
+ */
 const App: React.FC = () => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <div className='flex items-center justify-center h-screen'>Loading...</div>;
+  }
+
   return (
-    <Router>
-      <div className="min-h-screen flex flex-col bg-gray-100">
-        <Navbar />
-        <main className="flex-1 container mx-auto p-4">
-          <Routes>{RouteConfig}</Routes>
-        </main>
-        <footer className="bg-primary text-white text-center py-2">
-          © 2025 Portfolio Advisory
-        </footer>
-      </div>
-    </Router>
+    <Routes>
+      <Route path='/login' element={<LoginPage />} />
+      <Route
+        path='/'
+        element={user ? <PortfolioPage /> : <Navigate to='/login' replace />}
+      />
+    </Routes>
   );
 };
 
