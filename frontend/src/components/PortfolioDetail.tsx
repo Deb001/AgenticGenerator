@@ -1,71 +1,41 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import api from '../api';
-import { PortfolioDetail as PortfolioDetailType, Holding } from '../types';
-import './PortfolioDetail.css';
+import React, { useState } from 'react';
+import SignalChart from './SignalChart';
+import api from '../services/api';
+
+interface Props {
+  portfolio: any;
+}
 
 /**
- * Component that shows detailed information for a single portfolio, including its holdings.
+ * Shows portfolio details and allows the user to generate advisory signals.
  */
-const PortfolioDetail: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  const [portfolio, setPortfolio] = useState<PortfolioDetailType | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+const PortfolioDetail: React.FC<Props> = ({ portfolio }) => {
+  const [signals, setSignals] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchDetail = async () => {
-      try {
-        const response = await api.get<PortfolioDetailType>(`/portfolios/${id}`);
-        setPortfolio(response.data);
-      } catch (err) {
-        setError('Unable to load portfolio details.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (id) fetchDetail();
-  }, [id]);
-
-  if (loading) return <p>Loading portfolio details…</p>;
-  if (error) return <p className="error-message">{error}</p>;
-  if (!portfolio) return <p>No portfolio data.</p>;
+  const fetchSignals = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get(`/portfolios/${portfolio.id}/signals`);
+      setSignals(res.data);
+    } catch (err) {
+      console.error('Failed to fetch signals:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="portfolio-detail-container">
-      <h2>{portfolio.name} (ID: {portfolio.id})</h2>
-      <p>Client: {portfolio.clientName}</p>
-      <p>Created: {new Date(portfolio.createdAt).toLocaleDateString()}</p>
-      <h3>Holdings</h3>
-      {portfolio.holdings.length === 0 ? (
-        <p>No holdings for this portfolio.</p>
-      ) : (
-        <table className="holdings-table">
-          <thead>
-            <tr>
-              <th>Ticker</th>
-              <th>Quantity</th>
-              <th>Avg. Cost</th>
-              <th>Current Price</th>
-              <th>Market Value</th>
-            </tr>
-          </thead>
-          <tbody>
-            {portfolio.holdings.map((h: Holding) => (
-              <tr key={h.id}>
-                <td>{h.ticker}</td>
-                <td>{h.quantity}</td>
-                <td>{h.averageCost.toFixed(2)}</td>
-                <td>{h.currentPrice.toFixed(2)}</td>
-                <td>{(h.quantity * h.currentPrice).toFixed(2)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-      <Link to="/portfolios" className="back-link">
-        ← Back to Portfolio List
-      </Link>
+    <div className='bg-white rounded-lg shadow p-4 col-span-2'>
+      <h2 className='text-2xl font-semibold mb-4 text-primary'>{portfolio.name}</h2>
+      <button
+        onClick={fetchSignals}
+        className='mb-4 bg-accent text-white px-4 py-2 rounded hover:bg-secondary transition'
+        disabled={loading}
+      >
+        {loading ? 'Generating...' : 'Generate Signals'}
+      </button>
+      {signals.length > 0 && <SignalChart data={signals} />}
     </div>
   );
 };
