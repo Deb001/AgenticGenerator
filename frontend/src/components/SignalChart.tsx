@@ -1,32 +1,41 @@
 import React from 'react';
-import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
-interface Signal {
-  date: string;
-  recommendation: string;
-  confidence: number;
+interface Props {
+  data: { symbol: string; recommendation: string }[];
 }
 
-const SignalChart: React.FC<{ data: Signal[] }> = ({ data }) => {
-  const mapped = data.map((d) => ({
-    date: new Date(d.date).toLocaleDateString(),
-    value: d.recommendation === 'BUY' ? 2 : d.recommendation === 'HOLD' ? 1 : 0,
-    confidence: d.confidence
+/**
+ * Maps recommendation strings to colors for the chart.
+ */
+const colorMap: Record<string, string> = {
+  Buy: '#10B981',
+  Hold: '#F59E0B',
+  Sell: '#EF4444'
+};
+
+/**
+ * Renders a vertical bar chart where each bar represents a stock symbol and its advisory recommendation.
+ */
+const SignalChart: React.FC<Props> = ({ data }) => {
+  const chartData = data.map((d) => ({
+    name: d.symbol,
+    value: 1,
+    fill: colorMap[d.recommendation] || '#8884d8'
   }));
 
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <LineChart data={mapped}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="date" />
-        <YAxis
-          domain={[0, 2]}
-          ticks={[0, 1, 2]}
-          tickFormatter={(v) => (v === 2 ? 'BUY' : v === 1 ? 'HOLD' : 'SELL')}
-        />
+    <ResponsiveContainer width='100%' height={300}>
+      <BarChart data={chartData} layout='vertical'>
+        <XAxis type='number' hide />
+        <YAxis dataKey='name' type='category' width={80} />
         <Tooltip />
-        <Line type="monotone" dataKey="value" stroke="#2563EB" strokeWidth={2} dot={{ r: 4 }} />
-      </LineChart>
+        <Bar dataKey='value'>
+          {chartData.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={entry.fill} />
+          ))}
+        </Bar>
+      </BarChart>
     </ResponsiveContainer>
   );
 };
