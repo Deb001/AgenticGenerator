@@ -1,124 +1,37 @@
-(() => {
-  const display = document.getElementById('display');
-  const liveRegion = document.getElementById('live-region');
-  const buttons = document.querySelectorAll('.calc-btn');
+document.addEventListener('DOMContentLoaded', () => {
+  const num1Input = document.getElementById('num1');
+  const num2Input = document.getElementById('num2');
+  const operationSelect = document.getElementById('operation');
+  const resultDiv = document.getElementById('result');
+  const calcBtn = document.getElementById('calcBtn');
 
-  let operand1 = null;
-  let operand2 = null;
-  let operator = null;
-  let shouldResetDisplay = false;
-
-  const updateLiveRegion = (message) => {
-    liveRegion.textContent = '';
-    // Force a reflow to ensure screen readers announce the change
-    void liveRegion.offsetWidth;
-    liveRegion.textContent = message;
-  };
-
-  const clearAll = () => {
-    display.value = '';
-    operand1 = operand2 = operator = null;
-    shouldResetDisplay = false;
-    updateLiveRegion('Calculator cleared');
-  };
-
-  const appendNumber = (num) => {
-    if (shouldResetDisplay) {
-      display.value = '';
-      shouldResetDisplay = false;
-    }
-    if (num === '.' && display.value.includes('.')) return;
-    display.value += num;
-  };
-
-  const chooseOperator = (op) => {
-    if (display.value === '' && operand1 === null) return;
-    if (operand1 === null) {
-      operand1 = parseFloat(display.value);
-    } else if (!shouldResetDisplay) {
-      operand2 = parseFloat(display.value);
-      const result = compute();
-      display.value = result;
-      operand1 = result;
-    }
-    operator = op;
-    shouldResetDisplay = true;
-    updateLiveRegion(`Operator ${op} selected`);
-  };
-
-  const compute = () => {
-    if (operator === null || operand1 === null) return parseFloat(display.value);
-    operand2 = parseFloat(display.value);
-    let result;
-    switch (operator) {
-      case 'add':
-        result = operand1 + operand2;
+  const calculate = () => {
+    const a = parseFloat(num1Input.value) || 0;
+    const b = parseFloat(num2Input.value) || 0;
+    const op = operationSelect.value;
+    let res;
+    switch (op) {
+      case '+':
+        res = a + b;
         break;
-      case 'subtract':
-        result = operand1 - operand2;
+      case '-':
+        res = a - b;
         break;
-      case 'multiply':
-        result = operand1 * operand2;
+      case '*':
+        res = a * b;
         break;
-      case 'divide':
-        result = operand2 === 0 ? 'Error' : operand1 / operand2;
+      case '/':
+        if (b === 0) {
+          resultDiv.textContent = 'Result: Error (division by zero)';
+          return;
+        }
+        res = a / b;
         break;
       default:
-        result = operand2;
+        res = NaN;
     }
-    updateLiveRegion(`Result is ${result}`);
-    return result;
+    resultDiv.textContent = `Result: ${res}`;
   };
 
-  const handleEquals = () => {
-    if (operator === null) return;
-    const result = compute();
-    display.value = result;
-    operand1 = result;
-    operator = null;
-    shouldResetDisplay = true;
-  };
-
-  const handleButtonClick = (e) => {
-    const { value, action } = e.target.dataset;
-    if (value !== undefined) {
-      appendNumber(value);
-    } else if (action) {
-      switch (action) {
-        case 'add':
-        case 'subtract':
-        case 'multiply':
-        case 'divide':
-          chooseOperator(action);
-          break;
-        case 'decimal':
-          appendNumber('.');
-          break;
-        case 'equals':
-          handleEquals();
-          break;
-        case 'clear':
-          clearAll();
-          break;
-      }
-    }
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key >= '0' && e.key <= '9') {
-      appendNumber(e.key);
-    } else if (e.key === '.') {
-      appendNumber('.');
-    } else if (['+', '-', '*', '/'].includes(e.key)) {
-      const map = { '+': 'add', '-': 'subtract', '*': 'multiply', '/': 'divide' };
-      chooseOperator(map[e.key]);
-    } else if (e.key === 'Enter' || e.key === '=') {
-      handleEquals();
-    } else if (e.key === 'Escape') {
-      clearAll();
-    }
-  };
-
-  buttons.forEach(btn => btn.addEventListener('click', handleButtonClick));
-  document.addEventListener('keydown', handleKeyDown);
-})();
+  calcBtn.addEventListener('click', calculate);
+});
