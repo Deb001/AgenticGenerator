@@ -3,10 +3,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Portfolio Advisory Dashboard</title>
-  <script type="module" src="/src/main.jsx"></script>
+  <title>Arithmetic Calculator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="script.js"></script>
 </head>
-<body class="bg-gray-100">
-  <div id="root"></div>
+<body class="bg-gradient-to-r from-indigo-100 via-purple-100 to-pink-100 min-h-screen flex items-center justify-center p-4">
+  <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
+    <h1 class="text-2xl font-bold text-center mb-4 text-gray-800">Arithmetic Calculator</h1>
+    <div class="grid gap-4">
+      <input id="num1" type="number" placeholder="First number" class="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+      <input id="num2" type="number" placeholder="Second number" class="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+      <select id="operation" class="border rounded px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <option value="+">+</option>
+        <option value="-">-</option>
+        <option value="*">×</option>
+        <option value="/">÷</option>
+      </select>
+      <button id="calcBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded transition-colors">Calculate</button>
+      <div id="result" class="text-center text-xl font-medium text-gray-700 mt-2">Result: —</div>
+    </div>
+  </div>
 </body>
 </html>
