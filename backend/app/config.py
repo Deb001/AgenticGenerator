@@ -1,1 +1,14 @@
-from pydantic import BaseSettings, Field\n\n\nclass Settings(BaseSettings):\n    POSTGRES_USER: str = Field(..., env="POSTGRES_USER")\n    POSTGRES_PASSWORD: str = Field(..., env="POSTGRES_PASSWORD")\n    POSTGRES_DB: str = Field(..., env="POSTGRES_DB")\n    POSTGRES_HOST: str = Field(..., env="POSTGRES_HOST", default="localhost")\n    POSTGRES_PORT: int = Field(..., env="POSTGRES_PORT", default=5432)\n\n    JWT_SECRET_KEY: str = Field(..., env="JWT_SECRET_KEY")\n    JWT_ALGORITHM: str = Field(default="HS256", env="JWT_ALGORITHM")\n    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=60, env="ACCESS_TOKEN_EXPIRE_MINUTES")\n\n    class Config:\n        env_file = ".env"\n        env_file_encoding = "utf-8"\n\nsettings = Settings()\n
+from pydantic import BaseSettings
+
+
+class Settings(BaseSettings):
+    DATABASE_URL: str = "sqlite:///./app.db"
+    SECRET_KEY: str = "CHANGE_ME"
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+
+    class Config:
+        env_file = ".env"
+
+
+settings = Settings()
