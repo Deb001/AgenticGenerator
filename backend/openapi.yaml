@@ -1,0 +1,147 @@
+openapi: 3.0.3
+info:
+  title: Retail Workforce Scheduler API
+  version: "0.1.0"
+servers:
+  - url: http://localhost:8000
+paths:
+  /api/scheduler/run:
+    post:
+      summary: Run the weekly scheduler
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                store_id:
+                  type: integer
+                week_start:
+                  type: string
+                  format: date
+      responses:
+        '200':
+          description: Scheduler result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  assignments:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        shift_id:
+                          type: integer
+                        employee_id:
+                          type: integer
+        '400':
+          description: Scheduling error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/stores/{store_id}/schedule:
+    get:
+      summary: Get store weekly schedule
+      parameters:
+        - name: store_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: week_start
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Schedule data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleResponse'
+  /api/employees/{employee_id}/schedule:
+    get:
+      summary: Get employee weekly schedule
+      parameters:
+        - name: employee_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: week_start
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Employee schedule
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleResponse'
+  /api/shifts/{shift_id}/assign:
+    post:
+      summary: Manually assign employee to shift
+      parameters:
+        - name: shift_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignmentCreate'
+      responses:
+        '200':
+          description: Assignment updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+components:
+  schemas:
+    AssignmentCreate:
+      type: object
+      properties:
+        shift_id:
+          type: integer
+        employee_id:
+          type: integer
+      required:
+        - shift_id
+        - employee_id
+    ScheduleResponse:
+      type: object
+      properties:
+        week_start:
+          type: string
+          format: date
+        store_id:
+          type: integer
+        shifts:
+          type: array
+          items:
+            type: object
+        employees:
+          type: array
+          items:
+            type: object
+    ErrorResponse:
+      type: object
+      properties:
+        detail:
+          type: string
