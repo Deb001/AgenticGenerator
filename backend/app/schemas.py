@@ -1,1 +1,38 @@
-from pydantic import BaseModel, EmailStr, Field\nfrom typing import List, Optional\nimport datetime\n\nclass Token(BaseModel):\n    access_token: str\n    token_type: str = "bearer"\n\nclass TokenData(BaseModel):\n    username: Optional[str] = None\n\nclass ClientCreate(BaseModel):\n    name: str\n    email: EmailStr\n    password: str\n\nclass ClientRead(BaseModel):\n    id: int\n    name: str\n    email: EmailStr\n\n    class Config:\n        orm_mode = True\n\nclass PortfolioCreate(BaseModel):\n    name: str\n\nclass PortfolioRead(BaseModel):\n    id: int\n    name: str\n    created_at: datetime.datetime\n\n    class Config:\n        orm_mode = True\n\nclass HoldingRead(BaseModel):\n    id: int\n    stock_ticker: str\n    quantity: float\n\n    class Config:\n        orm_mode = True\n\nclass SignalRead(BaseModel):\n    date: datetime.datetime\n    recommendation: str\n    confidence: float\n\n    class Config:\n        orm_mode = True\n
+from pydantic import BaseModel, Field
+from datetime import date, time
+from typing import List, Optional
+
+
+class ShiftCreate(BaseModel):
+    date: date
+    shift_type: str = Field(..., regex="^(Morning|Afternoon|Evening)$")
+    start_time: time
+    end_time: time
+    store_id: int
+
+
+class AssignmentCreate(BaseModel):
+    shift_id: int
+    employee_id: int
+
+
+class EmployeeScheduleItem(BaseModel):
+    shift_id: int
+    date: date
+    shift_type: str
+    start_time: time
+    end_time: time
+
+
+class StoreScheduleItem(BaseModel):
+    shift_id: int
+    date: date
+    shift_type: str
+    employee_id: Optional[int]
+
+
+class ScheduleResponse(BaseModel):
+    week_start: date
+    store_id: int
+    shifts: List[StoreScheduleItem]
+    employees: List[EmployeeScheduleItem]
