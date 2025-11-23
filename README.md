@@ -1,66 +1,122 @@
-# Portfolio Advisory Application
+# Scientific Calculator
 
-## Overview
-A full‑stack web app for advisors to manage Indian equity client portfolios and receive automated Buy/Hold/Sell signals.
+A responsive, modern scientific calculator built with **plain HTML**, **Tailwind CSS**, and **vanilla JavaScript**. It supports basic arithmetic, parentheses, exponentiation, and common scientific functions (sin, cos, tan, ln, log, sqrt, π, e).
 
-## Tech Stack
-- **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, Recharts
-- **Backend**: Node.js, Express, TypeScript, TypeORM, PostgreSQL
-- **Auth**: JWT with role‑based access (advisor)
+---
 
-## Prerequisites
-- Node.js >= 18
-- PostgreSQL database
-- Git
+## Table of Contents
+- [Features](#features)
+- [Demo](#demo)
+- [Installation](#installation)
+- [Running the App](#running-the-app)
+- [Usage](#usage)
+- [Testing](#testing)
+- [Deployment](#deployment)
+- [Project Structure](#project-structure)
+- [License](#license)
 
-## Setup (Development)
+---
+
+## Features
+- Gradient background with glass‑morphism card.
+- Fully responsive button grid that works on mobile and desktop.
+- Accessible focus states and ARIA‑friendly markup.
+- Expression evaluator using the **shunting‑yard algorithm** (no `eval`).
+- Support for:
+  - Numbers (floats)
+  - Operators `+ - * / ^`
+  - Parentheses
+  - Unary minus
+  - Functions: `sin, cos, tan, ln, log, sqrt`
+  - Constants: `π, e`
+- Robust error handling (mismatched parentheses, divide‑by‑zero, domain errors, overflow).
+
+---
+
+## Demo
+Open `index.html` in any modern browser.
+
+---
+
+## Installation
+No build step is required because Tailwind is loaded via CDN.
+
 ```bash
-# Clone repo
+# Clone the repository
 git clone <repo-url>
-cd portfolio-advisory
-
-# Install dependencies
-npm install
-
-# Create .env from example
-cp .env.example .env
-# Edit .env with your DB credentials
-
-# Run database migrations (TypeORM will sync automatically on start)
-
-# Start both frontend and backend (concurrently)
-npm run dev
+cd <repo-directory>
 ```
 
-The frontend will be available at `http://localhost:5173` and the API at `http://localhost:4000/api`.
+If you wish to customize Tailwind, install the dev dependencies:
 
-## Build (Production)
 ```bash
-# Build frontend
-npm run build
-# Start backend
-npm start
+npm install
+# Then run the Tailwind CLI to generate a custom build (optional)
+ npx tailwindcss -i ./style.css -o ./dist/tailwind.css --watch
 ```
+
+---
+
+## Running the App
+Simply open `index.html` in a browser:
+
+```bash
+open index.html   # macOS
+start index.html   # Windows
+xdg-open index.html   # Linux
+```
+
+---
+
+## Usage
+- Click buttons or use the keyboard.
+- `C` clears the display, `←` deletes the last character.
+- Press `=` or **Enter** to evaluate.
+- Errors are shown directly in the display.
+
+---
 
 ## Testing
-```bash
-# Backend tests
-npm run test:backend
-# Frontend tests
-npm run test:frontend
-```
+Manual test cases are listed in **TESTS.md** (or the section below). Verify each case produces the expected result.
+
+### Sample Test Cases
+| # | Expression | Expected Result |
+|---|------------|-----------------|
+| 1 | `2+2` | `4` |
+| 2 | `5*6-3` | `27` |
+| 3 | `(1+2)*3` | `9` |
+| 4 | `3.5+2.1` | `5.6` |
+| 5 | `2^3` | `8` |
+| 6 | `sin(π/2)` | `1` |
+| 7 | `log(100)` | `2` |
+| 8 | `sqrt(16)` | `4` |
+| 9 | `ln(e)` | `1` |
+|10| `1/0` | `Division by zero` |
+
+---
 
 ## Deployment
-1. Build the frontend (`npm run build`).
-2. Copy the `dist` folder to a static file server (NGINX, Vercel, Netlify).
-3. Deploy the backend to a Node.js host (Heroku, Render, AWS EC2). Ensure environment variables are set.
+The app is static and can be hosted on any static file server (GitHub Pages, Netlify, Vercel, AWS S3, etc.).
 
-## API Documentation
-- `POST /api/auth/login` – returns JWT
-- `GET /api/portfolios` – list portfolios (advisor only)
-- `POST /api/portfolios` – create portfolio
-- `GET /api/portfolios/:id` – portfolio detail
-- `GET /api/portfolios/:id/signals` – latest advisory signals
+Example for GitHub Pages:
+1. Push the repository to GitHub.
+2. In repository settings enable **GitHub Pages** from the `main` branch root.
+3. The site will be available at `https://<username>.github.io/<repo>`.
+
+---
+
+## Project Structure
+```
+project-root/
+├─ index.html          # Main UI
+├─ style.css           # Custom CSS utilities & focus styles
+├─ app.js              # Expression evaluator & UI logic
+├─ README.md           # Documentation (this file)
+├─ .gitignore          # Git ignore rules
+└─ .env.example        # Placeholder for future env vars
+```
+
+---
 
 ## License
-MIT
+MIT License. Feel free to use, modify, and distribute.
