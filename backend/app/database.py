@@ -1,1 +1,8 @@
-from sqlalchemy import create_engine\nfrom sqlalchemy.orm import sessionmaker, declarative_base\nfrom backend.app.config import settings\n\nSQLALCHEMY_DATABASE_URL = (\n    f"postgresql+psycopg2://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}@"\n    f"{settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}"\n)\n\nengine = create_engine(SQLALCHEMY_DATABASE_URL, echo=False)\nSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)\nBase = declarative_base()\n\ndef get_db():\n    db = SessionLocal()\n    try:\n        yield db\n    finally:\n        db.close()\n
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
+from .config import settings
+
+# SQLite requires ``check_same_thread`` when used with ``connect_args``
+engine = create_engine(settings.DATABASE_URL, connect_args={"check_same_thread": False})
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
