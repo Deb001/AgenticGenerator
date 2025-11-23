@@ -1,249 +1,234 @@
-// app.js – ES module implementing a simple calculator UI
+"use strict";
+
+// ==================== Expression Evaluator ====================
+const OPERATORS = {
+  '+': { precedence: 2, assoc: 'L', func: (a, b) => a + b },
+  '-': { precedence: 2, assoc: 'L', func: (a, b) => a - b },
+  '*': { precedence: 3, assoc: 'L', func: (a, b) => a * b },
+  '/': {
+    precedence: 3,
+    assoc: 'L',
+    func: (a, b) => {
+      if (b === 0) throw new Error('Division by zero');
+      return a / b;
+    }
+  },
+  '^': { precedence: 4, assoc: 'R', func: (a, b) => Math.pow(a, b) }
+};
+
+const FUNCTIONS = {
+  sin: (x) => Math.sin(x),
+  cos: (x) => Math.cos(x),
+  tan: (x) => Math.tan(x),
+  ln: (x) => {
+    if (x <= 0) throw new Error('ln domain error');
+    return Math.log(x);
+  },
+  log: (x) => {
+    if (x <= 0) throw new Error('log domain error');
+    return Math.log10(x);
+  },
+  sqrt: (x) => {
+    if (x < 0) throw new Error('sqrt domain error');
+    return Math.sqrt(x);
+  },
+  π: () => Math.PI,
+  e: () => Math.E
+};
 
 /**
- * Custom error thrown when user input violates calculator rules.
+ * Split the expression string into an array of tokens.
+ * Supports numbers, constants, functions, operators and parentheses.
+ * @param {string} expr
+ * @returns {string[]}
  */
-export class ValidationError extends Error {
-    constructor(message) {
-        super(message);
-        this.name = 'ValidationError';
-    }
+function tokenize(expr) {
+  const tokens = [];
+  const regex = /\s*([0-9]*\.?[0-9]+|π|e|[A-Za-z]+|\S)\s*/g;
+  let match;
+  while ((match = regex.exec(expr)) !== null) {
+    tokens.push(match[1]);
+  }
+  return tokens;
 }
 
 /**
- * Custom error thrown when evaluation of the expression fails.
+ * Convert token array from infix to Reverse Polish Notation using the shunting‑yard algorithm.
+ * @param {string[]} tokens
+ * @returns {string[]}
  */
-export class EvaluationError extends Error {
-    constructor(message) {
-        super(message);
-        this.name = 'EvaluationError';
+function shuntingYard(tokens) {
+  const output = [];
+  const stack = [];
+  const isFunction = (t) => Object.prototype.hasOwnProperty.call(FUNCTIONS, t);
+  const isOperator = (t) => Object.prototype.hasOwnProperty.call(OPERATORS, t);
+
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    if (!isNaN(token) || token === 'π' || token === 'e') {
+      output.push(token);
+    } else if (isFunction(token)) {
+      stack.push(token);
+    } else if (token === ',') {
+      while (stack.length && stack[stack.length - 1] !== '(') {
+        output.push(stack.pop());
+      }
+      if (!stack.length) throw new Error('Misplaced comma or parentheses');
+    } else if (isOperator(token)) {
+      while (
+        stack.length &&
+        isOperator(stack[stack.length - 1]) &&
+        ((OPERATORS[token].assoc === 'L' && OPERATORS[token].precedence <= OPERATORS[stack[stack.length - 1]].precedence) ||
+          (OPERATORS[token].assoc === 'R' && OPERATORS[token].precedence < OPERATORS[stack[stack.length - 1]].precedence))
+      ) {
+        output.push(stack.pop());
+      }
+      stack.push(token);
+    } else if (token === '(') {
+      stack.push(token);
+    } else if (token === ')') {
+      while (stack.length && stack[stack.length - 1] !== '(') {
+        output.push(stack.pop());
+      }
+      if (!stack.length) throw new Error('Mismatched parentheses');
+      stack.pop(); // Remove '('
+      if (stack.length && isFunction(stack[stack.length - 1])) {
+        output.push(stack.pop());
+      }
+    } else {
+      throw new Error(`Unknown token: ${token}`);
     }
+  }
+
+  while (stack.length) {
+    const op = stack.pop();
+    if (op === '(' || op === ')') throw new Error('Mismatched parentheses');
+    output.push(op);
+  }
+  return output;
 }
 
 /**
- * Calculator encapsulates arithmetic logic, sanitization and safe evaluation.
+ * Evaluate an expression in Reverse Polish Notation.
+ * @param {string[]} rpn
+ * @returns {number}
  */
-export class Calculator {
-    /**
-     * Initializes an empty expression.
-     */
-    constructor() {
-        /** @type {string} */
-        this.expression = '';
+function evaluateRPN(rpn) {
+  const stack = [];
+  for (const token of rpn) {
+    if (!isNaN(token)) {
+      stack.push(parseFloat(token));
+    } else if (token === 'π') {
+      stack.push(Math.PI);
+    } else if (token === 'e') {
+      stack.push(Math.E);
+    } else if (Object.prototype.hasOwnProperty.call(FUNCTIONS, token)) {
+      const fn = FUNCTIONS[token];
+      const argCount = fn.length;
+      if (stack.length < argCount) throw new Error('Insufficient arguments for function');
+      const args = stack.splice(-argCount);
+      const result = fn(...args);
+      if (!Number.isFinite(result)) throw new Error('Math overflow');
+      stack.push(result);
+    } else if (Object.prototype.hasOwnProperty.call(OPERATORS, token)) {
+      const b = stack.pop();
+      const a = stack.pop();
+      if (a === undefined || b === undefined) throw new Error('Insufficient values for operator');
+      const result = OPERATORS[token].func(a, b);
+      if (!Number.isFinite(result)) throw new Error('Math overflow');
+      stack.push(result);
+    } else {
+      throw new Error(`Invalid token in RPN: ${token}`);
     }
-
-    /**
-     * Returns the current expression.
-     * @returns {string}
-     */
-    getExpression() {
-        return this.expression;
-    }
-
-    /**
-     * Clears the expression.
-     */
-    clear() {
-        this.expression = '';
-    }
-
-    /**
-     * Deletes the last character from the expression.
-     */
-    deleteLast() {
-        this.expression = this.expression.slice(0, -1);
-    }
-
-    /**
-     * Validates and appends a digit or operator.
-     * @param {string} value
-     * @throws {ValidationError}
-     */
-    append(value) {
-        const allowed = /^[0-9+\-*/().]$/;
-        if (!allowed.test(value)) {
-            throw new ValidationError('Invalid character');
-        }
-        // Prevent two consecutive operators (except minus for negative numbers)
-        const operators = '+-*/';
-        const lastChar = this.expression.slice(-1);
-        if (operators.includes(value) && operators.includes(lastChar) && !(value === '-' && lastChar !== '-')) {
-            throw new ValidationError('Consecutive operators are not allowed');
-        }
-        this.expression += value;
-    }
-
-    /**
-     * Safely evaluates the arithmetic expression.
-     * @returns {string}
-     * @throws {EvaluationError}
-     */
-    evaluate() {
-        if (this.expression.trim() === '') {
-            throw new EvaluationError('Expression is empty');
-        }
-        // Whitelist allowed characters only
-        const whitelist = /^[0-9+\-*/().\s]+$/;
-        if (!whitelist.test(this.expression)) {
-            throw new EvaluationError('Expression contains illegal characters');
-        }
-        try {
-            // Use Function constructor for evaluation in a safe sandboxed way
-            // eslint-disable-next-line no-new-func
-            const result = Function(`'use strict'; return (${this.expression})`)();
-            if (typeof result !== 'number' || !isFinite(result)) {
-                throw new EvaluationError('Result is not a finite number');
-            }
-            this.expression = String(result);
-            return this.expression;
-        } catch (e) {
-            throw new EvaluationError('Failed to evaluate expression');
-        }
-    }
+  }
+  if (stack.length !== 1) throw new Error('Invalid expression');
+  return stack[0];
 }
 
 /**
- * Configuration for calculator buttons.
- * @type {Array<{label:string, type:'digit'|'operator'|'control'}>}
+ * Public API – evaluate a mathematical expression string.
+ * @param {string} expr
+ * @returns {number}
+ * @throws Will throw an error if the expression is invalid.
  */
-const ButtonConfig = [
-    { label: 'C', type: 'control' },
-    { label: '←', type: 'control' },
-    { label: '(', type: 'operator' },
-    { label: ')', type: 'operator' },
-    { label: '7', type: 'digit' },
-    { label: '8', type: 'digit' },
-    { label: '9', type: 'digit' },
-    { label: '/', type: 'operator' },
-    { label: '4', type: 'digit' },
-    { label: '5', type: 'digit' },
-    { label: '6', type: 'digit' },
-    { label: '*', type: 'operator' },
-    { label: '1', type: 'digit' },
-    { label: '2', type: 'digit' },
-    { label: '3', type: 'digit' },
-    { label: '-', type: 'operator' },
-    { label: '0', type: 'digit' },
-    { label: '.', type: 'digit' },
-    { label: '=', type: 'control' },
-    { label: '+', type: 'operator' }
-];
-
-/**
- * Initializes the calculator UI inside #calculator-root.
- */
-function initUI() {
-    const root = document.getElementById('calculator-root');
-    if (!root) {
-        console.error('Root element #calculator-root not found');
-        return;
-    }
-
-    const calculator = new Calculator();
-
-    // Create display element
-    const display = document.createElement('div');
-    display.className = 'display';
-    display.textContent = '0';
-    root.appendChild(display);
-
-    // Create button grid container
-    const grid = document.createElement('div');
-    grid.className = 'button-grid';
-    root.appendChild(grid);
-
-    // Helper to create a button element
-    const createButton = (config) => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = `button ${config.type}`;
-        btn.dataset.type = config.type;
-        btn.dataset.value = config.label;
-        btn.textContent = config.label;
-        btn.addEventListener('click', (e) => handleButtonClick(e, calculator, display));
-        return btn;
-    };
-
-    // Populate grid
-    ButtonConfig.forEach(cfg => {
-        const btn = createButton(cfg);
-        grid.appendChild(btn);
-    });
+function evaluateExpression(expr) {
+  if (!expr) throw new Error('Empty expression');
+  const tokens = tokenize(expr);
+  const rpn = shuntingYard(tokens);
+  return evaluateRPN(rpn);
 }
 
-/**
- * Handles a button click, delegating to the Calculator instance.
- * @param {MouseEvent} event
- * @param {Calculator} calculator
- * @param {HTMLElement} display
- */
-function handleButtonClick(event, calculator, display) {
-    const target = /** @type {HTMLButtonElement} */ (event.currentTarget);
-    const type = target.dataset.type;
-    const value = target.dataset.value;
+// ==================== UI Interaction ====================
+const display = document.getElementById('display');
+let errorState = false;
 
-    try {
-        if (type === 'digit' || type === 'operator') {
-            calculator.append(value);
-            display.textContent = calculator.getExpression();
-        } else if (type === 'control') {
-            switch (value) {
-                case 'C':
-                    calculator.clear();
-                    display.textContent = '0';
-                    break;
-                case '←':
-                    calculator.deleteLast();
-                    const expr = calculator.getExpression();
-                    display.textContent = expr || '0';
-                    break;
-                case '=':
-                    const result = calculator.evaluate();
-                    display.textContent = result;
-                    break;
-                default:
-                    // No other control actions defined
-                    break;
-            }
-        }
-    } catch (err) {
-        if (err instanceof ValidationError || err instanceof EvaluationError) {
-            showError(err.message);
-        } else {
-            console.error('Unexpected error:', err);
-        }
-    }
+function appendToDisplay(value) {
+  if (errorState) {
+    display.value = '';
+    errorState = false;
+    display.classList.remove('error');
+  }
+  display.value += value;
 }
 
-/**
- * Shows a temporary error toast.
- * @param {string} message
- */
-function showError(message) {
-    let toast = document.querySelector('.toast');
-    if (!toast) {
-        toast = document.createElement('div');
-        toast.className = 'toast';
-        document.body.appendChild(toast);
-    }
-    toast.textContent = message;
-    toast.classList.add('show');
-    setTimeout(() => {
-        toast.classList.remove('show');
-    }, 3000);
+function clearDisplay() {
+  display.value = '';
+  errorState = false;
+  display.classList.remove('error');
 }
 
-// Global error handling to avoid leaking stack traces to UI
-window.addEventListener('error', (event) => {
-    console.error('Uncaught error:', event.error);
-});
-window.addEventListener('unhandledrejection', (event) => {
-    console.error('Unhandled promise rejection:', event.reason);
+function backspace() {
+  if (errorState) return clearDisplay();
+  display.value = display.value.slice(0, -1);
+}
+
+function computeResult() {
+  try {
+    const result = evaluateExpression(display.value);
+    display.value = Number.isFinite(result) ? result : 'Error';
+  } catch (e) {
+    display.value = e.message;
+    errorState = true;
+    display.classList.add('error');
+  }
+}
+
+// Button click handling
+document.querySelectorAll('button[data-key], button[data-func]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const key = btn.getAttribute('data-key');
+    const func = btn.getAttribute('data-func');
+    if (key) {
+      if (key === 'C') return clearDisplay();
+      if (key === '\u2190') return backspace();
+      if (key === '=') return computeResult();
+      appendToDisplay(key);
+    } else if (func) {
+      if (func === '^') return appendToDisplay('^');
+      if (func === 'π') return appendToDisplay('π');
+      if (func === 'e') return appendToDisplay('e');
+      // Functions are added with opening parenthesis
+      appendToDisplay(`${func}(`);
+    }
+  });
 });
 
-// Initialize UI when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initUI);
-} else {
-    initUI();
-}
+// Keyboard support
+document.addEventListener('keydown', (e) => {
+  const allowed = '0123456789.+-*/^()';
+  if (allowed.includes(e.key)) {
+    appendToDisplay(e.key);
+    e.preventDefault();
+  } else if (e.key === 'Enter') {
+    computeResult();
+    e.preventDefault();
+  } else if (e.key === 'Backspace') {
+    backspace();
+    e.preventDefault();
+  } else if (e.key === 'Escape') {
+    clearDisplay();
+    e.preventDefault();
+  }
+});
+
+export { evaluateExpression };
