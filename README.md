@@ -1,122 +1,107 @@
-# Scientific Calculator
+# Portfolio Advisory Dashboard (Frontend)
 
-A responsive, modern scientific calculator built with **plain HTML**, **Tailwind CSS**, and **vanilla JavaScript**. It supports basic arithmetic, parentheses, exponentiation, and common scientific functions (sin, cos, tan, ln, log, sqrt, π, e).
+## Overview
 
----
+This repository contains the **React** frontend for the Portfolio Advisory Dashboard. It provides a secure login flow, displays client portfolios, advisory signals, and performance charts. The UI is built with **Tailwind CSS** for a modern, responsive design and **Chart.js** for data visualisation.
 
-## Table of Contents
-- [Features](#features)
-- [Demo](#demo)
-- [Installation](#installation)
-- [Running the App](#running-the-app)
-- [Usage](#usage)
-- [Testing](#testing)
-- [Deployment](#deployment)
-- [Project Structure](#project-structure)
-- [License](#license)
+## Prerequisites
 
----
+- **Node.js** (v18 or later)
+- **npm** (v9 or later) or **yarn**
+- The backend API must be running (default: `http://localhost:5000`). See the backend repository for setup instructions.
 
-## Features
-- Gradient background with glass‑morphism card.
-- Fully responsive button grid that works on mobile and desktop.
-- Accessible focus states and ARIA‑friendly markup.
-- Expression evaluator using the **shunting‑yard algorithm** (no `eval`).
-- Support for:
-  - Numbers (floats)
-  - Operators `+ - * / ^`
-  - Parentheses
-  - Unary minus
-  - Functions: `sin, cos, tan, ln, log, sqrt`
-  - Constants: `π, e`
-- Robust error handling (mismatched parentheses, divide‑by‑zero, domain errors, overflow).
+## Getting Started
 
----
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/your-org/portfolio-advisory-frontend.git
+   cd portfolio-advisory-frontend
+   ```
 
-## Demo
-Open `index.html` in any modern browser.
+2. **Install dependencies**
+   ```bash
+   npm install
+   # or using yarn
+   # yarn install
+   ```
 
----
+3. **Configure environment variables**
+   - Copy the example file and adjust if needed:
+   ```bash
+   cp .env.example .env
+   ```
+   - The default points to the backend API at `http://localhost:5000/api`.
 
-## Installation
-No build step is required because Tailwind is loaded via CDN.
+4. **Run the development server**
+   ```bash
+   npm run dev
+   ```
+   The app will be available at `http://localhost:3000`.
 
-```bash
-# Clone the repository
-git clone <repo-url>
-cd <repo-directory>
-```
+5. **Build for production**
+   ```bash
+   npm run build
+   ```
+   The compiled assets will be placed in the `dist` folder.
 
-If you wish to customize Tailwind, install the dev dependencies:
-
-```bash
-npm install
-# Then run the Tailwind CLI to generate a custom build (optional)
- npx tailwindcss -i ./style.css -o ./dist/tailwind.css --watch
-```
-
----
-
-## Running the App
-Simply open `index.html` in a browser:
-
-```bash
-open index.html   # macOS
-start index.html   # Windows
-xdg-open index.html   # Linux
-```
-
----
-
-## Usage
-- Click buttons or use the keyboard.
-- `C` clears the display, `←` deletes the last character.
-- Press `=` or **Enter** to evaluate.
-- Errors are shown directly in the display.
-
----
-
-## Testing
-Manual test cases are listed in **TESTS.md** (or the section below). Verify each case produces the expected result.
-
-### Sample Test Cases
-| # | Expression | Expected Result |
-|---|------------|-----------------|
-| 1 | `2+2` | `4` |
-| 2 | `5*6-3` | `27` |
-| 3 | `(1+2)*3` | `9` |
-| 4 | `3.5+2.1` | `5.6` |
-| 5 | `2^3` | `8` |
-| 6 | `sin(π/2)` | `1` |
-| 7 | `log(100)` | `2` |
-| 8 | `sqrt(16)` | `4` |
-| 9 | `ln(e)` | `1` |
-|10| `1/0` | `Division by zero` |
-
----
-
-## Deployment
-The app is static and can be hosted on any static file server (GitHub Pages, Netlify, Vercel, AWS S3, etc.).
-
-Example for GitHub Pages:
-1. Push the repository to GitHub.
-2. In repository settings enable **GitHub Pages** from the `main` branch root.
-3. The site will be available at `https://<username>.github.io/<repo>`.
-
----
+6. **Preview the production build**
+   ```bash
+   npm run preview
+   ```
 
 ## Project Structure
+
 ```
-project-root/
-├─ index.html          # Main UI
-├─ style.css           # Custom CSS utilities & focus styles
-├─ app.js              # Expression evaluator & UI logic
-├─ README.md           # Documentation (this file)
-├─ .gitignore          # Git ignore rules
-└─ .env.example        # Placeholder for future env vars
+frontend/
+├─ public/                 # (optional) static assets
+├─ src/
+│  ├─ components/          # Re‑usable UI components
+│  │   ├─ Chart.tsx
+│  │   ├─ PortfolioTable.tsx
+│  │   └─ SignalBadge.tsx
+│  ├─ context/             # React context for authentication
+│  │   └─ AuthContext.tsx
+│  ├─ hooks/               # Custom React hooks
+│  │   └─ useAuth.tsx
+│  ├─ pages/               # Page‑level components (routes)
+│  │   ├─ Dashboard.tsx
+│  │   └─ Login.tsx
+│  ├─ services/            # API client (Axios instance)
+│  │   └─ api.ts
+│  ├─ mock/                # Mock data used when backend is unavailable
+│  │   └─ mockPortfolios.ts
+│  ├─ App.tsx              # Root component with routing & auth guard
+│  ├─ main.tsx             # React entry point
+│  └─ index.css            # Tailwind imports
+├─ .env.example
+├─ .gitignore
+├─ index.html
+├─ package.json
+├─ tailwind.config.js
+├─ postcss.config.js
+├─ tsconfig.json
+└─ vite.config.ts
 ```
 
----
+## Security & Best Practices
+
+- **Authentication** is handled via JWT stored in `localStorage`. The token is attached to every API request in the `Authorization` header.
+- **Input validation** is performed on the login form (HTML5 `required` attributes) and on the backend (not shown here).
+- **Content Security Policy (CSP)** should be configured on the server serving the built assets to mitigate XSS attacks.
+- **HTTPS** is recommended for production deployments.
+
+## Testing the UI without a Backend
+
+If the backend API is not reachable, the application gracefully falls back to static mock data defined in `src/mock/mockPortfolios.ts`. This allows you to explore the UI and chart components without a running server.
+
+## Scripts Reference
+
+| Script | Description |
+|--------|-------------|
+| `dev`   | Starts Vite development server with hot‑module replacement |
+| `build` | Generates an optimized production build |
+| `preview` | Serves the production build locally for verification |
 
 ## License
-MIT License. Feel free to use, modify, and distribute.
+
+MIT License. See `LICENSE` file for details.
