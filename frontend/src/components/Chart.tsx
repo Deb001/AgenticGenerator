@@ -1,57 +1,37 @@
-import React, { useEffect, useState } from 'react';
-import { Line } from 'react-chartjs-2';
+import React from 'react';
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
   Tooltip,
-  Legend,
-} from 'chart.js';
-import api from '../services/api';
-import { useAuth } from '../hooks/useAuth';
-import { mockPortfolios } from '../mock/mockPortfolios';
+  CartesianGrid
+} from 'recharts';
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
-
-interface Props {
-  portfolioId: number;
+interface DataPoint {
+  date: string;
+  value: number;
 }
 
-const ChartComponent: React.FC<Props> = ({ portfolioId }) => {
-  const [data, setData] = useState<number[]>([]);
-  const { token } = useAuth();
+interface Props {
+  data: DataPoint[];
+}
 
-  useEffect(() => {
-    const fetchChart = async () => {
-      try {
-        const response = await api.get(`/portfolios/${portfolioId}/history`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setData(response.data.returns);
-      } catch {
-        const mock = mockPortfolios.find((p) => p.id === portfolioId);
-        setData(mock?.historical_returns || []);
-      }
-    };
-    fetchChart();
-  }, [portfolioId, token]);
-
-  const chartData = {
-    labels: data.map((_, i) => i + 1),
-    datasets: [
-      {
-        label: 'Daily Return',
-        data,
-        borderColor: '#1E3A8A',
-        backgroundColor: 'rgba(30,58,138,0.2)',
-      },
-    ],
-  };
-
-  return <Line data={chartData} />;
+const Chart: React.FC<Props> = ({ data }) => {
+  return (
+    <div className="w-full h-64">
+      <ResponsiveContainer>
+        <LineChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff33" />
+          <XAxis dataKey="date" stroke="#fff" />
+          <YAxis stroke="#fff" />
+          <Tooltip contentStyle={{ backgroundColor: '#1e3a8a', border: 'none', color: '#fff' }} />
+          <Line type="monotone" dataKey="value" stroke="#f59e0b" strokeWidth={2} dot={false} />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
 };
 
-export default ChartComponent;
+export default Chart;
