@@ -1,23 +1,93 @@
-/* Custom focus ring for accessibility */
-button:focus {
-  outline: 2px solid #4F46E5; /* Tailwind primary color */
-  outline-offset: 2px;
+/* Basic reset */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-/* Calculator button base styling */
-.calc-btn {
-  background-color: #e5e7eb; /* gray-200 */
-  color: #374151;           /* gray-800 */
-  border-radius: 0.375rem; /* rounded-md */
-  padding-top: 0.75rem;    /* py-3 */
-  padding-bottom: 0.75rem;
-  font-weight: 500;        /* font-medium */
-  transition: background-color 0.2s ease-in-out;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); /* shadow-sm */
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  background: linear-gradient(135deg, #f0f4ff, #d9e6ff);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
 }
 
-/* Disabled/error display styling */
-#display.error {
-  color: #dc2626; /* red-600 */
-  font-weight: 700; /* font-bold */
+.calculator {
+  background: rgba(255, 255, 255, 0.85);
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  width: 320px;
+}
+
+#display {
+  width: 100%;
+  height: 3rem;
+  font-size: 1.5rem;
+  text-align: right;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  border: 2px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.buttons {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.5rem;
+}
+
+button {
+  font-size: 1rem;
+  padding: 0.75rem;
+  border: none;
+  border-radius: 6px;
+  background: #e0e7ff;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+button:hover {
+  background: #c3d2ff;
+}
+
+button:active {
+  transform: scale(0.97);
+}
+
+button.operator {
+  background: #ffdbb4;
+}
+
+button.operator:hover {
+  background: #ffca90;
+}
+
+button.function,
+button.constant {
+  background: #d1fae5;
+}
+
+button.function:hover,
+button.constant:hover {
+  background: #a7f3d0;
+}
+
+#clear,
+#backspace,
+#equals {
+  background: #fecaca;
+}
+
+#clear:hover,
+#backspace:hover,
+#equals:hover {
+  background: #fca5a5;
+}
+
+@media (max-width: 400px) {
+  .calculator { width: 100%; margin: 0.5rem; }
 }
