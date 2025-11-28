@@ -1,9 +1,11 @@
 import { Router } from 'express';
-import { getPortfolios, getPortfolioById } from '../controllers/portfolioController';
+import { getAllPortfolios, getPortfolioById } from '../controllers/portfolioController';
+import { verifyToken } from '../middleware/auth';
 
 const router = Router();
 
-router.get('/', getPortfolios);
+router.use(verifyToken);
+router.get('/', getAllPortfolios);
 router.get('/:id', getPortfolioById);
 
 export default router;
