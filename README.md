@@ -1,107 +1,60 @@
-# Portfolio Advisory Dashboard (Frontend)
+# Scientific Web Calculator
 
-## Overview
+A lightweight, client‑side scientific calculator built with plain HTML, CSS and JavaScript. It safely evaluates expressions using a custom parser (shunting‑yard algorithm) and supports common scientific functions.
 
-This repository contains the **React** frontend for the Portfolio Advisory Dashboard. It provides a secure login flow, displays client portfolios, advisory signals, and performance charts. The UI is built with **Tailwind CSS** for a modern, responsive design and **Chart.js** for data visualisation.
+## Features
 
-## Prerequisites
-
-- **Node.js** (v18 or later)
-- **npm** (v9 or later) or **yarn**
-- The backend API must be running (default: `http://localhost:5000`). See the backend repository for setup instructions.
-
-## Getting Started
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/your-org/portfolio-advisory-frontend.git
-   cd portfolio-advisory-frontend
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   # or using yarn
-   # yarn install
-   ```
-
-3. **Configure environment variables**
-   - Copy the example file and adjust if needed:
-   ```bash
-   cp .env.example .env
-   ```
-   - The default points to the backend API at `http://localhost:5000/api`.
-
-4. **Run the development server**
-   ```bash
-   npm run dev
-   ```
-   The app will be available at `http://localhost:3000`.
-
-5. **Build for production**
-   ```bash
-   npm run build
-   ```
-   The compiled assets will be placed in the `dist` folder.
-
-6. **Preview the production build**
-   ```bash
-   npm run preview
-   ```
+- Basic arithmetic: `+ – * / ^`
+- Parentheses for grouping
+- Scientific functions: `sin, cos, tan, asin, acos, atan, log (base‑10), ln, sqrt, exp, pow`
+- Constants: `π` and `e`
+- Clear, backspace, and keyboard shortcuts
+- Responsive layout with visual feedback
+- Robust error handling (mismatched parentheses, division by zero, domain errors)
 
 ## Project Structure
 
 ```
-frontend/
-├─ public/                 # (optional) static assets
-├─ src/
-│  ├─ components/          # Re‑usable UI components
-│  │   ├─ Chart.tsx
-│  │   ├─ PortfolioTable.tsx
-│  │   └─ SignalBadge.tsx
-│  ├─ context/             # React context for authentication
-│  │   └─ AuthContext.tsx
-│  ├─ hooks/               # Custom React hooks
-│  │   └─ useAuth.tsx
-│  ├─ pages/               # Page‑level components (routes)
-│  │   ├─ Dashboard.tsx
-│  │   └─ Login.tsx
-│  ├─ services/            # API client (Axios instance)
-│  │   └─ api.ts
-│  ├─ mock/                # Mock data used when backend is unavailable
-│  │   └─ mockPortfolios.ts
-│  ├─ App.tsx              # Root component with routing & auth guard
-│  ├─ main.tsx             # React entry point
-│  └─ index.css            # Tailwind imports
-├─ .env.example
-├─ .gitignore
-├─ index.html
-├─ package.json
-├─ tailwind.config.js
-├─ postcss.config.js
-├─ tsconfig.json
-└─ vite.config.ts
+.
+├─ index.html      # UI markup
+├─ style.css       # Styling and responsive grid
+├─ app.js          # Evaluation engine + UI logic
+├─ README.md       # Documentation (this file)
+└─ .gitignore      # Git ignore rules
 ```
 
-## Security & Best Practices
+## Getting Started
 
-- **Authentication** is handled via JWT stored in `localStorage`. The token is attached to every API request in the `Authorization` header.
-- **Input validation** is performed on the login form (HTML5 `required` attributes) and on the backend (not shown here).
-- **Content Security Policy (CSP)** should be configured on the server serving the built assets to mitigate XSS attacks.
-- **HTTPS** is recommended for production deployments.
+1. **Clone or download** the repository.
+2. Open `index.html` in any modern web browser (no server required).
 
-## Testing the UI without a Backend
+The calculator will load and be ready for use.
 
-If the backend API is not reachable, the application gracefully falls back to static mock data defined in `src/mock/mockPortfolios.ts`. This allows you to explore the UI and chart components without a running server.
+## Keyboard Shortcuts
 
-## Scripts Reference
+- Digits `0‑9`, decimal `.`, and operators `+ - * / ^ ( )` work directly.
+- Press **Enter** to evaluate.
+- Press **Backspace** to delete the last character.
+- Press **c** (or **C**) to clear the display.
+- Function names can be typed (e.g., `sin(`).
 
-| Script | Description |
-|--------|-------------|
-| `dev`   | Starts Vite development server with hot‑module replacement |
-| `build` | Generates an optimized production build |
-| `preview` | Serves the production build locally for verification |
+## Manual Test List
+
+| Expression | Expected Result | Notes |
+|------------|----------------|-------|
+| `2+2` | `4` | Simple addition |
+| `sin(pi/2)` | `1` | Trigonometric function |
+| `log(100)` | `2` | Base‑10 logarithm |
+| `ln(e)` | `1` | Natural logarithm |
+| `2^3^2` | `512` | Right‑associative exponentiation |
+| `sqrt(4)` | `2` | Square root |
+| `1/0` | `Error: Division by zero` | Division error handling |
+| `sqrt(-1)` | `Error: Sqrt domain error` | Domain error handling |
+
+## Contributing
+
+Feel free to fork the repo and submit pull requests. Improvements such as additional functions, theming, or accessibility enhancements are welcome.
 
 ## License
 
-MIT License. See `LICENSE` file for details.
+This project is released under the MIT License.
