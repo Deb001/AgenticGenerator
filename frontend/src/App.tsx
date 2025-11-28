@@ -1,27 +1,35 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from './hooks/useAuth';
-import LoginPage from './pages/LoginPage';
-import PortfolioPage from './pages/PortfolioPage';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, AuthContext } from './context/AuthContext';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
 
-/**
- * Root component handling routing and authentication guard.
- */
-const App: React.FC = () => {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return <div className='flex items-center justify-center h-screen'>Loading...</div>;
+const RequireAuth: React.FC<{ children: JSX.Element }> = ({ children }) => {
+  const { token } = React.useContext(AuthContext);
+  if (!token) {
+    return <Navigate to="/login" replace />;
   }
+  return children;
+};
 
+const App: React.FC = () => {
   return (
-    <Routes>
-      <Route path='/login' element={<LoginPage />} />
-      <Route
-        path='/'
-        element={user ? <PortfolioPage /> : <Navigate to='/login' replace />}
-      />
-    </Routes>
+    <Router>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route
+            path="/"
+            element={
+              <RequireAuth>
+                <Dashboard />
+              </RequireAuth>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AuthProvider>
+    </Router>
   );
 };
 
