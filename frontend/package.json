@@ -1,6 +1,7 @@
 {
   "name": "portfolio-advisory-frontend",
   "version": "1.0.0",
+  "private": true,
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -9,18 +10,15 @@
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.14.1",
+    "react-router-dom": "^6.14.2",
     "axios": "^1.4.0",
-    "tailwindcss": "^3.3.2",
-    "chart.js": "^4.3.0",
-    "react-chartjs-2": "^5.2.0"
+    "recharts": "^2.5.0",
+    "tailwindcss": "^3.3.2"
   },
   "devDependencies": {
-    "@types/react": "^18.2.14",
-    "@types/react-dom": "^18.2.6",
+    "@vitejs/plugin-react": "^4.0.0",
     "typescript": "^5.1.6",
     "vite": "^4.4.0",
-    "@vitejs/plugin-react": "^4.0.0",
     "postcss": "^8.4.24",
     "autoprefixer": "^10.4.14"
   }
