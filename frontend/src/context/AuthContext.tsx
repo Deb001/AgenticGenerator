@@ -1,47 +1,41 @@
-import React, { createContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { login as apiLogin } from '../services/api';
 import { useNavigate } from 'react-router-dom';
-import api from '../services/api';
 
 interface AuthContextProps {
-  token: string | null;
+  isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
-export const AuthContext = createContext<AuthContextProps>({
-  token: null,
-  login: async () => {},
-  logout: () => {},
-});
+const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [isAuthenticated, setAuth] = useState<boolean>(!!localStorage.getItem('token'));
   const navigate = useNavigate();
 
   const login = async (email: string, password: string) => {
-    try {
-      const response = await api.post('/auth/login', { email, password });
-      setToken(response.data.token);
-      localStorage.setItem('token', response.data.token);
-      navigate('/');
-    } catch (err) {
-      console.error('Login failed', err);
-    }
+    const token = await apiLogin(email, password);
+    localStorage.setItem('token', token);
+    setAuth(true);
+    navigate('/portfolios');
   };
 
   const logout = () => {
-    setToken(null);
     localStorage.removeItem('token');
+    setAuth(false);
     navigate('/login');
   };
 
-  useEffect(() => {
-    // Token validation could be added here.
-  }, []);
-
   return (
-    <AuthContext.Provider value={{ token, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
+};
+
+export const useAuthContext = () => {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error('useAuthContext must be used within AuthProvider');
+  return context;
 };
