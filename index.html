@@ -1,66 +1,53 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Scientific Calculator</title>
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    // Tailwind configuration (inline is acceptable because CSP is not enforced in this static demo)
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: '#4F46E5',
-            secondary: '#6366F1',
-          },
-        },
-      },
-    };
-  </script>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
-<body class="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 p-4">
-  <div class="w-full max-w-md bg-white bg-opacity-80 backdrop-blur-lg rounded-xl shadow-2xl p-6 flex flex-col space-y-4">
-    <input id="display" type="text" readonly class="w-full text-right text-3xl bg-white bg-opacity-50 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary" />
-    <div class="grid grid-cols-4 gap-2">
+<body>
+  <div class="calculator">
+    <input type="text" id="display" readonly aria-label="Calculator display">
+    <div class="buttons">
       <!-- Row 1 -->
-      <button data-key="7" class="calc-btn">7</button>
-      <button data-key="8" class="calc-btn">8</button>
-      <button data-key="9" class="calc-btn">9</button>
-      <button data-key="/" class="calc-btn bg-primary text-white hover:bg-primary/80">÷</button>
+      <button data-token="7">7</button>
+      <button data-token="8">8</button>
+      <button data-token="9">9</button>
+      <button data-token="/" class="operator">÷</button>
+      <button data-token="sin(" class="function">sin</button>
       <!-- Row 2 -->
-      <button data-key="4" class="calc-btn">4</button>
-      <button data-key="5" class="calc-btn">5</button>
-      <button data-key="6" class="calc-btn">6</button>
-      <button data-key="*" class="calc-btn bg-primary text-white hover:bg-primary/80">×</button>
+      <button data-token="4">4</button>
+      <button data-token="5">5</button>
+      <button data-token="6">6</button>
+      <button data-token="*" class="operator">×</button>
+      <button data-token="cos(" class="function">cos</button>
       <!-- Row 3 -->
-      <button data-key="1" class="calc-btn">1</button>
-      <button data-key="2" class="calc-btn">2</button>
-      <button data-key="3" class="calc-btn">3</button>
-      <button data-key="-" class="calc-btn bg-primary text-white hover:bg-primary/80">−</button>
+      <button data-token="1">1</button>
+      <button data-token="2">2</button>
+      <button data-token="3">3</button>
+      <button data-token="-" class="operator">−</button>
+      <button data-token="tan(" class="function">tan</button>
       <!-- Row 4 -->
-      <button data-key="0" class="calc-btn col-span-2">0</button>
-      <button data-key="." class="calc-btn">.</button>
-      <button data-key="+" class="calc-btn bg-primary text-white hover:bg-primary/80">+</button>
-      <!-- Row 5: Functions -->
-      <button data-func="sin" class="calc-btn bg-secondary text-white hover:bg-secondary/80">sin</button>
-      <button data-func="cos" class="calc-btn bg-secondary text-white hover:bg-secondary/80">cos</button>
-      <button data-func="tan" class="calc-btn bg-secondary text-white hover:bg-secondary/80">tan</button>
-      <button data-key="C" class="calc-btn bg-red-500 text-white hover:bg-red-600">C</button>
-      <!-- Row 6: More Functions -->
-      <button data-func="ln" class="calc-btn bg-secondary text-white hover:bg-secondary/80">ln</button>
-      <button data-func="log" class="calc-btn bg-secondary text-white hover:bg-secondary/80">log</button>
-      <button data-func="sqrt" class="calc-btn bg-secondary text-white hover:bg-secondary/80">√</button>
-      <button data-key="←" class="calc-btn bg-gray-400 hover:bg-gray-500">←</button>
-      <!-- Row 7: Extras -->
-      <button data-func="^" class="calc-btn bg-secondary text-white hover:bg-secondary/80">^</button>
-      <button data-func="π" class="calc-btn bg-secondary text-white hover:bg-secondary/80">π</button>
-      <button data-func="e" class="calc-btn bg-secondary text-white hover:bg-secondary/80">e</button>
-      <button data-key="=" class="calc-btn bg-green-600 text-white hover:bg-green-700 col-span-4">=</button>
+      <button data-token="0">0</button>
+      <button data-token=".">.</button>
+      <button data-token="(" >(</button>
+      <button data-token=")" >)</button>
+      <button data-token="+" class="operator">+</button>
+      <!-- Row 5 -->
+      <button data-token="log(" class="function">log</button>
+      <button data-token="ln(" class="function">ln</button>
+      <button data-token="sqrt(" class="function">√</button>
+      <button data-token="exp(" class="function">exp</button>
+      <button data-token="^" class="operator">^</button>
+      <!-- Row 6 -->
+      <button data-token="pi" class="constant">π</button>
+      <button data-token="e" class="constant">e</button>
+      <button id="clear">C</button>
+      <button id="backspace">⌫</button>
+      <button id="equals">=</button>
     </div>
   </div>
-  <script type="module" src="app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
