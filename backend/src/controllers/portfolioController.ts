@@ -1,34 +1,33 @@
-import { Request, Response } from 'express';
-import db from '../utils/db';
-import { generateSignal } from '../services/signalService';
+import { Request, Response, NextFunction } from 'express';
+import { Portfolio } from '../models/Portfolio';
 
-export const getPortfolios = async (req: Request, res: Response) => {
+/**
+ * GET /api/portfolios
+ */
+export const getAllPortfolios = async (_req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await db.query('SELECT * FROM portfolios WHERE advisor_id=$1', [
-      (req as any).user.userId,
-    ]);
-    const portfolios = result.rows.map((p) => ({
-      ...p,
-      signal: generateSignal(p.historical_returns),
-    }));
+    const portfolios = await Portfolio.getAll();
     res.json(portfolios);
   } catch (err) {
-    res.status(500).json({ message: 'Failed to fetch portfolios' });
+    next(err);
   }
 };
 
-export const getPortfolioById = async (req: Request, res: Response) => {
-  const { id } = req.params;
+/**
+ * GET /api/portfolios/:id
+ */
+export const getPortfolioById = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await db.query('SELECT * FROM portfolios WHERE id=$1 AND advisor_id=$2', [
-      id,
-      (req as any).user.userId,
-    ]);
-    if (result.rowCount === 0) return res.status(404).json({ message: 'Portfolio not found' });
-    const portfolio = result.rows[0];
-    portfolio.signal = generateSignal(portfolio.historical_returns);
+    const id = Number(req.params.id);
+    if (Number.isNaN(id)) {
+      return res.status(400).json({ message: 'Invalid portfolio ID' });
+    }
+    const portfolio = await Portfolio.getById(id);
+    if (!portfolio) {
+      return res.status(404).json({ message: 'Portfolio not found' });
+    }
     res.json(portfolio);
   } catch (err) {
-    res.status(500).json({ message: 'Failed to fetch portfolio' });
+    next(err);
   }
 };
