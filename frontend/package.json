@@ -1,30 +1,27 @@
 {
   "name": "portfolio-advisory-frontend",
   "version": "1.0.0",
-  "private": true,
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "test": "vitest"
+    "preview": "vite preview"
   },
   "dependencies": {
-    "@reduxjs/toolkit": "^2.2.0",
-    "axios": "^1.6.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.22.0",
-    "recharts": "^2.12.0"
+    "react-router-dom": "^6.14.1",
+    "axios": "^1.4.0",
+    "tailwindcss": "^3.3.2",
+    "chart.js": "^4.3.0",
+    "react-chartjs-2": "^5.2.0"
   },
   "devDependencies": {
-    "@types/react": "^18.2.45",
-    "@types/react-dom": "^18.2.18",
-    "@vitejs/plugin-react": "^4.2.1",
-    "autoprefixer": "^10.4.16",
-    "postcss": "^8.4.32",
-    "tailwindcss": "^3.4.1",
-    "typescript": "^5.3.3",
-    "vite": "^5.2.0",
-    "vitest": "^1.2.2"
+    "@types/react": "^18.2.14",
+    "@types/react-dom": "^18.2.6",
+    "typescript": "^5.1.6",
+    "vite": "^4.4.0",
+    "@vitejs/plugin-react": "^4.0.0",
+    "postcss": "^8.4.24",
+    "autoprefixer": "^10.4.14"
   }
 }
