@@ -1,35 +1,21 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, AuthContext } from './context/AuthContext';
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import LoginPage from './pages/LoginPage';
+import PortfolioPage from './pages/PortfolioPage';
+import { useAuth } from './hooks/useAuth';
 
-const RequireAuth: React.FC<{ children: JSX.Element }> = ({ children }) => {
-  const { token } = React.useContext(AuthContext);
-  if (!token) {
-    return <Navigate to="/login" replace />;
-  }
-  return children;
-};
-
-const App: React.FC = () => {
+const App = () => {
+  const { isAuthenticated } = useAuth();
   return (
-    <Router>
-      <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route
-            path="/"
-            element={
-              <RequireAuth>
-                <Dashboard />
-              </RequireAuth>
-            }
-          />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </AuthProvider>
-    </Router>
+    <div className="min-h-screen bg-gradient-to-r from-primary to-secondary text-white">
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/portfolios/*"
+          element={isAuthenticated ? <PortfolioPage /> : <Navigate to="/login" replace />}
+        />
+        <Route path="/*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    </div>
   );
 };
 
