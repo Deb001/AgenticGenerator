@@ -1,6 +1,12 @@
+// ====================
+//  Evaluation Engine  
+// ====================
+
 "use strict";
 
-// ==================== Expression Evaluator ====================
+/**
+ * Operator definitions with precedence, associativity, and implementation.
+ */
 const OPERATORS = {
   '+': { precedence: 2, assoc: 'L', func: (a, b) => a + b },
   '-': { precedence: 2, assoc: 'L', func: (a, b) => a - b },
@@ -16,129 +22,181 @@ const OPERATORS = {
   '^': { precedence: 4, assoc: 'R', func: (a, b) => Math.pow(a, b) }
 };
 
+/**
+ * Supported scientific functions. Each function receives numeric arguments.
+ */
 const FUNCTIONS = {
   sin: (x) => Math.sin(x),
   cos: (x) => Math.cos(x),
   tan: (x) => Math.tan(x),
-  ln: (x) => {
-    if (x <= 0) throw new Error('ln domain error');
-    return Math.log(x);
-  },
+  asin: (x) => Math.asin(x),
+  acos: (x) => Math.acos(x),
+  atan: (x) => Math.atan(x),
   log: (x) => {
-    if (x <= 0) throw new Error('log domain error');
+    if (x <= 0) throw new Error('Log domain error');
     return Math.log10(x);
   },
+  ln: (x) => {
+    if (x <= 0) throw new Error('Ln domain error');
+    return Math.log(x);
+  },
   sqrt: (x) => {
-    if (x < 0) throw new Error('sqrt domain error');
+    if (x < 0) throw new Error('Sqrt domain error');
     return Math.sqrt(x);
   },
-  π: () => Math.PI,
-  e: () => Math.E
+  exp: (x) => Math.exp(x),
+  pow: (x, y) => Math.pow(x, y)
 };
 
 /**
- * Split the expression string into an array of tokens.
- * Supports numbers, constants, functions, operators and parentheses.
+ * Constant values that can be used in expressions.
+ */
+const CONSTANTS = {
+  pi: Math.PI,
+  e: Math.E
+};
+
+/** Utility helpers */
+function isLetter(ch) {
+  return /[a-zA-Z]/.test(ch);
+}
+function isDigit(ch) {
+  return /[0-9]/.test(ch);
+}
+
+/**
+ * Convert a raw expression string into an array of token objects.
  * @param {string} expr
- * @returns {string[]}
+ * @returns {Array<{type:string, value:any}>}
  */
 function tokenize(expr) {
   const tokens = [];
-  const regex = /\s*([0-9]*\.?[0-9]+|π|e|[A-Za-z]+|\S)\s*/g;
-  let match;
-  while ((match = regex.exec(expr)) !== null) {
-    tokens.push(match[1]);
+  let i = 0;
+  while (i < expr.length) {
+    const ch = expr[i];
+    if (ch === ' ' || ch === '\t') { i++; continue; }
+    // Number (including decimal)
+    if (isDigit(ch) || ch === '.') {
+      let num = ch;
+      i++;
+      while (i < expr.length && (isDigit(expr[i]) || expr[i] === '.')) {
+        num += expr[i];
+        i++;
+      }
+      tokens.push({ type: 'number', value: parseFloat(num) });
+      continue;
+    }
+    // Identifier (function name or constant)
+    if (isLetter(ch)) {
+      let name = ch;
+      i++;
+      while (i < expr.length && isLetter(expr[i])) {
+        name += expr[i];
+        i++;
+      }
+      if (name in FUNCTIONS) {
+        tokens.push({ type: 'func', value: name });
+      } else if (name in CONSTANTS) {
+        tokens.push({ type: 'number', value: CONSTANTS[name] });
+      } else {
+        throw new Error('Unknown identifier: ' + name);
+      }
+      continue;
+    }
+    // Parentheses
+    if (ch === '(' || ch === ')') {
+      tokens.push({ type: 'paren', value: ch });
+      i++;
+      continue;
+    }
+    // Operators
+    if (ch in OPERATORS) {
+      tokens.push({ type: 'operator', value: ch });
+      i++;
+      continue;
+    }
+    throw new Error('Invalid character: ' + ch);
   }
   return tokens;
 }
 
 /**
- * Convert token array from infix to Reverse Polish Notation using the shunting‑yard algorithm.
- * @param {string[]} tokens
- * @returns {string[]}
+ * Convert token list to Reverse Polish Notation using the shunting‑yard algorithm.
+ * @param {Array} tokens
+ * @returns {Array}
  */
-function shuntingYard(tokens) {
+function toRPN(tokens) {
   const output = [];
   const stack = [];
-  const isFunction = (t) => Object.prototype.hasOwnProperty.call(FUNCTIONS, t);
-  const isOperator = (t) => Object.prototype.hasOwnProperty.call(OPERATORS, t);
-
-  for (let i = 0; i < tokens.length; i++) {
-    const token = tokens[i];
-    if (!isNaN(token) || token === 'π' || token === 'e') {
+  for (const token of tokens) {
+    if (token.type === 'number') {
       output.push(token);
-    } else if (isFunction(token)) {
+    } else if (token.type === 'func') {
       stack.push(token);
-    } else if (token === ',') {
-      while (stack.length && stack[stack.length - 1] !== '(') {
-        output.push(stack.pop());
-      }
-      if (!stack.length) throw new Error('Misplaced comma or parentheses');
-    } else if (isOperator(token)) {
-      while (
-        stack.length &&
-        isOperator(stack[stack.length - 1]) &&
-        ((OPERATORS[token].assoc === 'L' && OPERATORS[token].precedence <= OPERATORS[stack[stack.length - 1]].precedence) ||
-          (OPERATORS[token].assoc === 'R' && OPERATORS[token].precedence < OPERATORS[stack[stack.length - 1]].precedence))
-      ) {
-        output.push(stack.pop());
+    } else if (token.type === 'operator') {
+      while (stack.length) {
+        const top = stack[stack.length - 1];
+        if (top.type === 'operator' && (
+          (OPERATORS[top.value].assoc === 'L' && OPERATORS[top.value].precedence >= OPERATORS[token.value].precedence) ||
+          (OPERATORS[top.value].assoc === 'R' && OPERATORS[top.value].precedence > OPERATORS[token.value].precedence)
+        )) {
+          output.push(stack.pop());
+        } else {
+          break;
+        }
       }
       stack.push(token);
-    } else if (token === '(') {
-      stack.push(token);
-    } else if (token === ')') {
-      while (stack.length && stack[stack.length - 1] !== '(') {
-        output.push(stack.pop());
+    } else if (token.type === 'paren') {
+      if (token.value === '(') {
+        stack.push(token);
+      } else {
+        // token.value === ')'
+        while (stack.length && stack[stack.length - 1].value !== '(') {
+          output.push(stack.pop());
+        }
+        if (!stack.length) throw new Error('Mismatched parentheses');
+        stack.pop(); // Remove '('
+        if (stack.length && stack[stack.length - 1].type === 'func') {
+          output.push(stack.pop());
+        }
       }
-      if (!stack.length) throw new Error('Mismatched parentheses');
-      stack.pop(); // Remove '('
-      if (stack.length && isFunction(stack[stack.length - 1])) {
-        output.push(stack.pop());
-      }
-    } else {
-      throw new Error(`Unknown token: ${token}`);
     }
   }
-
   while (stack.length) {
-    const op = stack.pop();
-    if (op === '(' || op === ')') throw new Error('Mismatched parentheses');
-    output.push(op);
+    const top = stack.pop();
+    if (top.type === 'paren') throw new Error('Mismatched parentheses');
+    output.push(top);
   }
   return output;
 }
 
 /**
- * Evaluate an expression in Reverse Polish Notation.
- * @param {string[]} rpn
+ * Evaluate an RPN token list and return the numeric result.
+ * @param {Array} rpn
  * @returns {number}
  */
 function evaluateRPN(rpn) {
   const stack = [];
   for (const token of rpn) {
-    if (!isNaN(token)) {
-      stack.push(parseFloat(token));
-    } else if (token === 'π') {
-      stack.push(Math.PI);
-    } else if (token === 'e') {
-      stack.push(Math.E);
-    } else if (Object.prototype.hasOwnProperty.call(FUNCTIONS, token)) {
-      const fn = FUNCTIONS[token];
-      const argCount = fn.length;
-      if (stack.length < argCount) throw new Error('Insufficient arguments for function');
-      const args = stack.splice(-argCount);
-      const result = fn(...args);
-      if (!Number.isFinite(result)) throw new Error('Math overflow');
-      stack.push(result);
-    } else if (Object.prototype.hasOwnProperty.call(OPERATORS, token)) {
+    if (token.type === 'number') {
+      stack.push(token.value);
+    } else if (token.type === 'operator') {
       const b = stack.pop();
       const a = stack.pop();
-      if (a === undefined || b === undefined) throw new Error('Insufficient values for operator');
-      const result = OPERATORS[token].func(a, b);
-      if (!Number.isFinite(result)) throw new Error('Math overflow');
+      if (a === undefined || b === undefined) throw new Error('Insufficient values');
+      const result = OPERATORS[token.value].func(a, b);
       stack.push(result);
-    } else {
-      throw new Error(`Invalid token in RPN: ${token}`);
+    } else if (token.type === 'func') {
+      const fn = FUNCTIONS[token.value];
+      const argCount = fn.length; // Number of expected arguments
+      const args = [];
+      for (let i = 0; i < argCount; i++) {
+        const val = stack.pop();
+        if (val === undefined) throw new Error('Insufficient arguments for function');
+        args.unshift(val);
+      }
+      const result = fn(...args);
+      stack.push(result);
     }
   }
   if (stack.length !== 1) throw new Error('Invalid expression');
@@ -146,89 +204,75 @@ function evaluateRPN(rpn) {
 }
 
 /**
- * Public API – evaluate a mathematical expression string.
+ * High‑level helper that evaluates a raw expression string.
+ * Returns either a numeric result or an error message string.
  * @param {string} expr
- * @returns {number}
- * @throws Will throw an error if the expression is invalid.
+ * @returns {number|string}
  */
 function evaluateExpression(expr) {
-  if (!expr) throw new Error('Empty expression');
-  const tokens = tokenize(expr);
-  const rpn = shuntingYard(tokens);
-  return evaluateRPN(rpn);
-}
-
-// ==================== UI Interaction ====================
-const display = document.getElementById('display');
-let errorState = false;
-
-function appendToDisplay(value) {
-  if (errorState) {
-    display.value = '';
-    errorState = false;
-    display.classList.remove('error');
-  }
-  display.value += value;
-}
-
-function clearDisplay() {
-  display.value = '';
-  errorState = false;
-  display.classList.remove('error');
-}
-
-function backspace() {
-  if (errorState) return clearDisplay();
-  display.value = display.value.slice(0, -1);
-}
-
-function computeResult() {
   try {
-    const result = evaluateExpression(display.value);
-    display.value = Number.isFinite(result) ? result : 'Error';
+    const tokens = tokenize(expr);
+    const rpn = toRPN(tokens);
+    const result = evaluateRPN(rpn);
+    return result;
   } catch (e) {
-    display.value = e.message;
-    errorState = true;
-    display.classList.add('error');
+    return 'Error: ' + e.message;
   }
 }
 
-// Button click handling
-document.querySelectorAll('button[data-key], button[data-func]').forEach((btn) => {
+// ====================
+//  UI Interaction    
+// ====================
+
+const display = document.getElementById('display');
+const buttons = document.querySelectorAll('button[data-token]');
+
+buttons.forEach(btn => {
   btn.addEventListener('click', () => {
-    const key = btn.getAttribute('data-key');
-    const func = btn.getAttribute('data-func');
-    if (key) {
-      if (key === 'C') return clearDisplay();
-      if (key === '\u2190') return backspace();
-      if (key === '=') return computeResult();
-      appendToDisplay(key);
-    } else if (func) {
-      if (func === '^') return appendToDisplay('^');
-      if (func === 'π') return appendToDisplay('π');
-      if (func === 'e') return appendToDisplay('e');
-      // Functions are added with opening parenthesis
-      appendToDisplay(`${func}(`);
-    }
+    display.value += btn.getAttribute('data-token');
   });
 });
 
-// Keyboard support
-document.addEventListener('keydown', (e) => {
-  const allowed = '0123456789.+-*/^()';
-  if (allowed.includes(e.key)) {
-    appendToDisplay(e.key);
-    e.preventDefault();
-  } else if (e.key === 'Enter') {
-    computeResult();
-    e.preventDefault();
-  } else if (e.key === 'Backspace') {
-    backspace();
-    e.preventDefault();
-  } else if (e.key === 'Escape') {
-    clearDisplay();
-    e.preventDefault();
-  }
+document.getElementById('clear').addEventListener('click', () => {
+  display.value = '';
 });
 
-export { evaluateExpression };
+document.getElementById('backspace').addEventListener('click', () => {
+  display.value = display.value.slice(0, -1);
+});
+
+document.getElementById('equals').addEventListener('click', () => {
+  const expr = display.value;
+  const result = evaluateExpression(expr);
+  display.value = result;
+});
+
+// Keyboard support
+
+document.addEventListener('keydown', (e) => {
+  const key = e.key;
+  if (key === 'Enter') {
+    e.preventDefault();
+    document.getElementById('equals').click();
+    return;
+  }
+  if (key === 'Backspace') {
+    e.preventDefault();
+    document.getElementById('backspace').click();
+    return;
+  }
+  if (key.toLowerCase() === 'c') {
+    e.preventDefault();
+    document.getElementById('clear').click();
+    return;
+  }
+  const allowed = '0123456789.+-*/^()';
+  if (allowed.includes(key)) {
+    display.value += key;
+    return;
+  }
+  // Allow typing of function names (letters)
+  if (/[a-zA-Z]/.test(key)) {
+    display.value += key;
+  }
+});
