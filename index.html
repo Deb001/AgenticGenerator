@@ -4,48 +4,54 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Scientific Calculator</title>
-  <link rel="stylesheet" href="style.css">
+  <!-- Content Security Policy to mitigate XSS -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' https://cdn.jsdelivr.net; script-src 'self';">
+  <!-- Tailwind CSS from CDN with Subresource Integrity -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.2/dist/tailwind.min.css" rel="stylesheet" integrity="sha384-6VZ+eK6Ff8gDuwZQzQ0jrISFRCGDpa2BkLomqKgJo0vvVuv5AO9M/dwZ0pQfM9vF" crossorigin="anonymous">
+  <!-- Custom stylesheet for variables and minor tweaks -->
+  <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-  <div class="calculator">
-    <input type="text" id="display" readonly aria-label="Calculator display">
-    <div class="buttons">
+<body class="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-100 to-gray-200">
+  <div class="calculator bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
+    <input type="text" id="display" class="display w-full text-right text-2xl bg-gray-800 text-gray-100 rounded-md p-2 mb-4" readonly placeholder="0">
+    <div class="buttons grid grid-cols-4 gap-2">
       <!-- Row 1 -->
-      <button data-token="7">7</button>
-      <button data-token="8">8</button>
-      <button data-token="9">9</button>
-      <button data-token="/" class="operator">÷</button>
-      <button data-token="sin(" class="function">sin</button>
+      <button data-action="clear" class="bg-gray-200 hover:bg-gray-300 active:bg-gray-400 text-gray-800 rounded-md p-2">C</button>
+      <button data-action="backspace" class="bg-gray-200 hover:bg-gray-300 active:bg-gray-400 text-gray-800 rounded-md p-2">&#x232b;</button>
+      <button data-action="parenthesis" data-value="(" class="bg-gray-200 hover:bg-gray-300 active:bg-gray-400 text-gray-800 rounded-md p-2">(</button>
+      <button data-action="parenthesis" data-value=")" class="bg-gray-200 hover:bg-gray-300 active:bg-gray-400 text-gray-800 rounded-md p-2">)</button>
       <!-- Row 2 -->
-      <button data-token="4">4</button>
-      <button data-token="5">5</button>
-      <button data-token="6">6</button>
-      <button data-token="*" class="operator">×</button>
-      <button data-token="cos(" class="function">cos</button>
+      <button data-action="function" data-value="sin" class="bg-gray-200 hover:bg-gray-300 active:bg-gray-400 text-gray-800 rounded-md p-2">sin</button>
+      <button data-action="function" data-value="cos" class="bg-gray-200 hover:bg-gray-300 active:bg-gray-400 text-gray-800 rounded-md p-2">cos</button>
+      <button data-action="function" data-value="tan" class="bg-gray-200 hover:bg-gray-300 active:bg-gray-400 text-gray-800 rounded-md p-2">tan</button>
+      <button data-action="operator" data-value="/" class="bg-gray-200 hover:bg-gray-300 active:bg-gray-400 text-gray-800 rounded-md p-2">&#247;</button>
       <!-- Row 3 -->
-      <button data-token="1">1</button>
-      <button data-token="2">2</button>
-      <button data-token="3">3</button>
-      <button data-token="-" class="operator">−</button>
-      <button data-token="tan(" class="function">tan</button>
+      <button data-action="function" data-value="log" class="bg-gray-200 hover:bg-gray-300 active:bg-gray-400 text-gray-800 rounded-md p-2">log</button>
+      <button data-action="function" data-value="ln" class="bg-gray-200 hover:bg-gray-300 active:bg-gray-400 text-gray-800 rounded-md p-2">ln</button>
+      <button data-action="function" data-value="sqrt" class="bg-gray-200 hover:bg-gray-300 active:bg-gray-400 text-gray-800 rounded-md p-2">&#8730;</button>
+      <button data-action="operator" data-value="*" class="bg-gray-200 hover:bg-gray-300 active:bg-gray-400 text-gray-800 rounded-md p-2">&#215;</button>
       <!-- Row 4 -->
-      <button data-token="0">0</button>
-      <button data-token=".">.</button>
-      <button data-token="(" >(</button>
-      <button data-token=")" >)</button>
-      <button data-token="+" class="operator">+</button>
+      <button data-action="number" data-value="7" class="bg-gray-200 hover:bg-gray-300 active:bg-gray-400 text-gray-800 rounded-md p-2">7</button>
+      <button data-action="number" data-value="8" class="bg-gray-200 hover:bg-gray-300 active:bg-gray-400 text-gray-800 rounded-md p-2">8</button>
+      <button data-action="number" data-value="9" class="bg-gray-200 hover:bg-gray-300 active:bg-gray-400 text-gray-800 rounded-md p-2">9</button>
+      <button data-action="operator" data-value="-" class="bg-gray-200 hover:bg-gray-300 active:bg-gray-400 text-gray-800 rounded-md p-2">&#8722;</button>
       <!-- Row 5 -->
-      <button data-token="log(" class="function">log</button>
-      <button data-token="ln(" class="function">ln</button>
-      <button data-token="sqrt(" class="function">√</button>
-      <button data-token="exp(" class="function">exp</button>
-      <button data-token="^" class="operator">^</button>
+      <button data-action="number" data-value="4" class="bg-gray-200 hover:bg-gray-300 active:bg-gray-400 text-gray-800 rounded-md p-2">4</button>
+      <button data-action="number" data-value="5" class="bg-gray-200 hover:bg-gray-300 active:bg-gray-400 text-gray-800 rounded-md p-2">5</button>
+      <button data-action="number" data-value="6" class="bg-gray-200 hover:bg-gray-300 active:bg-gray-400 text-gray-800 rounded-md p-2">6</button>
+      <button data-action="operator" data-value="+" class="bg-gray-200 hover:bg-gray-300 active:bg-gray-400 text-gray-800 rounded-md p-2">+</button>
       <!-- Row 6 -->
-      <button data-token="pi" class="constant">π</button>
-      <button data-token="e" class="constant">e</button>
-      <button id="clear">C</button>
-      <button id="backspace">⌫</button>
-      <button id="equals">=</button>
+      <button data-action="number" data-value="1" class="bg-gray-200 hover:bg-gray-300 active:bg-gray-400 text-gray-800 rounded-md p-2">1</button>
+      <button data-action="number" data-value="2" class="bg-gray-200 hover:bg-gray-300 active:bg-gray-400 text-gray-800 rounded-md p-2">2</button>
+      <button data-action="number" data-value="3" class="bg-gray-200 hover:bg-gray-300 active:bg-gray-400 text-gray-800 rounded-md p-2">3</button>
+      <button data-action="equals" class="bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white rounded-md p-2">=</button>
+      <!-- Row 7 -->
+      <button data-action="number" data-value="0" class="bg-gray-200 hover:bg-gray-300 active:bg-gray-400 text-gray-800 rounded-md p-2 col-span-2">0</button>
+      <button data-action="decimal" data-value="." class="bg-gray-200 hover:bg-gray-300 active:bg-gray-400 text-gray-800 rounded-md p-2">.</button>
+      <button data-action="function" data-value="exp" class="bg-gray-200 hover:bg-gray-300 active:bg-gray-400 text-gray-800 rounded-md p-2">exp</button>
+      <button data-action="constant" data-value="pi" class="bg-gray-200 hover:bg-gray-300 active:bg-gray-400 text-gray-800 rounded-md p-2">&#960;</button>
+      <button data-action="constant" data-value="e" class="bg-gray-200 hover:bg-gray-300 active:bg-gray-400 text-gray-800 rounded-md p-2">e</button>
+      <button data-action="operator" data-value="^" class="bg-gray-200 hover:bg-gray-300 active:bg-gray-400 text-gray-800 rounded-md p-2">^</button>
     </div>
   </div>
   <script src="app.js"></script>
