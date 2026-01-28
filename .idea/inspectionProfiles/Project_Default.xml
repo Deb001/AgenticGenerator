@@ -1,0 +1,30 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="Eslint" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <list>
+          <option value="matplotlib" />
+          <option value="plotly" />
+          <option value="pandas" />
+          <option value="bandit" />
+          <option value="safety" />
+          <option value="semgrep" />
+          <option value="spacy" />
+          <option value="nltk" />
+          <option value="textstat" />
+          <option value="boto3" />
+          <option value="azure-identity" />
+          <option value="google-cloud-billing" />
+          <option value="cookiecutter" />
+          <option value="gitpython" />
+          <option value="memory-profiler" />
+          <option value="pytest-cov" />
+          <option value="pre-commit" />
+          <option value="dataclasses-json" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
