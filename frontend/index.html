@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NSE Stock Screener</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <header>
+        <h1>NSE Stock Screener</h1>
+    </header>
+    <main class="app-container">
+        <!-- Search & Filters -->
+        <section class="controls">
+            <div class="search-bar">
+                <input type="text" id="search-input" placeholder="Search NSE stocks (e.g., RELIANCE)" autocomplete="off" />
+                <ul id="suggestions" class="suggestions"></ul>
+            </div>
+            <div class="filter-panel">
+                <h2>Filters</h2>
+                <div class="filter-group">
+                    <label for="sector-select">Sector</label>
+                    <select id="sector-select">
+                        <option value="">All</option>
+                        <option value="Financial Services">Financial Services</option>
+                        <option value="Technology">Technology</option>
+                        <option value="Consumer Goods">Consumer Goods</option>
+                        <option value="Healthcare">Healthcare</option>
+                        <option value="Industrial Goods">Industrial Goods</option>
+                        <!-- Add more as needed -->
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="marketcap-min">Market Cap (₹ Cr) – Min</label>
+                    <input type="number" id="marketcap-min" placeholder="e.g., 5000" min="0" />
+                </div>
+                <div class="filter-group">
+                    <label for="marketcap-max">Market Cap (₹ Cr) – Max</label>
+                    <input type="number" id="marketcap-max" placeholder="e.g., 50000" min="0" />
+                </div>
+                <div class="filter-group">
+                    <label for="pe-min">P/E – Min</label>
+                    <input type="number" id="pe-min" step="0.1" placeholder="e.g., 5" min="0" />
+                </div>
+                <div class="filter-group">
+                    <label for="pe-max">P/E – Max</label>
+                    <input type="number" id="pe-max" step="0.1" placeholder="e.g., 30" min="0" />
+                </div>
+                <div class="filter-group">
+                    <label for="div-yield-min">Div. Yield (%) – Min</label>
+                    <input type="number" id="div-yield-min" step="0.01" placeholder="e.g., 0.5" min="0" />
+                </div>
+                <div class="filter-group">
+                    <label for="div-yield-max">Div. Yield (%) – Max</label>
+                    <input type="number" id="div-yield-max" step="0.01" placeholder="e.g., 5" min="0" />
+                </div>
+                <div class="filter-group">
+                    <label for="52w-high-low-select">52‑W High/Low</label>
+                    <select id="52w-high-low-select">
+                        <option value="">Any</option>
+                        <option value="high">Near High (≥ 90%)</option>
+                        <option value="low">Near Low (≤ 10%)</option>
+                    </select>
+                </div>
+                <button id="apply-filters" class="btn">Apply Filters</button>
+                <button id="clear-filters" class="btn btn-secondary">Clear Filters</button>
+            </div>
+        </section>
+        <!-- Results Table -->
+        <section class="results">
+            <table id="results-table">
+                <thead>
+                    <tr>
+                        <th data-key="symbol">Symbol &#x25B2;&#x25BC;</th>
+                        <th data-key="shortName">Name &#x25B2;&#x25BC;</th>
+                        <th data-key="sector">Sector &#x25B2;&#x25BC;</th>
+                        <th data-key="regularMarketPrice">Price (₹) &#x25B2;&#x25BC;</th>
+                        <th data-key="marketCap">Mkt Cap (₹ Cr) &#x25B2;&#x25BC;</th>
+                        <th data-key="trailingPE">P/E &#x25B2;&#x25BC;</th>
+                        <th data-key="dividendYield">Div Yield (%) &#x25B2;&#x25BC;</th>
+                        <th data-key="fiftyTwoWeekHigh">52W High (₹) &#x25B2;&#x25BC;</th>
+                        <th data-key="fiftyTwoWeekLow">52W Low (₹) &#x25B2;&#x25BC;</th>
+                        <th>Watch</th>
+                    </tr>
+                </thead>
+                <tbody id="results-body">
+                    <!-- Filled by script.js -->
+                </tbody>
+            </table>
+            <div id="pagination" class="pagination"></div>
+        </section>
+        <!-- Watchlist Sidebar -->
+        <aside class="watchlist-sidebar">
+            <h2>Watchlist</h2>
+            <ul id="watchlist" class="watchlist"></ul>
+        </aside>
+    </main>
+    <footer>
+        <p>Data sourced from Yahoo Finance (public endpoints). © 2026</p>
+    </footer>
+    <script src="script.js"></script>
+</body>
+</html>
