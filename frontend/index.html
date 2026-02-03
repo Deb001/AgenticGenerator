@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NSE Stock Screener</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <h1 class="brand">NSE Stock Screener</h1>
+    <input
+      type="text"
+      id="search-input"
+      class="search-input"
+      placeholder="Enter ticker symbols (e.g. RELIANCE.NS, TCS.NS)"
+      autocomplete="off"
+    />
+  </header>
+
+  <main class="main-container">
+    <!-- Filters Panel -->
+    <aside class="filters" id="filters-panel">
+      <h2>Filters</h2>
+      <form id="filters-form">
+        <label for="sector-filter">Sector</label>
+        <select id="sector-filter" name="sector">
+          <option value="">All</option>
+        </select>
+
+        <label for="marketcap-min">Market Cap (₹ Cr) – Min</label>
+        <input type="number" id="marketcap-min" name="marketcapMin" placeholder="e.g. 5000" />
+        <label for="marketcap-max">Market Cap (₹ Cr) – Max</label>
+        <input type="number" id="marketcap-max" name="marketcapMax" placeholder="e.g. 50000" />
+
+        <label for="pe-min">P/E Ratio – Min</label>
+        <input type="number" step="0.01" id="pe-min" name="peMin" placeholder="e.g. 5" />
+        <label for="pe-max">P/E Ratio – Max</label>
+        <input type="number" step="0.01" id="pe-max" name="peMax" placeholder="e.g. 30" />
+
+        <label for="div-yield-min">Dividend Yield (%) – Min</label>
+        <input type="number" step="0.01" id="div-yield-min" name="divYieldMin" placeholder="e.g. 0" />
+        <label for="div-yield-max">Dividend Yield (%) – Max</label>
+        <input type="number" step="0.01" id="div-yield-max" name="divYieldMax" placeholder="e.g. 5" />
+
+        <label for="price-min">Current Price – Min (₹)</label>
+        <input type="number" step="0.01" id="price-min" name="priceMin" placeholder="e.g. 100" />
+        <label for="price-max">Current Price – Max (₹)</label>
+        <input type="number" step="0.01" id="price-max" name="priceMax" placeholder="e.g. 3000" />
+
+        <button type="submit" class="btn apply-filters">Apply Filters</button>
+        <button type="button" id="clear-filters" class="btn clear-filters">Clear</button>
+      </form>
+    </aside>
+
+    <!-- Results Panel -->
+    <section class="results" id="results-panel">
+      <h2>Results</h2>
+      <table class="results-table" id="results-table">
+        <thead>
+          <tr>
+            <th data-sort="symbol">Symbol</th>
+            <th data-sort="shortName">Name</th>
+            <th data-sort="sector">Sector</th>
+            <th data-sort="price">Price (₹)</th>
+            <th data-sort="changePercent">% Change</th>
+            <th data-sort="marketCap">Mkt Cap (₹ Cr)</th>
+            <th data-sort="peRatio">P/E</th>
+            <th data-sort="dividendYield">Div Yield (%)</th>
+            <th data-sort="week52High">52W High</th>
+            <th data-sort="week52Low">52W Low</th>
+            <th>Watch</th>
+          </tr>
+        </thead>
+        <tbody id="results-body">
+          <!-- Filled by script.js -->
+        </tbody>
+      </table>
+      <div class="pagination" id="pagination-controls">
+        <button id="prev-page" class="btn" disabled>Prev</button>
+        <span id="page-info">Page 1 of 1</span>
+        <button id="next-page" class="btn" disabled>Next</button>
+      </div>
+    </section>
+
+    <!-- Watchlist Panel -->
+    <aside class="watchlist" id="watchlist-panel">
+      <h2>Watchlist</h2>
+      <ul id="watchlist-items"></ul>
+      <div class="watchlist-actions">
+        <button id="export-watchlist" class="btn">Export JSON</button>
+        <button id="import-watchlist" class="btn">Import JSON</button>
+        <input type="file" id="import-file" accept="application/json" style="display:none" />
+      </div>
+    </aside>
+  </main>
+
+  <!-- Stock Detail Modal -->
+  <div id="detail-modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <span class="close-modal" id="close-modal">&times;</span>
+      <div id="modal-body">
+        <!-- Filled dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notifications -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>Data sourced from Yahoo Finance (public endpoints). Use for informational purposes only.</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
